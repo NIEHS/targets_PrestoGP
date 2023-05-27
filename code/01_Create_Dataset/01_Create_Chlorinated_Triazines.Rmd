@@ -161,7 +161,6 @@ data.AZO.year.avg <- data.AZO.daily.avg %>%
 
 
 ```{r Save Data}
-
-save(data.AZO.year.avg,file = "../../input/data_process/data_AZO_year_avg.RData")
+save(data.AZO.year.avg,file = "input/data_process/data_AZO_year_avg.RData")
 
 ```

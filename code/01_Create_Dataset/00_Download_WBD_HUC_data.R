@@ -4,7 +4,7 @@
 library(beepr)
 library(nhdplusTools)
 
-outdir <- "/../Code/WBD-National/"
+outdir <- "input/WBD-National/"
 
 download_wbd(
   outdir,
