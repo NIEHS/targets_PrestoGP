@@ -39,8 +39,8 @@ US.bb <- terra::ext(c(-124.7844079 , -66.9513812, 24.7433195, 49.3457868))
 # NHD WBD Layer names
 WBD.layers <- st_layers("input/WBD-National/WBD_National_GDB.gdb")
 
-WBD <- st_read("input/WBD-National/WBD_National_GDB.gdb",layer = "WBDHU12")
-
+WBD <- st_read("input/WBD-National/WBD_National_GDB.gdb",layer = "WBDHU8") %>% 
+  st_transform("EPSG:4326")
 
 ```
 
@@ -58,7 +58,7 @@ method currently available in R for dealing with rasters.
 ```{r OLM raster data,echo=FALSE}
 # Cropped Raster directory 
 # cropped.raster.dir <- "/Volumes/SHAG/OpenLandMapData/OLM_Combined/"
-cropped.raster.dir <- "/Users/messierkp/Documents/OLM_Combined/"
+cropped.raster.dir <- "input/OpenLandMapData/OLM_Combined/"
 
 if ( length(list.files(path = cropped.raster.dir,
            pattern = "*.tif$", full.names = T))==7){ # If the cropped rasters have been generated,read those in
@@ -75,13 +75,13 @@ if ( length(list.files(path = cropped.raster.dir,
 }else{# otherwise generate them which takes a bit of time (~ 1 hour)
   
   # Directories of individual raw OLM data
-OLM.dir.pH <- "/Volumes/SHAG/OpenLandMapData/pH"
-OLM.dir.Clay_Content <- "/Volumes/SHAG/OpenLandMapData/Clay_Content"
-OLM.dir.Bulk_Density <- "/Volumes/SHAG/OpenLandMapData/Bulk_Density"
-OLM.dir.Sand_Content <- "/Volumes/SHAG/OpenLandMapData/Sand_Content"
-OLM.dir.Organic_Carbon <- "/Volumes/SHAG/OpenLandMapData/Organic_Carbon"
-OLM.dir.Soil_Order <- "/Volumes/SHAG/OpenLandMapData/Soil_Order"
-OLM.dir.Texture <- "/Volumes/SHAG/OpenLandMapData/USDA_Texture_Class"
+OLM.dir.pH <- "input/OpenLandMapData/pH"
+OLM.dir.Clay_Content <- "input/OpenLandMapData/Clay_Content"
+OLM.dir.Bulk_Density <- "input/OpenLandMapData/Bulk_Density"
+OLM.dir.Sand_Content <- "input/OpenLandMapData/Sand_Content"
+OLM.dir.Organic_Carbon <- "input/OpenLandMapData/Organic_Carbon"
+OLM.dir.Soil_Order <- "input/OpenLandMapData/Soil_Order"
+OLM.dir.Texture <- "input/OpenLandMapData/USDA_Texture_Class"
 
 
 # Get Raster data filenames/paths
@@ -133,13 +133,13 @@ texture.stack <- terra::rast(OLM.filenames.Texture) %>% terra::crop(US.bb)
 
 
 # Write the cropped rasters for future use and time saving
-writeRaster(pH.stack,"/Volumes/SHAG/OpenLandMapData/OLM_Combined/OLM_US_Crop_pH.tif")
-writeRaster(Clay_Content.stack,"/Volumes/SHAG/OpenLandMapData/OLM_Combined/OLM_US_Crop_Clay_Content.tif")
-writeRaster(Bulk_Density.stack,"/Volumes/SHAG/OpenLandMapData/OLM_Combined/OLM_US_Crop_Bulk_Density.tif")
-writeRaster(Sand_Content.stack,"/Volumes/SHAG/OpenLandMapData/OLM_Combined/OLM_US_Crop_Sand_Content.tif")
-writeRaster(Organic_Carbon.stack,"/Volumes/SHAG/OpenLandMapData/OLM_Combined/OLM_US_Crop_Organic_Carbon.tif")
-writeRaster(soil_order.stack,"/Volumes/SHAG/OpenLandMapData/OLM_Combined/OLM_US_Crop_Soil_Order.tif")
-writeRaster(texture.stack,"/Volumes/SHAG/OpenLandMapData/OLM_Combined/OLM_US_Crop_Soil_Texture_Class.tif")
+writeRaster(pH.stack,"input/OpenLandMapData/OLM_Combined/OLM_US_Crop_pH.tif")
+writeRaster(Clay_Content.stack,"input/OpenLandMapData/OLM_Combined/OLM_US_Crop_Clay_Content.tif")
+writeRaster(Bulk_Density.stack,"input/OpenLandMapData/OLM_Combined/OLM_US_Crop_Bulk_Density.tif")
+writeRaster(Sand_Content.stack,"input/OpenLandMapData/OLM_Combined/OLM_US_Crop_Sand_Content.tif")
+writeRaster(Organic_Carbon.stack,"input/OpenLandMapData/OLM_Combined/OLM_US_Crop_Organic_Carbon.tif")
+writeRaster(soil_order.stack,"input/OpenLandMapData/OLM_Combined/OLM_US_Crop_Soil_Order.tif")
+writeRaster(texture.stack,"input/OpenLandMapData/OLM_Combined/OLM_US_Crop_Soil_Texture_Class.tif")
 
 }
 
@@ -204,7 +204,7 @@ for (i in 1:length(huc08.unique)){
   idx.row <- data.AZO$huc08 == huc08.unique[i]
   
   # get the given HUC08 geometry from the WBD data
-  huc08.polygon <- dplyr::filter(WBD,huc8 == huc08.unique[i])
+  huc08.polygon <- dplyr::filter(WBD,huc08 == huc08.unique[i])
  
   # calculate the mean raster values in the HUC
   huc08.val <- exact_extract(OLM.stack.values,st_geometry(huc08.polygon),fun = "mean", stack_apply = TRUE)
@@ -257,7 +257,7 @@ HUC.rast.class <- dplyr::rename_with(HUC.rast.class,~ gsub("frac_1_",paste0("fra
 ```{r Save the data to a geopackage (OSG open source format) ,echo=TRUE}
 
 data.AZO.HUC08.OLM <- cbind(data.AZO,HUC.rast.vals,HUC.rast.class)
-sf::st_write(data.AZO.HUC08.OLM,"/Volumes/SHAG/PrestoGP_Covariates/AZO_HUC08_OLM.gpkg")
+sf::st_write(data.AZO.HUC08.OLM,"input/Covariates/AZO_HUC08_OLM.gpkg")
 
 
 ```
