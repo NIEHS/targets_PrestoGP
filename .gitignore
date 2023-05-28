@@ -1,4 +1,9 @@
 ### R ###
+
+# watershed boundary data folder
+input/
+
+
 # History files
 .Rhistory
 .Rapp.history
