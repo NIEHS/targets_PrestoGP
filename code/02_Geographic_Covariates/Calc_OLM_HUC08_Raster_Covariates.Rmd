@@ -204,7 +204,7 @@ for (i in 1:length(huc08.unique)){
   idx.row <- data.AZO$huc08 == huc08.unique[i]
   
   # get the given HUC08 geometry from the WBD data
-  huc08.polygon <- dplyr::filter(WBD,huc08 == huc08.unique[i])
+  huc08.polygon <- dplyr::filter(WBD,huc8 == huc08.unique[i])
  
   # calculate the mean raster values in the HUC
   huc08.val <- exact_extract(OLM.stack.values,st_geometry(huc08.polygon),fun = "mean", stack_apply = TRUE)
