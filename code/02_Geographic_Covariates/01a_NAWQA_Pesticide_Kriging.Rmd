@@ -32,7 +32,7 @@ Including or excluding pesticide
 
 1) ATRAZINE, PROPAZINE, SIMAZINE - Actual chemicals we are modeling
 2) 3 others are degredates and not produced
-
+3) Other chemicals
 
 
 
