@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Required Libraries and Source Local Functions
 
-```{r libraries and sourcing,echo=FALSE}
+```{r libraries and sourcing,echo=FALSE,include=FALSE}
 
 library(sf)
 library(terra)
@@ -20,6 +20,7 @@ library(lubridate)
 library(tidyverse)
 library(data.table)
 library(nhdplusTools)
+library(tigris) # for getting county shapefile
 
 
 ```
@@ -38,22 +39,44 @@ Including or excluding pesticide
 
 ```{r pesticide and NHD WBD data, echo=FALSE}
 # Read in main pesticide data here
-data.NAWQA <- data.table::fread("input/NAWQA_Pesticides/EPest.county.estimates.2000.txt")
+NAWQA.files <- c("input/NAWQA_Pesticides/EPest.county.estimates.2000.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2001.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2002.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2003.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2004.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2005.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2006.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2007.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2008.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2009.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2010.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2011.txt",
+                 "input/NAWQA_Pesticides/EPest.county.estimates.2012.txt",
+                 "input/NAWQA_Pesticides/EPest_county_estimates_2013_2017_v2.txt",
+                 "input/NAWQA_Pesticides/EPest_county_estimates_2018.txt",
+                 "input/NAWQA_Pesticides/EPest_county_estimates_2018.txt")
 
-data.triazines <- data.NAWQA |> 
-  filter()
 
+l <- lapply(NAWQA.files, fread, sep="\t")
+beepr::beep(sound = 5)
+dt <- rbindlist( l )
+setkey(dt, COMPOUND , YEAR )
+dt$STATE_FIPS_CODE <- as.character(dt$STATE_FIPS_CODE)
+dt$COUNTY_FIPS_CODE <- as.character(dt$COUNTY_FIPS_CODE)
 
-# For efficient extraction, we just need the geometry
-AZO.geometry <- sf::st_geometry(data.AZO)
+# US bounding box - we want only the lower 48
+US.bb <- terra::ext(c(-124.7844079 , -66.9513812, 18.7433195, 51.3457868))
 
-# US bounding box
-US.bb <- terra::ext(c(-124.7844079 , -66.9513812, 24.7433195, 49.3457868))
+centroids <- counties(resolution = "20m") |> 
+  st_centroid() |> 
+  sf::st_crop(US.bb) |>
+  select(c(STATEFP,COUNTYFP,INTPTLAT,INTPTLON,geometry)) 
 
-# NHD WBD Layer names
-WBD.layers <- st_layers("input/WBD-National/WBD_National_GDB.gdb")
+colnames(centroids) <- c("STATE_FIPS_CODE","COUNTY_FIPS_CODE","Lat","Lon","geometry")
+# Join the NAWQA data to the spatial county data
 
-WBD <- st_read("input/WBD-National/WBD_National_GDB.gdb",layer = "WBDHU12")
+NAWQA.sf <- left_join(centroids,dt,by = c("STATE_FIPS_CODE","COUNTY_FIPS_CODE"),multiple = "all")
+
 
 ```
 
