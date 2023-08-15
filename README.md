@@ -81,6 +81,10 @@ The code file name should be descriptive of the code's purpose. For example, 01_
 ###  R File types
 Functions are written using basic R files (.R) and scripts, or data analysis workflows, are written in RMarkdown (.Rmd). RMarkdown helps ensure that our code is well-organized and easy to read.
 
+## NASS Agricultural data
+The NASS Agricultural classification data by year are available here: https://www.nass.usda.gov/Research_and_Science/Cropland/Release/index.php
+Each year is a 1.5+GB raster, so I've created a wget script to download and unzip it. Please download and unzip in the "input/USDA_NASS/" folder. 
+
 
 
 
