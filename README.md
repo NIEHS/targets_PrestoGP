@@ -83,7 +83,7 @@ Functions are written using basic R files (.R) and scripts, or data analysis wor
 
 ## NASS Agricultural data
 The NASS Agricultural classification data by year are available here: https://www.nass.usda.gov/Research_and_Science/Cropland/Release/index.php
-Each year is a 1.5+GB raster, so I've created a wget scripts in the "input/USDA_NASS" folder to download and unzip it. Please download and unzip in the "input/USDA_NASS/" folder. 
+Each year is a 1.5+GB raster, so I've created a wget bash (.sh) scripts in the "input/USDA_NASS" folder to download and unzip it. Please download and unzip in the "input/USDA_NASS/" folder. Please make adjustments to the the bash as needed or contact Kyle if you need help. They are written for running on NIEHS HPC. 
 
 
 
