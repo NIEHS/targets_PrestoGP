@@ -1,27 +1,5 @@
----
-title: "Reproducible Research Guide"
-author: "Kyle P Messier"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: no
-    toc_depth: '2'
-    df_print: paged
-  rmdformats::downcute:
-    self_contained: yes
-    thumbnails: yes
-    lightbox: no
-    gallery: no
-    toc: 4
-    default_style: dark
-  pdf_document:
-    toc: yes=
-    toc_depth: '2'
-subtitle: \{SET\}~group~
----
 
-
-## Reproducible File Structure 
+## PrestoGP File Structure 
 
 
 We will utilize a strict file structure for all projects. This will ensure that the code and data from the project is accessible and reproducible in the long term. In short, we will utilize a relative path file setup with a few strictly define folder names. After that, there is more flexibility, but this will ensure consistently and reproducibility. 
