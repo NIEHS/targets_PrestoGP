@@ -85,7 +85,9 @@ Functions are written using basic R files (.R) and scripts, or data analysis wor
 The NASS Agricultural classification data by year are available here: https://www.nass.usda.gov/Research_and_Science/Cropland/Release/index.php
 Each year is a 1.5+GB raster, so I've created a wget bash (.sh) scripts in the "input/USDA_NASS" folder to download and unzip it. Please download and unzip in the "input/USDA_NASS/" folder. Please make adjustments to the the bash as needed or contact Kyle if you need help. They are written for running on NIEHS HPC. 
 
-
+## National Watershed Boundary Dataset (WBD) 
+I've found that downloading the full watershed boundary dateset with HUCS 2 through 12 is faster than downloading from an API as needed. Please download the WBD from https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/Hydrography/WBD/National/GDB/ and unzip into 
+"input/WBD-National/". 
 
 
 
