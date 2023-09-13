@@ -19,7 +19,6 @@ library(exactextractr)
 library(lubridate)
 library(tidyverse)
 library(data.table)
-library(nhdplusTools)
 library(tigris) # for getting county shapefile
 
 
@@ -29,15 +28,14 @@ library(tigris) # for getting county shapefile
 
 ## Read in NAWQA Pesticide Use data
 
-Including or excluding pesticide
+Overall plan:
+1) Read in the NAWQA data, which is by year 
+2) Re-process the data to be a list by chemical with county centroids as 
+row and year as column
+3) Read in a TIGER census data on counties with their centroid
+4) Join each datatable to the census counties 
 
-1) ATRAZINE, PROPAZINE, SIMAZINE - Actual chemicals we are modeling
-2) 3 others are degredates and not produced
-3) Other chemicals
-
-
-
-```{r pesticide and NHD WBD data, echo=FALSE}
+```{r read in the NAWQA data which is by year , echo=FALSE}
 # Read in main pesticide data here
 NAWQA.files <- c("input/NAWQA_Pesticides/EPest.county.estimates.2000.txt",
                  "input/NAWQA_Pesticides/EPest.county.estimates.2001.txt",
@@ -58,14 +56,28 @@ NAWQA.files <- c("input/NAWQA_Pesticides/EPest.county.estimates.2000.txt",
 
 
 l <- lapply(NAWQA.files, fread, sep="\t")
-beepr::beep(sound = 5)
 dt <- rbindlist( l )
+# sort
 setkey(dt, COMPOUND , YEAR )
+# change FIPS code data type to character (for joins later)
 dt$STATE_FIPS_CODE <- as.character(dt$STATE_FIPS_CODE)
 dt$COUNTY_FIPS_CODE <- as.character(dt$COUNTY_FIPS_CODE)
 
+dt$FIPS <- paste0(stringr::str_pad(dt$STATE_FIPS_CODE,2,side = "left",pad = "0"),
+                         stringr::str_pad(dt$COUNTY_FIPS_CODE,3,side = "left",pad = "0"))
+```
+
+## Split the data frame by chemical and create a common size table
+```{r, split data, echo=FALSE}
+# Split data.table by chemical
+dt.chem <- split(dt,dt$COMPOUND)
+
+```
+
+
+```{r,Get and Process US county data, echo=FALSE}
 # US bounding box - we want only the lower 48
-US.bb <- terra::ext(c(-124.7844079 , -66.9513812, 18.7433195, 51.3457868))
+US.bb <- terra::ext(c(-124.7844079 , -66.9513812, 17.7433195, 51.3457868))
 
 centroids <- counties(resolution = "20m") |> 
   st_centroid() |> 
@@ -73,14 +85,27 @@ centroids <- counties(resolution = "20m") |>
   select(c(STATEFP,COUNTYFP,INTPTLAT,INTPTLON,geometry)) 
 
 colnames(centroids) <- c("STATE_FIPS_CODE","COUNTY_FIPS_CODE","Lat","Lon","geometry")
-# Join the NAWQA data to the spatial county data
 
-NAWQA.sf <- left_join(centroids,dt,by = c("STATE_FIPS_CODE","COUNTY_FIPS_CODE"),multiple = "all")
-
+centroids$FIPS <- paste0(stringr::str_pad(centroids$STATE_FIPS_CODE,2,side = "left",pad = "0"),
+                         stringr::str_pad(centroids$COUNTY_FIPS_CODE,3,side = "left",pad = "0"))
 
 ```
 
 
+
+```{r, Join each datatable to the county geometry, echo = FALSE}
+# Join the NAWQA data to the spatial county data
+
+NAWQA.sf <- full_join(dt.chem[[2]],centroids,by = "FIPS",multiple = "all")
+ 
+NAWQA.wide <- pivot_wider(NAWQA.sf,id_cols = c("FIPS"),
+                          names_from = c("YEAR") , values_from = "EPEST_HIGH_KG",values_fn = mean)
+```
+
+```{r, Reformat each joined datatable to a S-T wide format, echo = FALSE}
+
+
+```
 ## Read in the OpenLandMaps (OLM) soil raster data
 
 Here, we have an if-else statement. If the cropped (to US bounding box) have been
