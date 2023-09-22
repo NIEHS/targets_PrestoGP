@@ -24,7 +24,7 @@ input/
 /*.Rcheck/
 
 # RStudio files
-.Rproj.user/
+/.Rproj.user/
 
 # produced vignettes
 vignettes/*.html
@@ -50,3 +50,8 @@ docs/
 # translation temp files
 po/*~
 output/
+
+# ddn storage hidden files
+\._.*
+**/**/**/._*
+**/.DS_Store
