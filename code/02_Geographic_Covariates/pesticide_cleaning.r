@@ -4,7 +4,8 @@ if (!require(pacman)) {
     library(pacman)
     }
 
-p_load(data.table, tidytable, tigris, sf, terra)
+p_load(data.table, tidytable, tigris, sf, terra, ggplot2, ggrepel)
+sf_use_s2(F)
 
 Sys.getenv('TIGRIS_CACHE_DIR')
 # tigris::tigris_cache_dir("__cache__dir__")
@@ -13,10 +14,10 @@ states = tigris::states()
 statesdf = states %>%
     select(3, 6, NAME) %>%
     st_drop_geometry
-statesdf %>% filter(STUSPS %in% c("HI", "VI", "GU", "AK", "PR", "MP"))
-dim(statesdf)
+statesdf = statesdf %>% filter(!STUSPS %in% c("HI", "VI", "GU", "AK", "PR", "MP"))
+# dim(statesdf)
 
-pestdir = "../../pesticides/"
+pestdir = paste0(Sys.getenv("HOME"), "/Documents/pesticides/")
 txts = list.files(path = pestdir, pattern = "*.txt$", full.names = TRUE)
 
 pests = lapply(txts, fread)
@@ -41,8 +42,102 @@ pests_df_geoid = pests_df %>%
 
 # Which counties are partially present during the study period?
 pests_df_geoid_nas = pests_df_geoid %>%
-    filter(!complete.cases(.))
+    filter(!complete.cases(.)) %>%
+    pivot_longer(cols = 2:ncol(.)) %>%
+    transmute(GEOID = GEOID,
+              year = name,
+              value = ifelse(is.na(value), FALSE, value))
 pests_df_geoid_nas
+
+
+cnty00 = tigris::counties(year = 2000, cb = TRUE)
+cnty15 = tigris::counties(year = 2015, cb = TRUE)
+
+cnty00s = cnty00 %>%
+    dplyr::filter(STATE %in% statesdf$STATEFP) %>%
+    dplyr::mutate(GEOID = paste0(STATEFP, COUNTYFP),
+           GEOID_lab = ifelse(GEOID %in% unique(pests_df_geoid_nas$GEOID), GEOID, NA)) %>%
+    st_buffer(0)
+cnty15s = cnty15 %>%
+    dplyr::filter(STATEFP %in% statesdf$STATEFP) %>%
+    dplyr::mutate(GEOID = paste0(STATEFP, COUNTYFP),
+           GEOID_lab = ifelse(GEOID %in% unique(pests_df_geoid_nas$GEOID), GEOID, NA)) %>%
+           st_buffer(0)
+checkbox = st_as_sfc(st_bbox(c(xmin = -130, ymin = 20, xmax = -60, ymax = 62), crs = st_crs(cnty15s)))
+cnty15s = cnty15s[checkbox,]
+
+g1 = 
+    ggplot(data = pests_df_geoid_nas, 
+        mapping = aes(x = year, y = GEOID, fill = value)) +
+        geom_tile() +
+        scale_fill_discrete(type = c("#E69F00", "#56B4E9")) +
+        theme(legend.position = "top",
+              axis.text.x = element_text(hjust = 1, angle = 30),
+              legend.direction = "horizontal") +
+        labs(fill = NULL)
+g2 = 
+    ggplot(data = cnty00s) +
+    geom_sf(aes(fill = !is.na(GEOID_lab))) +
+    # geom_sf_label(aes(label = GEOID_lab)) +
+    ggrepel::geom_label_repel(
+        aes(label = GEOID_lab, geometry = geometry),
+        stat = "sf_coordinates",
+        min.segment.length = 0,
+        size = 3,
+        label.size = 0.2,
+        segment.size = 0.125,
+        box.padding = 0.05,
+        label.padding = 0.1,
+        point.padding = 0,
+        max.iter = 1e5,
+        force = 1
+      ) +
+    scale_fill_discrete(type = c("grey", "#D05050")) +
+    # xlim(c(-130, -60)) +
+    # ylim(c(20, 55)) +
+    theme(legend.position = "none",
+          axis.title = element_blank(),
+          text = element_text(size = 10))
+# g2
+
+g3 = 
+    ggplot(data = cnty15s) +
+    geom_sf(aes(fill = !is.na(GEOID_lab))) +
+    # geom_sf_label(aes(label = GEOID_lab)) +
+    ggrepel::geom_label_repel(
+        aes(label = GEOID_lab, geometry = geometry),
+        stat = "sf_coordinates",
+        min.segment.length = 0,
+        size = 3,
+        label.size = 0.2,
+        segment.size = 0.125,
+        box.padding = 0.05,
+        label.padding = 0.1,
+        point.padding = 0,
+        max.iter = 1e5,
+        force = 1
+      ) +
+    scale_fill_discrete(type = c("grey", "#D05050")) +
+    # xlim(c(-130, -60)) +
+    # ylim(c(20, 55)) +
+    theme(legend.position = "none",
+          axis.title = element_blank(),
+          text = element_text(size = 10))
+
+# gridExtra::grid.arrange(g1, g2, g3, layout_matrix = matrix(c(1,2,2,1,3,3), byrow = T, nrow = 2))
+
+gwrapped = 
+patchwork::wrap_plots(
+    A = g1, B = g2, C = g3,
+    widths = c(0.3, 0.7),
+    design = "AABBB
+              AABBB
+              AACCC
+              AACCC" 
+)
+gwrapped
+
+ggsave(filename = "./nonpresence.png", plot = gwrapped, width = 15, height = 9, units = "in", dpi = 300)
 
 # How many GEOIDs are present each year?
 pests_df_geoid = pests_df %>%
