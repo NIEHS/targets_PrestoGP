@@ -1,6 +1,6 @@
 ######## pacman initialization ########
 library(pacman)
-p_load(terra, sf, dplyr, tidytable, future, exactextractr, conflicted)
+p_load(terra, sf, dplyr, future, exactextractr, conflicted)
 sf_use_s2(FALSE)
 
 ## data path determination
@@ -30,6 +30,9 @@ path_output = "/mnt/"
 # target is SGMC_Geology
 shp_sgmc = sf::read_sf(path_geol, layer = "SGMC_Geology")
 
+## wbd
+ext_mainland = c(xmin = -126, xmax = -72, ymin = 24, ymax = 51)
+ext_mainland = terra::ext(ext_mainland)
 
 ## Main extraction ####
 ### Geology spatial join ####
