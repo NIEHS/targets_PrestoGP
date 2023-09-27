@@ -1,6 +1,6 @@
 ######## pacman initialization ########
 library(pacman)
-p_load(terra, sf, dplyr, future, exactextractr, conflicted)
+p_load(terra, sf, dplyr, future, future.apply, exactextractr, conflicted)
 sf_use_s2(FALSE)
 
 ## data path determination
@@ -51,7 +51,7 @@ fname = paste0(path_output, "HUC08_Geology.csv")
 # fname = gsub("/opt/PRISM", "/mnt", fname)
 
 split(huc08, huc08$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         k = st_transform(k, st_crs(shp_sgmc))
         sub_sgmc = shp_sgmc[st_as_sfc(st_bbox(k)),]
         huc08_geology = st_join(k, sub_sgmc)
@@ -77,7 +77,7 @@ huc10 = huc10[which(huc10$huc_split %in% unique(huc10$huc_split)),]
 fname = paste0(path_output, "HUC10_Geology.csv")
 
 split(huc10, huc10$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         k = st_transform(k, st_crs(shp_sgmc))
         sub_sgmc = shp_sgmc[st_as_sfc(st_bbox(k)),]
         huc10_geology = st_join(k, sub_sgmc)
@@ -103,7 +103,7 @@ huc12 = huc12[which(huc12$huc_split %in% unique(huc12$huc_split)),]
 fname = paste0(path_output, "HUC12_Geology.csv")
 
 split(huc12, huc12$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         k = st_transform(k, st_crs(shp_sgmc))
         sub_sgmc = shp_sgmc[st_as_sfc(st_bbox(k)),]
         huc10_geology = st_join(k, sub_sgmc)

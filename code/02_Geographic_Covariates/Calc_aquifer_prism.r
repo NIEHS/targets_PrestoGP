@@ -1,6 +1,6 @@
 ######## pacman initialization ########
 library(pacman)
-p_load(terra, sf, dplyr, future, exactextractr, conflicted)
+p_load(terra, sf, dplyr, future, future.apply, exactextractr, conflicted)
 sf_use_s2(FALSE)
 
 ## data path determination
@@ -105,7 +105,7 @@ fname = paste0(path_output, "HUC08_PRISM_mean.csv")
 # fname = gsub("/opt/PRISM", "/mnt", fname)
 
 split(huc08, huc08$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         #nass = terra::rast(x, win = terra::ext(k))
         prism = terra::crop(rast_prism, terra::ext(k))
         huc08_prism = exactextractr::exact_extract(prism, st_as_sf(huc08), weights = "area", fun = "weighted_mean", force_df = T)
@@ -130,7 +130,7 @@ fname = paste0(path_output, "HUC10_PRISM_mean.csv")
 # fname = gsub("\\.tif", "_huc10_ext.csv", x)
 # fname = gsub("/opt/USDA_NASS", "/mnt", fname)
 split(huc10, huc10$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         prism = terra::crop(rast_prism, terra::ext(k))
         huc10_prism = exactextractr::exact_extract(prism, st_as_sf(huc10), weights = "area", fun = "weighted_mean", force_df = T)
         huc10_prism$HUC = k$huc10
@@ -151,7 +151,7 @@ fname = paste0(path_output, "HUC12_PRISM_mean.csv")
 # fname = gsub("\\.tif", "_huc12_ext.csv", x)
 # fname = gsub("/opt/USDA_NASS", "/mnt", fname)
 split(huc12, huc12$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         prism = terra::crop(rast_prism, terra::ext(k))
         huc12_prism = exactextractr::exact_extract(prism, st_as_sf(huc12), weights = "area", fun = "weighted_mean", force_df = T)
         huc12_prism$HUC = k$huc12
@@ -186,7 +186,7 @@ fname = paste0(path_output, "HUC08_Aquifer.csv")
 sf_aqui = st_as_sf(shp_aqui)
 
 split(huc08, huc08$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         huc08_aquifer = st_join(k, sf_aqui)
         huc08_aquifer = huc08_aquifer %>%
             st_drop_geometry() %>%
@@ -212,7 +212,7 @@ fname = paste0(path_output, "HUC10_Aquifer.csv")
 # fname = gsub("\\.tif", "_huc10_ext.csv", x)
 # fname = gsub("/opt/USDA_NASS", "/mnt", fname)
 split(huc10, huc10$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         huc10_aquifer = st_join(k, sf_aqui)
         huc10_aquifer = huc10_aquifer %>%
             st_drop_geometry() %>%
@@ -238,7 +238,7 @@ fname = paste0(path_output, "HUC12_Aquifer.csv")
 # fname = gsub("\\.tif", "_huc12_ext.csv", x)
 # fname = gsub("/opt/USDA_NASS", "/mnt", fname)
 split(huc12, huc12$huc_split) %>%
-    future_lapply(function(k) {
+    future.apply::future_lapply(function(k) {
         huc12_aquifer = st_join(k, sf_aqui)
         huc12_aquifer = huc12_aquifer %>%
             st_drop_geometry() %>%
