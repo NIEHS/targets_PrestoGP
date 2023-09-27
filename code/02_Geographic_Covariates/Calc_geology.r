@@ -1,9 +1,5 @@
 ######## pacman initialization ########
-if (!require(pacman)) {
-    install.packages('pacman')
-    library(pacman)
-    }
-
+library(pacman)
 p_load(terra, sf, dplyr, tidytable, future, exactextractr, conflicted)
 sf_use_s2(FALSE)
 
