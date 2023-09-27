@@ -4,7 +4,7 @@ if (!require(pacman)) {
     library(pacman)
     }
 
-p_load(terra, sf, dplyr, tidytable, exactextractr, conflicted)
+p_load(terra, sf, dplyr, tidytable, future, exactextractr, conflicted)
 sf_use_s2(FALSE)
 
 ## data path determination
@@ -97,7 +97,7 @@ ext_mainland = terra::ext(ext_mainland)
 
 
 # test: 17:41 09/20/2023
-huc08 = terra::vect(wbdpath, layer = "WBDHU8")
+huc08 = terra::vect(path_wbd, layer = "WBDHU8")
 huc08 = huc08[ext_mainland,]
 #huc08 = terra::project(huc08, "EPSG:5070")
 huc08 = huc08[,'huc8']
@@ -122,7 +122,7 @@ split(huc08, huc08$huc_split) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
 
-huc10 = terra::vect(wbdpath, layer = "WBDHU10")
+huc10 = terra::vect(path_wbd, layer = "WBDHU10")
 huc10 = huc10[ext_mainland,]
 #huc10 = terra::project(huc10, "EPSG:5070")
 huc10 = huc10[,'huc10']
@@ -144,7 +144,7 @@ split(huc10, huc10$huc_split) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
 
-huc12 = terra::vect(wbdpath, layer = "WBDHU12")
+huc12 = terra::vect(path_wbd, layer = "WBDHU12")
 huc12 = huc12[ext_mainland,]
 #huc12 = terra::project(huc12, "EPSG:5070")
 huc12 = huc12[,'huc12']
@@ -177,7 +177,7 @@ split(huc12, huc12$huc_split) %>%
 ### HUC-aquifers ####
 
 ####
-huc08 = terra::vect(wbdpath, layer = "WBDHU8")
+huc08 = terra::vect(path_wbd, layer = "WBDHU8")
 huc08 = huc08[ext_mainland,]
 #huc08 = terra::project(huc08, "EPSG:5070")
 huc08 = huc08[,'huc8']
@@ -204,7 +204,7 @@ split(huc08, huc08$huc_split) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
 
-huc10 = terra::vect(wbdpath, layer = "WBDHU10")
+huc10 = terra::vect(path_wbd, layer = "WBDHU10")
 huc10 = huc10[ext_mainland,]
 #huc10 = terra::project(huc10, "EPSG:5070")
 huc10 = huc10[,'huc10']
@@ -231,7 +231,7 @@ split(huc10, huc10$huc_split) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
 
-huc12 = terra::vect(wbdpath, layer = "WBDHU12")
+huc12 = terra::vect(path_wbd, layer = "WBDHU12")
 huc12 = huc12[ext_mainland,]
 #huc12 = terra::project(huc12, "EPSG:5070")
 huc12 = huc12[,'huc12']
