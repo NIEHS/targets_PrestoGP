@@ -15,4 +15,4 @@
 apptainer exec \
     --writable-tmpfs \
     --mount type=bind,source=/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input,destination=/opt \
-    /ddn/gs1/home/songi2/images/rocker_base_computation.sif Rscript /ddn/gs1/home/songi2/projects/PrestoGP_Pesticides/code/02_Geographic_Covariates/HUC12_extract_test.r
+    /ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/Rspatial_container/rocker_base_computation.sif Rscript /ddn/gs1/home/songi2/projects/PrestoGP_Pesticides/code/02_Geographic_Covariates/HUC12_extract_test.r
