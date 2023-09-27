@@ -21,11 +21,11 @@ path_base =
 future::plan(multicore, workers = 16)
 
 # abbrev: [aqui]fer, [geol]ogy, [ecor]egions
-path_aqui = paste0(path_base, "input/Aquifers/aquifrp025/")
-path_ecor = paste0(path_base, "input/Ecoregion/")
+path_aqui = paste0(path_base, "Aquifers/aquifrp025/")
+path_ecor = paste0(path_base, "Ecoregion/")
 # path_geol = paste0(path_base, "input/Geology/USGS_StateGeologicMapCompilation_ver1.1.gdb")
-path_geol = paste0(path_base, "input/Geology/SGMC_Geology.gpkg")
-path_wbd = paste0(path_base, "input/WBD-National/WBD_National_GPKG.gpkg")
+path_geol = paste0(path_base, "Geology/SGMC_Geology.gpkg")
+path_wbd = paste0(path_base, "WBD-National/WBD_National_GPKG.gpkg")
 
 path_output = "/mnt/"
 
