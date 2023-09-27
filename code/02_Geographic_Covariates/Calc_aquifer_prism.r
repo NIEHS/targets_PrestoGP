@@ -62,7 +62,7 @@ shp_sgmc = sf::read_sf(path_geol, layer = "SGMC_Geology")
 
 
 ## prism
-path_prism = paste0(path_base, "input/PRISM/")
+path_prism = paste0(path_base, "PRISM/")
 # bils_prism = list.files(path_prism, pattern = "*.bil$", recursive = TRUE, full.names = TRUE)
 # dirs_prism = list.dirs(path = path_prism, full.names = FALSE, recursive = FALSE)
 # dirs_prism_string = strsplit(dirs_prism, split = "_") %>%
