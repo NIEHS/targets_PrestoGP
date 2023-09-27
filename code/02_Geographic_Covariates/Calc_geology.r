@@ -4,7 +4,7 @@ if (!require(pacman)) {
     library(pacman)
     }
 
-p_load(terra, sf, dplyr, tidytable, exactextractr, conflicted)
+p_load(terra, sf, dplyr, tidytable, future, exactextractr, conflicted)
 sf_use_s2(FALSE)
 
 ## data path determination
@@ -18,7 +18,7 @@ path_base =
     ifelse(COMPUTE_MODE == 3,
     "/opt/", stop("COMPUTE_MODE should be one of 1, 2, or 3.\n"))))
 
-future::plan(multicore, workers = 32)
+future::plan(multicore, workers = 16)
 
 # abbrev: [aqui]fer, [geol]ogy, [ecor]egions
 path_aqui = paste0(path_base, "input/Aquifers/aquifrp025/")
