@@ -46,7 +46,8 @@ ext_mainland = ext_mainland %>%
 shp_sgmc = shp_sgmc[,"UNIT_NAME"]
 
 huc08 = sf::read_sf(path_wbd, layer = "WBDHU8")
-huc08 = huc08[ext_mainland,]
+ext_mainland_huc = sf::st_transform(ext_mainland, st_crs(huc08))
+huc08 = huc08[ext_mainland_huc,]
 #huc08 = terra::project(huc08, "EPSG:5070")
 huc08 = huc08[,'huc8']
 huc08 = st_as_sf(huc08)
@@ -96,7 +97,7 @@ gc()
 
 
 huc10 = sf::read_sf(path_wbd, layer = "WBDHU10")
-huc10 = huc10[ext_mainland,]
+huc10 = huc10[ext_mainland_huc,]
 #huc10 = terra::project(huc10, "EPSG:5070")
 huc10 = huc10[,'huc10']
 huc10$huc_split = substr(huc10$huc10, 1, 4)
@@ -145,7 +146,7 @@ gc()
 
 
 huc12 = terra::vect(path_wbd, layer = "WBDHU12")
-huc12 = huc12[ext_mainland,]
+huc12 = huc12[ext_mainland_huc,]
 huc12 = huc12[,'huc12']
 huc12$huc_split = substr(huc12$huc12, 1, 6)
 # subset

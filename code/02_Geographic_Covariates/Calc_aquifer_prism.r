@@ -25,6 +25,10 @@ path_wbd = paste0(path_base, "WBD-National/WBD_National_GPKG.gpkg")
 
 path_output = "/mnt/"
 
+ext_mainland = c(xmin = -126, xmax = -72, ymin = 24, ymax = 51)
+ext_mainland = terra::ext(ext_mainland)
+
+
 # assumptions: we know the file extensions of entries in each path
 # cleaning
 ## aqui: single file (reprojection is required)
@@ -79,8 +83,6 @@ path_prism = paste0(path_base, "PRISM/")
 # names(rast_prism) = dirs_prism_string
 # rast_prism
 # ## wbd
-# ext_mainland = c(xmin = -126, xmax = -72, ymin = 24, ymax = 51)
-# ext_mainland = terra::ext(ext_mainland)
 
 ## To run the main part, uncomment until "HUC-aquifers" header
 # huc08 = terra::vect(path_wbd, layer = "WBDHU8")
