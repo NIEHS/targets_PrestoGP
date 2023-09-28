@@ -59,10 +59,10 @@ split(huc08, huc08$huc_split) %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc8) %>%
             tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) 
+            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
         return(huc08_geology)
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
@@ -85,10 +85,10 @@ split(huc10, huc10$huc_split) %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc10) %>%
             tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) 
+            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
         return(huc10_geology)
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
@@ -111,10 +111,10 @@ split(huc12, huc12$huc_split) %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc12) %>%
             tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) 
+            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
         return(huc12_geology)
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 

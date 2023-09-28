@@ -108,12 +108,12 @@ split(huc08, huc08$huc_split) %>%
     future.apply::future_lapply(function(k) {
         #nass = terra::rast(x, win = terra::ext(k))
         prism = terra::crop(rast_prism, terra::ext(k))
-        huc08_prism = exactextractr::exact_extract(prism, st_as_sf(huc08), weights = "area", fun = "weighted_mean", force_df = T)
+        huc08_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
         
         #hucfrq = terra::freq(nass, zones=k, wide = TRUE)
         huc08_prism$HUC = k$huc8
         return(huc08_prism)
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
@@ -132,10 +132,10 @@ fname = paste0(path_output, "HUC10_PRISM_mean.csv")
 split(huc10, huc10$huc_split) %>%
     future.apply::future_lapply(function(k) {
         prism = terra::crop(rast_prism, terra::ext(k))
-        huc10_prism = exactextractr::exact_extract(prism, st_as_sf(huc10), weights = "area", fun = "weighted_mean", force_df = T)
+        huc10_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
         huc10_prism$HUC = k$huc10
         return(huc10_prism)
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
@@ -153,10 +153,10 @@ fname = paste0(path_output, "HUC12_PRISM_mean.csv")
 split(huc12, huc12$huc_split) %>%
     future.apply::future_lapply(function(k) {
         prism = terra::crop(rast_prism, terra::ext(k))
-        huc12_prism = exactextractr::exact_extract(prism, st_as_sf(huc12), weights = "area", fun = "weighted_mean", force_df = T)
+        huc12_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
         huc12_prism$HUC = k$huc12
         return(huc12_prism)
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 
@@ -195,7 +195,7 @@ split(huc08, huc08$huc_split) %>%
             dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) 
             dplyr::ungroup()
         return(huc08_aquifer)
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
@@ -222,7 +222,7 @@ split(huc10, huc10$huc_split) %>%
             dplyr::ungroup()
         return(huc10_aquifer)
 
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
@@ -248,7 +248,7 @@ split(huc12, huc12$huc_split) %>%
             dplyr::ungroup()
         return(huc12_aquifer)
 
-    }) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 
