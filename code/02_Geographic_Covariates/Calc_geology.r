@@ -64,15 +64,22 @@ huc08_split = split(huc08, huc08$huc_split)
 
 
 huc08_split %>%
-future.apply::future_mapply(function(huc) {
+future.apply::future_lapply(function(huc) {
         huc = st_transform(huc, st_crs(shp_sgmc))
-        huc08_geology = st_join(huc, shp_sgmc)
+        huc08_geology = st_join(huc[,1], shp_sgmc)
         huc08_geology = huc08_geology %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc8) %>%
-            tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
+            dplyr::mutate(combined = paste0(unique(UNIT_NAME), collapse = "|")) %>%
+            # tidyr::nest() %>% 
+            dplyr::summarize(combined = unique(combined)) %>%
             dplyr::ungroup()
+        huc08_geology = bind_cols(
+            huc08 = huc08_geology[,1],
+            strsplit(huc08_geology$combined, "|", fixed = TRUE) %>%
+                lapply(function(x) matrix(x, nrow = 1) %>% data.frame) %>%
+                do.call(bind_rows, .)
+        )
         return(huc08_geology)
     }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
@@ -112,20 +119,27 @@ huc10_split = split(huc10, huc10$huc_split)
 #     })
 
 huc10_split %>%
-future.apply::future_mapply(function(huc) {
+future.apply::future_lapply(function(huc) {
         huc = st_transform(huc, st_crs(shp_sgmc))
-        huc10_geology = st_join(huc, shp_sgmc)
+        huc10_geology = st_join(huc[,1], shp_sgmc)
         huc10_geology = huc10_geology %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc10) %>%
-            tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
+            dplyr::mutate(combined = paste0(unique(UNIT_NAME), collapse = "|")) %>%
+            # tidyr::nest() %>% 
+            dplyr::summarize(combined = unique(combined)) %>%
             dplyr::ungroup()
-        return(huc08_geology)
+        huc10_geology = bind_cols(
+            huc10 = huc10_geology[,1],
+            strsplit(huc10_geology$combined, "|", fixed = TRUE) %>%
+                lapply(function(x) matrix(x, nrow = 1) %>% data.frame) %>%
+                do.call(bind_rows, .)
+        )
+        return(huc10_geology)
     }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
-
+gc()
 
 # future.apply::future_mapply(function(sgmc, huc) {
 #         huc = st_transform(huc, st_crs(sgmc))
@@ -140,7 +154,6 @@ future.apply::future_mapply(function(huc) {
 #     }, shp_sgmc10, huc10_split, future.seed = TRUE, SIMPLIFY = FALSE) %>%
 #     do.call(dplyr::bind_rows, .) %>%
 #     write.csv(., fname, row.names = FALSE)
-gc()
 
 
 
@@ -161,19 +174,27 @@ huc12_split = split(huc12, huc12$huc_split)
 #     })
 
 huc12_split %>%
-future.apply::future_mapply(function(huc) {
+future.apply::future_lapply(function(huc) {
         huc = st_transform(huc, st_crs(shp_sgmc))
-        huc12_geology = st_join(huc, shp_sgmc)
+        huc12_geology = st_join(huc[,1], shp_sgmc)
         huc12_geology = huc12_geology %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc12) %>%
-            tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
+            dplyr::mutate(combined = paste0(unique(UNIT_NAME), collapse = "|")) %>%
+            # tidyr::nest() %>% 
+            dplyr::summarize(combined = unique(combined)) %>%
             dplyr::ungroup()
+        huc12_geology = bind_cols(
+            huc12 = huc12_geology[,1],
+            strsplit(huc12_geology$combined, "|", fixed = TRUE) %>%
+                lapply(function(x) matrix(x, nrow = 1) %>% data.frame) %>%
+                do.call(bind_rows, .)
+        )
         return(huc12_geology)
     }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
+gc()
 
 
 # future.apply::future_mapply(function(sgmc, huc) {
@@ -190,4 +211,3 @@ future.apply::future_mapply(function(huc) {
 #     }, shp_sgmc12, huc12_split, future.seed = TRUE, SIMPLIFY = FALSE) %>%
 #     do.call(dplyr::bind_rows, .) %>%
 #     write.csv(., fname, row.names = FALSE)
-gc()
