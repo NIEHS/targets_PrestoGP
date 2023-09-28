@@ -5,7 +5,7 @@
 #SBATCH --mail-user=songi2@nih.gov
 #SBATCH --mail-type=END,FAIL
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=10
 #SBATCH --mem=480g
 #SBATCH --partition=highmem
 

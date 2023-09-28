@@ -70,112 +70,82 @@ path_prism = paste0(path_base, "PRISM/")
 # names(rast_prism) = dirs_prism_string
 # terra::writeCDF(rast_prism, "~/Documents/PRISM_4km_combined.nc4")
 
-# hard-coded layer names for direct CDF reading
-dirs_prism_string = 
-    c("ppt", "solclear", "solslope", "soltotal", "soltrans", "tdmean",
-     "tmax", "tmean", "tmin", "us_dem", "vpdmax", "vpdmin")
-## ... edit dirs_prism if necessary....
-rast_prism = terra::rast(paste0(path_prism, "PRISM_4km_combined.nc"))
-names(rast_prism) = dirs_prism_string
-rast_prism
-## wbd
-ext_mainland = c(xmin = -126, xmax = -72, ymin = 24, ymax = 51)
-ext_mainland = terra::ext(ext_mainland)
+# # hard-coded layer names for direct CDF reading
+# dirs_prism_string = 
+#     c("ppt", "solclear", "solslope", "soltotal", "soltrans", "tdmean",
+#      "tmax", "tmean", "tmin", "us_dem", "vpdmax", "vpdmin")
+# ## ... edit dirs_prism if necessary....
+# rast_prism = terra::rast(paste0(path_prism, "PRISM_4km_combined.nc"))
+# names(rast_prism) = dirs_prism_string
+# rast_prism
+# ## wbd
+# ext_mainland = c(xmin = -126, xmax = -72, ymin = 24, ymax = 51)
+# ext_mainland = terra::ext(ext_mainland)
 
-# huc08 = terra::vect(paste0(path_base, "WBD_National/WBD_National.gdb"))
-# huc08 = terra::vect("~/Downloads/WBD_National_GPKG/WBD_National_GPKG.gpkg", layer = "WBDHU8")
-# huc08 = huc08[ext_mainland,][1:100,]
+## To run the main part, uncomment until "HUC-aquifers" header
+# huc08 = terra::vect(path_wbd, layer = "WBDHU8")
+# huc08 = huc08[ext_mainland,]
+# huc08 = huc08[,'huc8']
+# huc08$huc_split = substr(huc08$huc8, 1, 4)
+# # subset
+# huc08 = huc08[which(huc08$huc_split %in% unique(huc08$huc_split)),]
+# fname = paste0(path_output, "HUC08_PRISM_mean.csv")
 
-
-# (huc08_extr_test = exactextractr::exact_extract(rast_prism, st_as_sf(huc08), weights = "area", fun = "weighted_mean", force_df = T))
-# (huc08_extr_test2 = terra::zonal(rast_prism, huc08, exact = F, weights = TRUE, fun = 'mean', na.rm = TRUE))
-# (huc08_extr_test3 = terra::zonal(rast_prism, huc08, exact = F, weights = F, fun = 'mean', na.rm = TRUE))
-
-
-# test: 17:41 09/20/2023
-huc08 = terra::vect(path_wbd, layer = "WBDHU8")
-huc08 = huc08[ext_mainland,]
-#huc08 = terra::project(huc08, "EPSG:5070")
-huc08 = huc08[,'huc8']
-huc08$huc_split = substr(huc08$huc8, 1, 4)
-# subset
-huc08 = huc08[which(huc08$huc_split %in% unique(huc08$huc_split)),]
-fname = paste0(path_output, "HUC08_PRISM_mean.csv")
-# fname = gsub("\\.tif", "_huc08_ext.csv", x)
-# fname = gsub("/opt/PRISM", "/mnt", fname)
-
-split(huc08, huc08$huc_split) %>%
-    future.apply::future_lapply(function(k) {
-        #nass = terra::rast(x, win = terra::ext(k))
-        prism = terra::crop(rast_prism, terra::ext(k))
-        huc08_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
+# split(huc08, huc08$huc_split) %>%
+#     future.apply::future_lapply(function(k) {
+#         prism = terra::crop(rast_prism, terra::ext(k))
+#         huc08_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
         
-        #hucfrq = terra::freq(nass, zones=k, wide = TRUE)
-        huc08_prism$HUC = k$huc8
-        return(huc08_prism)
-    }, future.seed = TRUE) %>%
-    do.call(dplyr::bind_rows, .) %>%
-    write.csv(., fname, row.names = FALSE)
-gc()
+#         huc08_prism$HUC = k$huc8
+#         return(huc08_prism)
+#     }, future.seed = TRUE) %>%
+#     do.call(dplyr::bind_rows, .) %>%
+#     write.csv(., fname, row.names = FALSE)
+# gc()
 
-huc10 = terra::vect(path_wbd, layer = "WBDHU10")
-huc10 = huc10[ext_mainland,]
-#huc10 = terra::project(huc10, "EPSG:5070")
-huc10 = huc10[,'huc10']
-huc10$huc_split = substr(huc10$huc10, 1, 4)
-# subset
-huc10 = huc10[which(huc10$huc_split %in% unique(huc10$huc_split)),]
-fname = paste0(path_output, "HUC10_PRISM_mean.csv")
-
-# fname = gsub("\\.tif", "_huc10_ext.csv", x)
-# fname = gsub("/opt/USDA_NASS", "/mnt", fname)
-split(huc10, huc10$huc_split) %>%
-    future.apply::future_lapply(function(k) {
-        prism = terra::crop(rast_prism, terra::ext(k))
-        huc10_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
-        huc10_prism$HUC = k$huc10
-        return(huc10_prism)
-    }, future.seed = TRUE) %>%
-    do.call(dplyr::bind_rows, .) %>%
-    write.csv(., fname, row.names = FALSE)
-gc()
-
-huc12 = terra::vect(path_wbd, layer = "WBDHU12")
-huc12 = huc12[ext_mainland,]
-#huc12 = terra::project(huc12, "EPSG:5070")
-huc12 = huc12[,'huc12']
-huc12$huc_split = substr(huc12$huc12, 1, 6)
-# subset
-huc12 = huc12[which(huc12$huc_split %in% unique(huc12$huc_split)),]
-fname = paste0(path_output, "HUC12_PRISM_mean.csv")
-# fname = gsub("\\.tif", "_huc12_ext.csv", x)
-# fname = gsub("/opt/USDA_NASS", "/mnt", fname)
-split(huc12, huc12$huc_split) %>%
-    future.apply::future_lapply(function(k) {
-        prism = terra::crop(rast_prism, terra::ext(k))
-        huc12_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
-        huc12_prism$HUC = k$huc12
-        return(huc12_prism)
-    }, future.seed = TRUE) %>%
-    do.call(dplyr::bind_rows, .) %>%
-    write.csv(., fname, row.names = FALSE)
-
-
-# huc10 = terra::vect("~/Downloads/WBD_National_GPKG/WBD_National_GPKG.gpkg", layer = "WBDHU10")
+# huc10 = terra::vect(path_wbd, layer = "WBDHU10")
 # huc10 = huc10[ext_mainland,]
-# huc10_extr_test = terra::zonal(rast_prism, huc10, exact = TRUE, weights = TRUE, fun = 'mean', na.rm = TRUE)
+# huc10 = huc10[,'huc10']
+# huc10$huc_split = substr(huc10$huc10, 1, 4)
+# # subset
+# huc10 = huc10[which(huc10$huc_split %in% unique(huc10$huc_split)),]
+# fname = paste0(path_output, "HUC10_PRISM_mean.csv")
 
+# split(huc10, huc10$huc_split) %>%
+#     future.apply::future_lapply(function(k) {
+#         prism = terra::crop(rast_prism, terra::ext(k))
+#         huc10_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
+#         huc10_prism$HUC = k$huc10
+#         return(huc10_prism)
+#     }, future.seed = TRUE) %>%
+#     do.call(dplyr::bind_rows, .) %>%
+#     write.csv(., fname, row.names = FALSE)
+# gc()
 
-# huc12 = terra::vect("~/Downloads/WBD_National_GPKG/WBD_National_GPKG.gpkg", layer = "WBDHU12")
+# huc12 = terra::vect(path_wbd, layer = "WBDHU12")
 # huc12 = huc12[ext_mainland,]
-# huc12_extr_test = terra::zonal(rast_prism, huc12, exact = TRUE, weights = TRUE, fun = 'mean', na.rm = TRUE)
+# huc12 = huc12[,'huc12']
+# huc12$huc_split = substr(huc12$huc12, 1, 6)
+# # subset
+# huc12 = huc12[which(huc12$huc_split %in% unique(huc12$huc_split)),]
+# fname = paste0(path_output, "HUC12_PRISM_mean.csv")
+
+# split(huc12, huc12$huc_split) %>%
+#     future.apply::future_lapply(function(k) {
+#         prism = terra::crop(rast_prism, terra::ext(k))
+#         huc12_prism = exactextractr::exact_extract(prism, st_as_sf(k), weights = "area", fun = "weighted_mean", force_df = T)
+#         huc12_prism$HUC = k$huc12
+#         return(huc12_prism)
+#     }, future.seed = TRUE) %>%
+#     do.call(dplyr::bind_rows, .) %>%
+#     write.csv(., fname, row.names = FALSE)
+
 
 ### HUC-aquifers ####
 
 ####
 huc08 = terra::vect(path_wbd, layer = "WBDHU8")
 huc08 = huc08[ext_mainland,]
-#huc08 = terra::project(huc08, "EPSG:5070")
 huc08 = huc08[,'huc8']
 huc08 = st_as_sf(huc08)
 huc08$huc_split = substr(huc08$huc8, 1, 4)
@@ -187,7 +157,7 @@ sf_aqui = st_as_sf(shp_aqui)[,"AQ_NAME"]
 
 split(huc08, huc08$huc_split) %>%
     future.apply::future_lapply(function(k) {
-        huc08_aquifer = st_join(k, sf_aqui)
+        huc08_aquifer = st_join(k[,"huc8"], sf_aqui)
         huc08_aquifer = huc08_aquifer %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc8) %>%
@@ -214,7 +184,7 @@ fname = paste0(path_output, "HUC10_Aquifer.csv")
 # fname = gsub("/opt/USDA_NASS", "/mnt", fname)
 split(huc10, huc10$huc_split) %>%
     future.apply::future_lapply(function(k) {
-        huc10_aquifer = st_join(k, sf_aqui)
+        huc10_aquifer = st_join(k[,"huc10"], sf_aqui)
         huc10_aquifer = huc10_aquifer %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc10) %>%
@@ -241,7 +211,7 @@ fname = paste0(path_output, "HUC12_Aquifer.csv")
 # fname = gsub("/opt/USDA_NASS", "/mnt", fname)
 split(huc12, huc12$huc_split) %>%
     future.apply::future_lapply(function(k) {
-        huc12_aquifer = st_join(k, sf_aqui)
+        huc12_aquifer = st_join(k[,"huc12"], sf_aqui)
         huc12_aquifer = huc12_aquifer %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc12) %>%

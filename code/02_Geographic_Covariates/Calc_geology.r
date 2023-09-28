@@ -14,7 +14,9 @@ path_base =
     ifelse(COMPUTE_MODE == 3,
     "/opt/", stop("COMPUTE_MODE should be one of 1, 2, or 3.\n"))))
 
-future::plan(multicore, workers = 16)
+NUM_WORKERS = 10
+
+future::plan(multicore, workers = NUM_WORKERS)
 
 # abbrev: [aqui]fer, [geol]ogy, [ecor]egions
 path_aqui = paste0(path_base, "Aquifers/aquifrp025/")
@@ -51,20 +53,19 @@ huc08 = st_as_sf(huc08)
 huc08$huc_split = substr(huc08$huc8, 1, 4)
 # subset
 fname = paste0(path_output, "HUC08_Geology.csv")
-# fname = gsub("\\.tif", "_huc08_ext.csv", x)
-# fname = gsub("/opt/PRISM", "/mnt", fname)
 
-huc08_split = split(huc08, huc08$huc_split) %>%
-shp_sgmc08 = lapply(huc08_split,
-    function(huc) { 
-        shp_sgmc[st_as_sfc(st_bbox(k)),]
-    })
+huc08_split = split(huc08, huc08$huc_split) 
+# shp_sgmc08 = lapply(huc08_split,
+#     function(huc) { 
+#         huc_e = st_transform(huc, st_crs(shp_sgmc))
+#         shp_sgmc[st_as_sfc(st_bbox(huc_e)),]
+#     })
 
 
-future.apply::future_mapply(function(sgmc, huc) {
-        huc = st_transform(huc, st_crs(sgmc))
-        #sub_sgmc = shp_sgmc[st_as_sfc(st_bbox(k)),]
-        huc08_geology = st_join(huc, sgmc)
+huc08_split %>%
+future.apply::future_mapply(function(huc) {
+        huc = st_transform(huc, st_crs(shp_sgmc))
+        huc08_geology = st_join(huc, shp_sgmc)
         huc08_geology = huc08_geology %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc8) %>%
@@ -72,10 +73,25 @@ future.apply::future_mapply(function(sgmc, huc) {
             dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
         return(huc08_geology)
-    }, shp_sgmc08, huc08_split, future.seed = TRUE, SIMPLIFY = FALSE) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
 gc()
+
+# future.apply::future_mapply(function(sgmc, huc) {
+#         huc = st_transform(huc, st_crs(sgmc))
+#         #sub_sgmc = shp_sgmc[st_as_sfc(st_bbox(k)),]
+#         huc08_geology = st_join(huc, sgmc)
+#         huc08_geology = huc08_geology %>%
+#             st_drop_geometry() %>%
+#             dplyr::group_by(huc8) %>%
+#             tidyr::nest() %>% 
+#             dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
+#             dplyr::ungroup()
+#         return(huc08_geology)
+#     }, shp_sgmc08, huc08_split, future.seed = TRUE, SIMPLIFY = FALSE) %>%
+#     do.call(dplyr::bind_rows, .) %>%
+#     write.csv(., fname, row.names = FALSE)
 
 
 
@@ -88,27 +104,41 @@ huc10$huc_split = substr(huc10$huc10, 1, 4)
 huc10 = huc10[which(huc10$huc_split %in% unique(huc10$huc_split)),]
 fname = paste0(path_output, "HUC10_Geology.csv")
 
-huc10_split = split(huc10, huc10$huc_split) %>%
-shp_sgmc10 = lapply(huc10_split,
-    function(huc) { 
-        shp_sgmc[st_as_sfc(st_bbox(k)),]
-    })
+huc10_split = split(huc10, huc10$huc_split)
+# shp_sgmc10 = lapply(huc10_split,
+#     function(huc) { 
+#         shp_sgmc[st_as_sfc(st_bbox(k)),]
+#     })
 
-
-future.apply::future_mapply(function(sgmc, huc) {
-        huc = st_transform(huc, st_crs(sgmc))
-        #sub_sgmc = shp_sgmc[st_as_sfc(st_bbox(k)),]
-        huc10_geology = st_join(huc, sgmc)
+huc10_split %>%
+future.apply::future_mapply(function(huc) {
+        huc = st_transform(huc, st_crs(shp_sgmc))
+        huc10_geology = st_join(huc, shp_sgmc)
         huc10_geology = huc10_geology %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc10) %>%
             tidyr::nest() %>% 
             dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
-        return(huc10_geology)
-    }, shp_sgmc10, huc10_split, future.seed = TRUE, SIMPLIFY = FALSE) %>%
+        return(huc08_geology)
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
+
+
+# future.apply::future_mapply(function(sgmc, huc) {
+#         huc = st_transform(huc, st_crs(sgmc))
+#         huc10_geology = st_join(huc, sgmc)
+#         huc10_geology = huc10_geology %>%
+#             st_drop_geometry() %>%
+#             dplyr::group_by(huc10) %>%
+#             tidyr::nest() %>% 
+#             dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
+#             dplyr::ungroup()
+#         return(huc10_geology)
+#     }, shp_sgmc10, huc10_split, future.seed = TRUE, SIMPLIFY = FALSE) %>%
+#     do.call(dplyr::bind_rows, .) %>%
+#     write.csv(., fname, row.names = FALSE)
 gc()
 
 
@@ -116,24 +146,23 @@ gc()
 
 huc12 = terra::vect(path_wbd, layer = "WBDHU12")
 huc12 = huc12[ext_mainland,]
-#huc12 = terra::project(huc12, "EPSG:5070")
 huc12 = huc12[,'huc12']
 huc12$huc_split = substr(huc12$huc12, 1, 6)
 # subset
 huc12 = huc12[which(huc12$huc_split %in% unique(huc12$huc_split)),]
 fname = paste0(path_output, "HUC12_Geology.csv")
 
-huc12_split = split(huc12, huc12$huc_split) %>%
-shp_sgmc12 = lapply(huc12_split,
-    function(huc) { 
-        shp_sgmc[st_as_sfc(st_bbox(k)),]
-    })
 
+huc12_split = split(huc12, huc12$huc_split)
+# shp_sgmc10 = lapply(huc10_split,
+#     function(huc) { 
+#         shp_sgmc[st_as_sfc(st_bbox(k)),]
+#     })
 
-future.apply::future_mapply(function(sgmc, huc) {
-        huc = st_transform(huc, st_crs(sgmc))
-        #sub_sgmc = shp_sgmc[st_as_sfc(st_bbox(k)),]
-        huc12_geology = st_join(huc, sgmc)
+huc12_split %>%
+future.apply::future_mapply(function(huc) {
+        huc = st_transform(huc, st_crs(shp_sgmc))
+        huc12_geology = st_join(huc, shp_sgmc)
         huc12_geology = huc12_geology %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc12) %>%
@@ -141,7 +170,23 @@ future.apply::future_mapply(function(sgmc, huc) {
             dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
         return(huc12_geology)
-    }, shp_sgmc12, huc12_split, future.seed = TRUE, SIMPLIFY = FALSE) %>%
+    }, future.seed = TRUE) %>%
     do.call(dplyr::bind_rows, .) %>%
     write.csv(., fname, row.names = FALSE)
+
+
+# future.apply::future_mapply(function(sgmc, huc) {
+#         huc = st_transform(huc, st_crs(sgmc))
+#         #sub_sgmc = shp_sgmc[st_as_sfc(st_bbox(k)),]
+#         huc12_geology = st_join(huc, sgmc)
+#         huc12_geology = huc12_geology %>%
+#             st_drop_geometry() %>%
+#             dplyr::group_by(huc12) %>%
+#             tidyr::nest() %>% 
+#             dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
+#             dplyr::ungroup()
+#         return(huc12_geology)
+#     }, shp_sgmc12, huc12_split, future.seed = TRUE, SIMPLIFY = FALSE) %>%
+#     do.call(dplyr::bind_rows, .) %>%
+#     write.csv(., fname, row.names = FALSE)
 gc()
