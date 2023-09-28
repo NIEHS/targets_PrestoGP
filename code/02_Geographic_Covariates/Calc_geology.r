@@ -5,7 +5,7 @@ sf_use_s2(FALSE)
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE = 3
+COMPUTE_MODE = 1
 path_base = 
     ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/",
@@ -32,7 +32,10 @@ shp_sgmc = sf::read_sf(path_geol, layer = "SGMC_Geology")
 
 ## wbd
 ext_mainland = c(xmin = -126, xmax = -72, ymin = 24, ymax = 51)
-ext_mainland = terra::ext(ext_mainland)
+ext_mainland = terra::ext(ext_mainland) %>%
+    st_bbox %>%
+    st_as_sfc(crs = 4326) %>%
+    st_transform(st_crs(shp_sgmc))
 
 ## Main extraction ####
 ### Geology spatial join ####

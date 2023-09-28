@@ -14,7 +14,7 @@ path_base =
     ifelse(COMPUTE_MODE == 3,
     "/opt/", stop("COMPUTE_MODE should be one of 1, 2, or 3.\n"))))
 
-future::plan(multicore, workers = 32)
+future::plan(multicore, workers = 24)
 
 # abbrev: [aqui]fer, [geol]ogy, [ecor]egions
 path_aqui = paste0(path_base, "Aquifers/aquifrp025/")
@@ -51,7 +51,7 @@ shp_aqui = sf::read_sf(path_aqui |> paste0("aquifrp025.shp"))
 ## geol
 # lyrs_sgmc = sf::st_layers(path_geol)
 # target is SGMC_Geology
-shp_sgmc = sf::read_sf(path_geol, layer = "SGMC_Geology")
+# shp_sgmc = sf::read_sf(path_geol, layer = "SGMC_Geology")
 # v_sgmc = terra::vect(path_geol, layer = "SGMC_Geology")
 # shp_sgmc %>% st_transform("EPSG:5070") %>% write_sf(path_base %>% paste0("input/Geology/SGMC_Geology.gpkg"))
 
@@ -192,7 +192,7 @@ split(huc08, huc08$huc_split) %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc8) %>%
             tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) 
+            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
         return(huc08_aquifer)
     }, future.seed = TRUE) %>%
@@ -204,6 +204,7 @@ huc10 = terra::vect(path_wbd, layer = "WBDHU10")
 huc10 = huc10[ext_mainland,]
 #huc10 = terra::project(huc10, "EPSG:5070")
 huc10 = huc10[,'huc10']
+huc10 = st_as_sf(huc10)
 huc10$huc_split = substr(huc10$huc10, 1, 4)
 # subset
 huc10 = huc10[which(huc10$huc_split %in% unique(huc10$huc_split)),]
@@ -218,7 +219,7 @@ split(huc10, huc10$huc_split) %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc10) %>%
             tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) 
+            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
         return(huc10_aquifer)
 
@@ -231,6 +232,7 @@ huc12 = terra::vect(path_wbd, layer = "WBDHU12")
 huc12 = huc12[ext_mainland,]
 #huc12 = terra::project(huc12, "EPSG:5070")
 huc12 = huc12[,'huc12']
+huc12 = st_as_sf(huc12)
 huc12$huc_split = substr(huc12$huc12, 1, 6)
 # subset
 huc12 = huc12[which(huc12$huc_split %in% unique(huc12$huc_split)),]
@@ -244,7 +246,7 @@ split(huc12, huc12$huc_split) %>%
             st_drop_geometry() %>%
             dplyr::group_by(huc12) %>%
             tidyr::nest() %>% 
-            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) 
+            dplyr::transmute(combined = map_chr(data, ~paste(.x, collapse = "|"))) %>%
             dplyr::ungroup()
         return(huc12_aquifer)
 
