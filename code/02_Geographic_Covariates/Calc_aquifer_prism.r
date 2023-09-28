@@ -183,7 +183,7 @@ huc08$huc_split = substr(huc08$huc8, 1, 4)
 fname = paste0(path_output, "HUC08_Aquifer.csv")
 # fname = gsub("\\.tif", "_huc08_ext.csv", x)
 # fname = gsub("/opt/PRISM", "/mnt", fname)
-sf_aqui = st_as_sf(shp_aqui)
+sf_aqui = st_as_sf(shp_aqui)[,"AQ_NAME"]
 
 split(huc08, huc08$huc_split) %>%
     future.apply::future_lapply(function(k) {

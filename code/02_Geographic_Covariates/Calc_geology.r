@@ -5,12 +5,12 @@ sf_use_s2(FALSE)
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE = 1
+COMPUTE_MODE = 3
 path_base = 
     ifelse(COMPUTE_MODE == 1,
-    "/Volumes/SET/Projects/PrestoGP_Pesticides/",
+    "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
     ifelse(COMPUTE_MODE == 2,
-    "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/",
+    "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/",
     ifelse(COMPUTE_MODE == 3,
     "/opt/", stop("COMPUTE_MODE should be one of 1, 2, or 3.\n"))))
 
@@ -33,8 +33,9 @@ shp_sgmc = sf::read_sf(path_geol, layer = "SGMC_Geology")
 ## wbd
 ext_mainland = c(xmin = -126, xmax = -72, ymin = 24, ymax = 51)
 ext_mainland = terra::ext(ext_mainland) %>%
-    st_bbox %>%
-    st_as_sfc(crs = 4326) %>%
+    st_bbox(crs = 4326) %>%
+    st_as_sfc()
+ext_mainland = ext_mainland %>%
     st_transform(st_crs(shp_sgmc))
 
 ## Main extraction ####
