@@ -1,6 +1,6 @@
 ######## pacman initialization ########
 library(pacman)
-p_load(terra, sf, dplyr, future, future.apply, exactextractr, conflicted)
+p_load(terra, sf, dplyr, purrr, future, future.apply, exactextractr, conflicted)
 sf_use_s2(FALSE)
 
 ## data path determination
