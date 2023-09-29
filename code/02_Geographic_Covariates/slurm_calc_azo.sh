@@ -6,7 +6,7 @@
 #SBATCH --mail-type=END,FAIL
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=64g
+#SBATCH --mem=128g
 #SBATCH --partition=highmem
 
 ## apptainer

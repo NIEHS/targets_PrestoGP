@@ -1,10 +1,6 @@
 ######## pacman initialization ########
-if (!require(pacman)) {
-	install.packages('pacman')
-    library(pacman)
-    }
-
-p_load(data.table, tidytable, tigris, sf, terra, ggplot2, ggrepel)
+library(pacman)
+p_load(sf, terra, dplyr, purrr)
 sf_use_s2(F)
 
 
@@ -19,10 +15,10 @@ path_base =
     ifelse(COMPUTE_MODE == 3,
     "/opt/", stop("COMPUTE_MODE should be one of 1, 2, or 3.\n"))))
 
-future::plan(sequential)
+# future::plan(sequential)
 
 ## AZO 
-azo = sf::read_sf("./input/data_process/data_AZO_watershed_huc_join.shp")
+azo = sf::read_sf(paste0(path_base, "data_process/data_AZO_watershed_huc_join.shp"))
 azo_s = azo %>%
     dplyr::select(site_no, Year) %>%
     unique %>%
