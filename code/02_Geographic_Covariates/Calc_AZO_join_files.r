@@ -9,9 +9,9 @@ sf_use_s2(F)
 COMPUTE_MODE = 3
 path_base = 
     ifelse(COMPUTE_MODE == 1,
-    "/Volumes/SET/Projects/PrestoGP_Pesticides/",
+    "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
     ifelse(COMPUTE_MODE == 2,
-    "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/",
+    "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/",
     ifelse(COMPUTE_MODE == 3,
     "/opt/", stop("COMPUTE_MODE should be one of 1, 2, or 3.\n"))))
 
@@ -68,7 +68,7 @@ names(rast_prism) = dirs_prism_string
 
 azo_s_sgmc = st_transform(azo_s, st_crs(shp_sgmc))
 azo_s_prism = terra::project(vect(azo_s), crs(rast_prism))
-azo_s_aqui = st_transform(azo_s, shp_aqui)
+azo_s_aqui = st_transform(azo_s, st_crs(shp_aqui))
 
 # sgmc
 ext_azo_sgmc = st_join(azo_s_sgmc, shp_sgmc)
