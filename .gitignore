@@ -49,7 +49,7 @@ docs/
 
 # translation temp files
 po/*~
-output/
+#output/
 
 # ddn storage hidden files
 \._.*
