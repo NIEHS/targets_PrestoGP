@@ -16,4 +16,4 @@ apptainer exec \
     --writable-tmpfs \
     --mount type=bind,source=/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input,destination=/opt \
     --mount type=bind,source=/ddn/gs1/home/songi2/projects/PrestoGP_Pesticides/output,destination=/mnt \
-    /ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/Rspatial_container/rocker_base_computation.sif Rscript /ddn/gs1/home/songi2/projects/PrestoGP_Pesticides/code/02_Geographic_Covariates/Calc_geology.r
+    /ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/Rspatial_container/rocker_base_computation.sif Rscript /ddn/gs1/home/songi2/projects/PrestoGP_Pesticides/code/02_Geographic_Covariates/Calc_geology_huc12.r

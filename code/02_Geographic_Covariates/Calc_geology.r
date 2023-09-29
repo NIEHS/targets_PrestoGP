@@ -158,7 +158,7 @@ gc()
 
 
 
-huc12 = terra::vect(path_wbd, layer = "WBDHU12")
+huc12 = sf::read_sf(path_wbd, layer = "WBDHU12")
 huc12 = huc12[ext_mainland_huc,]
 huc12 = huc12[,'huc12']
 huc12$huc_split = substr(huc12$huc12, 1, 6)
