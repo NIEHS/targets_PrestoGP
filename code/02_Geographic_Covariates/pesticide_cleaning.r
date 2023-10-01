@@ -4,7 +4,7 @@ if (!require(pacman)) {
     library(pacman)
     }
 
-p_load(data.table, tidytable, tigris, sf, terra, ggplot2, ggrepel)
+p_load(data.table, tidytable, tigris, sf, terra, ggplot2, ggrepel, skimr)
 sf_use_s2(F)
 
 Sys.getenv('TIGRIS_CACHE_DIR')
