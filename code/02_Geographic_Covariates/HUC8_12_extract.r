@@ -1,32 +1,33 @@
 # source("../00_Load_Packages/Load_Packages.r")
 
-pkgs = c("sf", "stars", "terra", "dplyr", "tidytable", "future", "future.apply", "scomps")
+pkgs <- c("sf", "stars", "terra", "dplyr", "tidytable", "future", "future.apply", "scomps")
 invisible(sapply(pkgs, library, character.only = TRUE, quietly = TRUE))
 sf_use_s2(FALSE)
 # 1 -- localmount: mounted volume
 # 2 -- computenode: HPC job submission
-COMPUTE_MODE = 2 # Sys.getenv("COMPUTE_MODE")
+COMPUTE_MODE <- 2 # Sys.getenv("COMPUTE_MODE")
 
-datadir = ifelse(COMPUTE_MODE == 1,
-    "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
-    "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/")
+datadir <- ifelse(COMPUTE_MODE == 1,
+  "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
+  "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/"
+)
 # option 2: apptainer mount point
-datadir = "/opt/"
+datadir <- "/opt/"
 
 # datadir = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/"
-wbddir = paste0(datadir, "WBD-National/")
-wbdpath = paste0(wbddir, "WBD_National_GDB.gdb")
+wbddir <- paste0(datadir, "WBD-National/")
+wbdpath <- paste0(wbddir, "WBD_National_GDB.gdb")
 # wbd_list = sf::st_layers(wbdpath)
 
-list_hucs = c("WBDHU8", "WBDHU10", "WBDHU12")
+list_hucs <- c("WBDHU8", "WBDHU10", "WBDHU12")
 # c("WBDHU2", "WBDHU4", "WBDHU6", "WBDHU8", "WBDHU10", "WBDHU12")
 # list_hucs_ex = split(list_hucs, list_hucs) |>
 #     lapply(function(x) sf::read_sf(wbdpath, layer = x, stringsAsFactors = TRUE))
 
-list_nass = list.files(path = paste0(datadir, "USDA_NASS"), pattern = "*.tif$", full.names = TRUE)
+list_nass <- list.files(path = paste0(datadir, "USDA_NASS"), pattern = "*.tif$", full.names = TRUE)
 
-ext_mainland = c(xmin = -125, xmax = -62, ymin = 24, ymax = 61)
-ext_mainland = terra::ext(ext_mainland)
+ext_mainland <- c(xmin = -125, xmax = -62, ymin = 24, ymax = 61)
+ext_mainland <- terra::ext(ext_mainland)
 
 # query = sprintf("select * from WBDHU%d where states not in ")
 # list_hucs_tr = split(list_hucs, list_hucs) |>
@@ -72,28 +73,28 @@ future::plan(multicore, workers = 15L)
 
 # test: 17:41 09/20/2023
 split(list_nass, list_nass) %>%
-    future_lapply(., function(x) { 
-        nass = terra::rast(x)
-        # print(nass)
-        huc = terra::vect(wbdpath, layer = "WBDHU8")
-        huc = huc[ext_mainland,]
-        huc = terra::project(huc, "EPSG:5070")
-        huc = huc[,'huc8']
-        hucfrq = terra::freq(nass, zones=huc, wide = TRUE)
-        fname = gsub("\\.tif", "_huc8_ext.csv", x)
-        write.csv(hucfrq, fname, row.names = FALSE)
-        # for (huc in list_hucs) {
-        #     target_huc = terra::vect(wbdpath, layer = huc)
-        #     target_huc = target_huc[ext_mainland,]
-        #     # split by huc2
-        #     this_name = gsub("WBDHU", "huc", huc)
-        #     target_huc$huc_split = substr(target_huc[[this_name]], 1, 2)
-        #     target_huc_list = split(target_huc, target_huc$huc_split)
-        #     future.apply::future_lapply(target_huc_list,
-        #         FUN = scomps::extract_with(id = this_name)
-        #     )
-        #     scomps::extract_with()        
-    })
+  future_lapply(., function(x) {
+    nass <- terra::rast(x)
+    # print(nass)
+    huc <- terra::vect(wbdpath, layer = "WBDHU8")
+    huc <- huc[ext_mainland, ]
+    huc <- terra::project(huc, "EPSG:5070")
+    huc <- huc[, "huc8"]
+    hucfrq <- terra::freq(nass, zones = huc, wide = TRUE)
+    fname <- gsub("\\.tif", "_huc8_ext.csv", x)
+    write.csv(hucfrq, fname, row.names = FALSE)
+    # for (huc in list_hucs) {
+    #     target_huc = terra::vect(wbdpath, layer = huc)
+    #     target_huc = target_huc[ext_mainland,]
+    #     # split by huc2
+    #     this_name = gsub("WBDHU", "huc", huc)
+    #     target_huc$huc_split = substr(target_huc[[this_name]], 1, 2)
+    #     target_huc_list = split(target_huc, target_huc$huc_split)
+    #     future.apply::future_lapply(target_huc_list,
+    #         FUN = scomps::extract_with(id = this_name)
+    #     )
+    #     scomps::extract_with()
+  })
 
 
 # for (nass in list_nass) {
