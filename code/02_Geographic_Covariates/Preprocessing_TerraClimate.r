@@ -5,7 +5,7 @@ sf_use_s2(FALSE)
 ## data path determination
 ## compute_mode 
 ## 1 (wine mount), 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 1
+COMPUTE_MODE <- 3
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
@@ -26,6 +26,13 @@ path_tc_files <- list.files(
   path = path_tc, pattern = "*.nc$",
   full.names = TRUE
 )
+
+## AZO
+azo <- sf::read_sf(paste0(path_base, "data_process/data_AZO_watershed_huc_join.shp"))
+azo_s <- azo %>%
+  dplyr::select(site_no, Year) %>%
+  unique() %>%
+  st_transform("EPSG:4326")
 
 
 # some bands should be summed
@@ -59,28 +66,28 @@ preprocess <- function(ras, extent, fun) {
 }
 
 # all median: exploration
-netcdf_read_median <-
-  split(bandnames, bandnames) |>
-  lapply(function(x) {
-    grep(paste0("(", x, ")"), path_tc_files, value = TRUE)
-  }) |>
-  lapply(function(x) {
-    xr <- Reduce(c, lapply(x, terra::rast)) |>
-      preprocess(ext_mainland, "median")
-    names(xr) <- regmatches(x, 
-      regexpr(paste0("(", 
-        paste0(bandnames, collapse = "|"), ")"), x))
-  }) |>
-  Reduce(f = c, x = _)
+# netcdf_read_median <-
+#   split(bandnames, bandnames) |>
+#   lapply(function(x) {
+#     grep(paste0("(", x, ")"), path_tc_files, value = TRUE)
+#   }) |>
+#   lapply(function(x) {
+#     xr <- Reduce(c, lapply(x, terra::rast)) |>
+#       preprocess(ext_mainland, "median")
+#     names(xr) <- regmatches(x, 
+#       regexpr(paste0("(", 
+#         paste0(bandnames, collapse = "|"), ")"), x))
+#   }) |>
+#   Reduce(f = c, x = _)
 
 
 
-
+## new strategy (10062023): take sum and mean then choose one if necessary
 # band for summation
-bandnames_sum <- bandnames[c(...)]
+bandnames_sum <- bandnames#[c(...)]
 
 # band for averaging
-bandnames_avg <- bandnames[c(...)]
+bandnames_avg <- bandnames#[c(...)]
 
 
 netcdf_read_sum <-
@@ -106,3 +113,51 @@ netcdf_read_mean <-
 
 ##
 # ... extract ...
+extract_by_year <- function(ras, pnt) {
+  years <- seq(2000, 2022)
+  # split by year (raster)
+  ras_list <- split(years, years) |>
+    lapply(function(y) {
+      ras[as.character(y)]
+    })
+  
+  pnt_list <- split(pnt, pnt[["Year"]])
+  
+  extract_and_clean <- function(
+    ras0, pnt0, pnt_uniqueid = "site_no") {
+      rownames()
+      extracted <- terra::extract(ras0, pnt0)
+      #extracted[[pnt_uniqueid]] <- pnt0[[pnt_uniqueid]]
+      return(extracted)
+    }
+  
+  future::plan(future::multicore, workers = 12)
+  
+  extracted <- 
+    future.apply::future_mapply(
+      FUN = \(r, p) {
+        extract_and_clean(r, p, "site_no")
+      },
+      ras_list, pnt_list, SIMPLIFY = FALSE
+    )
+  extracted <- Reduce(c, extracted)
+
+  return(extracted)
+}
+
+azo_t <- terra::vect(azo_s)
+## exec extract_by_year
+terra_pnt_sum <- extract_by_year(
+  netcdf_read_sum, azo_t
+)
+
+terra_pnt_mean <- extract_by_year(
+  netcdf_read_mean, azo_t
+)
+
+terra_pnt_sum <- as.data.frame(terra_pnt_sum)
+terra_pnt_mean <- as.data.frame(terra_pnt_mean)
+
+dir_output <- "/mnt/"
+write.csv(terra_pnt_sum, paste0(dir_output, "terraclimate_yearly_azo_sum.csv"), row.names = FALSE)
+write.csv(terra_pnt_mean, paste0(dir_output, "terraclimate_yearly_azo_mean.csv"), row.names = FALSE)
