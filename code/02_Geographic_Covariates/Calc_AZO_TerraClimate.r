@@ -17,6 +17,7 @@ path_base <-
     )
   )
 
+# path_base <- "~/Documents/"
 ## wbd
 ext_mainland <- c(xmin = -126, xmax = -64, ymin = 24, ymax = 51)
 ext_mainland <- terra::ext(ext_mainland)
@@ -80,7 +81,8 @@ preprocess <- function(ras, extent, fun) {
 #   }) |>
 #   Reduce(f = c, x = _)
 
-
+# bandnames <- c("aet", "def")
+# bandnames_sorted <- bandnames
 
 ## new strategy (10062023): take sum and mean then choose one if necessary
 # band for summation
@@ -118,29 +120,36 @@ extract_by_year <- function(ras, pnt) {
   # split by year (raster)
   ras_list <- split(years, years) |>
     lapply(function(y) {
-      ras[as.character(y)]
+      rasout <- ras[as.character(y)]
+      names(rasout) <- bandnames_sorted
+      return(rasout)
     })
   
-  pnt_list <- split(pnt, pnt[["Year"]])
+  pnt_list <- split(pnt, unlist(pnt[["Year"]]))
   
   extract_and_clean <- function(
     ras0, pnt0, pnt_uniqueid = "site_no") {
-      rownames()
-      extracted <- terra::extract(ras0, pnt0)
+      #rownames(pnt0) <- unlist(pnt0[["site_no"]])
+      pnt0[["ID"]] <- pnt0[[pnt_uniqueid]]
+      extracted <- terra::extract(ras0, pnt0, ID = FALSE)
       #extracted[[pnt_uniqueid]] <- pnt0[[pnt_uniqueid]]
       return(extracted)
     }
   
-  future::plan(future::multicore, workers = 12)
+  future::plan(future::multicore, workers = 24)
   
   extracted <- 
     future.apply::future_mapply(
       FUN = \(r, p) {
-        extract_and_clean(r, p, "site_no")
+        PNT_UID <- "site_no"
+        extr0 <- extract_and_clean(r, p, PNT_UID)
+        extr0[["year"]] <- p[["Year"]]
+        extr0[[PNT_UID]] <- p[[PNT_UID]]
+        return(extr0)
       },
       ras_list, pnt_list, SIMPLIFY = FALSE
     )
-  extracted <- Reduce(c, extracted)
+  extracted <- Reduce(dplyr::bind_rows, extracted)
 
   return(extracted)
 }
@@ -155,9 +164,8 @@ terra_pnt_mean <- extract_by_year(
   netcdf_read_mean, azo_t
 )
 
-terra_pnt_sum <- as.data.frame(terra_pnt_sum)
-terra_pnt_mean <- as.data.frame(terra_pnt_mean)
+# dir_output <- "/mnt/"
+dir_output <- gsub("input", "output", path_base)
 
-dir_output <- "/mnt/"
 write.csv(terra_pnt_sum, paste0(dir_output, "terraclimate_yearly_azo_sum.csv"), row.names = FALSE)
 write.csv(terra_pnt_mean, paste0(dir_output, "terraclimate_yearly_azo_mean.csv"), row.names = FALSE)
