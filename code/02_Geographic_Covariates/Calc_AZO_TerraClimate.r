@@ -131,7 +131,7 @@ extract_by_year <- function(ras, pnt) {
     ras0, pnt0, pnt_uniqueid = "site_no") {
       #rownames(pnt0) <- unlist(pnt0[["site_no"]])
       pnt0[["ID"]] <- pnt0[[pnt_uniqueid]]
-      extracted <- terra::extract(ras0, pnt0, ID = FALSE)
+      extracted <- terra::extract(ras0, pnt0, ID = TRUE)
       #extracted[[pnt_uniqueid]] <- pnt0[[pnt_uniqueid]]
       return(extracted)
     }
@@ -143,8 +143,9 @@ extract_by_year <- function(ras, pnt) {
       FUN = \(r, p) {
         PNT_UID <- "site_no"
         extr0 <- extract_and_clean(r, p, PNT_UID)
-        extr0[["year"]] <- p[["Year"]]
-        extr0[[PNT_UID]] <- p[[PNT_UID]]
+        # without unlist, the file export will result in 9.8GB per file.
+        extr0[["year"]] <- unlist(p[["Year"]])
+        extr0[[PNT_UID]] <- unlist(p[[PNT_UID]])
         return(extr0)
       },
       ras_list, pnt_list, SIMPLIFY = FALSE
@@ -164,8 +165,8 @@ terra_pnt_mean <- extract_by_year(
   netcdf_read_mean, azo_t
 )
 
-# dir_output <- "/mnt/"
-dir_output <- gsub("input", "output", path_base)
+dir_output <- "/mnt/"
+# dir_output <- gsub("input", "output", path_base)
 
 write.csv(terra_pnt_sum, paste0(dir_output, "terraclimate_yearly_azo_sum.csv"), row.names = FALSE)
 write.csv(terra_pnt_mean, paste0(dir_output, "terraclimate_yearly_azo_mean.csv"), row.names = FALSE)
