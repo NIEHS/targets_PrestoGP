@@ -46,7 +46,7 @@ US.bb <- terra::ext(c(-124.7844079, -66.9513812, 24.7433195, 49.3457868))
 # # NHD WBD Layer names
 WBD.layers <- st_layers(paste0(path_base, "WBD_National_GPKG.gpkg"))
 
-WBD <- st_read(paste0(path_base, "input/WBD-National/WBD_National_GPKG.gpkg"), layer = "WBDHU8") %>%
+WBD <- st_read(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8") %>%
   st_transform("EPSG:4326")
 
 
@@ -189,20 +189,21 @@ names(OLM.stack.classes) <- c(
 
 
 ## ----Calculate exact grid points ,echo=TRUE-----------------------------------
-
+HUCUNIT <- "huc12"
 
 # HUC08
   # get the given HUC08 geometry from the WBD data
   # huc08.polygon <- dplyr::filter(WBD, huc8 == huc08.unique[i])
-  huc08.polygon <- sf::read_sf(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8")
+  huc08.polygon <- WBD
+  #sf::read_sf(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8")
 
-HUC.rast.vals <- data.table("huc08" = huc08.polygon$huc8)
+HUC.rast.vals <- data.table(!!sym(HUCUNIT) := unlist(huc08.polygon[["HUCUNIT"]]))
 
 # huc08.unique <- unique(data.AZO$huc08)
 
-HUC.rast.vals[, paste0("huc08", ".", names(OLM.stack.values)) := NA_real_]
+HUC.rast.vals[, paste0(HUCUNIT, ".", names(OLM.stack.values)) := NA_real_]
 
-HUC.rast.class <- data.table("huc08" = huc08.polygon$huc8)
+HUC.rast.class <- data.table(!!sym(HUCUNIT) := unlist(huc08.polygon[[HUCUNIT]]))
 
 class.df <- expand.grid(levels(OLM.stack.classes)[[1]]$ID, c(
   "Texture_000cm", "Texture_010cm", "Texture_030cm",
@@ -213,7 +214,7 @@ class.df <- class.df[order(class.df$Var1), ]
 class.possible.names <- paste0("frac_", class.df$Var1, ".", class.df$Var2)
 
 
-HUC.rast.class[, paste0("huc08", ".", class.possible.names) := 0]
+HUC.rast.class[, paste0(HUCUNIT, ".", class.possible.names) := 0]
 
 # for (i in 1:length(huc08.unique)) {
 #   print(i)
@@ -245,12 +246,12 @@ HUC.rast.vals <- HUC.rast.vals %>%
   rename_with(function(x) str_replace_all(x, "_{2}", "_")) %>%
   rename_with(function(x) str_replace_all(x, "sol_order_usda_soiltax_", "")) %>%
   rename_with(function(x) str_replace_all(x, "_1950_2017_v0_1", "")) %>%
-  select(-huc08)
+  select(-!!sym(HUCUNIT))
 
 # Classes column names updates
 HUC.rast.class <- HUC.rast.class %>%
   rename_with(function(x) str_replace_all(x, "[.]", "_")) %>%
-  select(-huc08)
+  select(-!!sym(HUCUNIT))
 
 # Rename the number with the class name - ugly but it works
 HUC.rast.class <- dplyr::rename_with(HUC.rast.class, ~ gsub("frac_1_", paste0("frac_", texture_classes$classes[1], "_"), .x, fixed = TRUE)) %>%
@@ -268,7 +269,8 @@ HUC.rast.class <- dplyr::rename_with(HUC.rast.class, ~ gsub("frac_1_", paste0("f
 
 
 ## ----Save the data to a geopackage (OSG open source format) ,echo=TRUE--------
-data.AZO.HUC08.OLM <- cbind(HUC08=huc08.polygon$huc8, HUC.rast.vals, HUC.rast.class)
+data.AZO.HUC08.OLM <- cbind(HUC08=unlist(huc08.polygon[[HUCUNIT]]), HUC.rast.vals, HUC.rast.class)
+names(data.AZO.HUC08.OLM)[1] <- HUCUNIT
 # sf::st_write(data.AZO.HUC08.OLM, paste0(path_base, "/AZO_HUC08_OLM.gpkg"))
-write.csv(data.AZO.HUC08.OLM, paste0(path_base, "/AZO_HUC08_OLM.csv"), row.names = FALSE)
+write.csv(data.AZO.HUC08.OLM, paste0("/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/output", "/AZO_", HUCUNIT, "_OLM.csv"), row.names = FALSE)
 
