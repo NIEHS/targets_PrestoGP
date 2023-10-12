@@ -15,7 +15,7 @@ sf_use_s2(FALSE)
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 2
+COMPUTE_MODE <- 4
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
@@ -54,19 +54,21 @@ WBD <- st_read(paste0(path_base, "input/WBD-National/WBD_National_GPKG.gpkg"), l
 # Cropped Raster directory
 # cropped.raster.dir <- "/Volumes/SHAG/OpenLandMapData/OLM_Combined/"
 cropped.raster.dir <- ""#"OpenLandMapData/OLM_Combined/"
+crop.dir <- paste0(path_base, cropped.raster.dir)
+
 
 if (length(list.files(
-  path = paste0(path_base, cropped.raster.dir),
+  path = crop.dir,
   pattern = "*.tif$", full.names = T
 )) == 7) { # If the cropped rasters have been generated,read those in
 
-  pH.stack <- terra::rast(paste0(cropped.raster.dir, "OLM_US_Crop_pH.tif"))
-  Clay_Content.stack <- terra::rast(paste0(cropped.raster.dir, "OLM_US_Crop_Clay_Content.tif"))
-  Bulk_Density.stack <- terra::rast(paste0(cropped.raster.dir, "OLM_US_Crop_Bulk_Density.tif"))
-  Sand_Content.stack <- terra::rast(paste0(cropped.raster.dir, "OLM_US_Crop_Sand_Content.tif"))
-  Organic_Carbon.stack <- terra::rast(paste0(cropped.raster.dir, "OLM_US_Crop_Organic_Carbon.tif"))
-  soil_order.stack <- terra::rast(paste0(cropped.raster.dir, "OLM_US_Crop_Soil_Order.tif"))
-  texture.stack <- terra::rast(paste0(cropped.raster.dir, "OLM_US_Crop_Soil_Texture_Class.tif"))
+  pH.stack <- terra::rast(crop.dir, "OLM_US_Crop_pH.tif")
+  Clay_Content.stack <- terra::rast(crop.dir, "OLM_US_Crop_Clay_Content.tif")
+  Bulk_Density.stack <- terra::rast(crop.dir, "OLM_US_Crop_Bulk_Density.tif")
+  Sand_Content.stack <- terra::rast(crop.dir, "OLM_US_Crop_Sand_Content.tif")
+  Organic_Carbon.stack <- terra::rast(crop.dir, "OLM_US_Crop_Organic_Carbon.tif")
+  soil_order.stack <- terra::rast(crop.dir, "OLM_US_Crop_Soil_Order.tif")
+  texture.stack <- terra::rast(crop.dir, "OLM_US_Crop_Soil_Texture_Class.tif")
 } else { # otherwise generate them which takes a bit of time (~ 1 hour)
 
   # Directories of individual raw OLM data
@@ -267,5 +269,6 @@ HUC.rast.class <- dplyr::rename_with(HUC.rast.class, ~ gsub("frac_1_", paste0("f
 
 ## ----Save the data to a geopackage (OSG open source format) ,echo=TRUE--------
 data.AZO.HUC08.OLM <- cbind(HUC08=huc08.polygon$huc8, HUC.rast.vals, HUC.rast.class)
-sf::st_write(data.AZO.HUC08.OLM, paste0(path_base, "/AZO_HUC08_OLM.gpkg"))
+# sf::st_write(data.AZO.HUC08.OLM, paste0(path_base, "/AZO_HUC08_OLM.gpkg"))
+write.csv(data.AZO.HUC08.OLM, paste0(path_base, "/AZO_HUC08_OLM.csv"), row.names = FALSE)
 
