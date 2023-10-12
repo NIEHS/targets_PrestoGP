@@ -12,22 +12,6 @@ library(data.table)
 # library(nhdplusTools)
 sf_use_s2(FALSE)
 
-## ----pesticide and NHD WBD data, echo=FALSE-----------------------------------
-# Read in main pesticide data here
-# data.AZO <- sf::st_read("input/data_process/data_AZO_watershed_huc_join.shp")
-
-# # For efficient extraction, we just need the geometry
-# AZO.geometry <- sf::st_geometry(data.AZO)
-
-# # US bounding box
-# US.bb <- terra::ext(c(-124.7844079, -66.9513812, 24.7433195, 49.3457868))
-
-# # NHD WBD Layer names
-# WBD.layers <- st_layers("input/WBD-National/WBD_National_GDB.gdb")
-
-# WBD <- st_read("input/WBD-National/WBD_National_GDB.gdb", layer = "WBDHU8") %>%
-#   st_transform("EPSG:4326")
-
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
@@ -40,12 +24,30 @@ path_base <-
       ifelse(COMPUTE_MODE == 3,
         "/opt/",
         ifelse(COMPUTE_MODE == 4,
-          "/tmp/",
+          "/tmp/OLM/",
           stop("COMPUTE_MODE should be one of 1, 2, 3, or 4.\n")
         )
       )
     )
   )
+
+
+
+## ----pesticide and NHD WBD data, echo=FALSE-----------------------------------
+# Read in main pesticide data here
+data.AZO <- sf::st_read(paste0(path_base, "./data_process/data_AZO_watershed_huc_join.shp"))
+
+# # For efficient extraction, we just need the geometry
+AZO.geometry <- sf::st_geometry(data.AZO)
+
+# # US bounding box
+US.bb <- terra::ext(c(-124.7844079, -66.9513812, 24.7433195, 49.3457868))
+
+# # NHD WBD Layer names
+WBD.layers <- st_layers(paste0(path_base, "WBD_National_GPKG.gpkg"))
+
+WBD <- st_read(paste0(path_base, "input/WBD-National/WBD_National_GPKG.gpkg"), layer = "WBDHU8") %>%
+  st_transform("EPSG:4326")
 
 
 ## ----OLM raster data,echo=FALSE-----------------------------------------------
@@ -188,13 +190,17 @@ names(OLM.stack.classes) <- c(
 
 
 # HUC08
-HUC.rast.vals <- data.table("huc08" = data.AZO$huc08)
+  # get the given HUC08 geometry from the WBD data
+  # huc08.polygon <- dplyr::filter(WBD, huc8 == huc08.unique[i])
+  huc08.polygon <- sf::read_sf(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8")
 
-huc08.unique <- unique(data.AZO$huc08)
+HUC.rast.vals <- data.table("huc08" = huc08.polygon$huc8)
+
+# huc08.unique <- unique(data.AZO$huc08)
 
 HUC.rast.vals[, paste0("huc08", ".", names(OLM.stack.values)) := NA_real_]
 
-HUC.rast.class <- data.table("huc08" = data.AZO$huc08)
+HUC.rast.class <- data.table("huc08" = huc08.polygon$huc8)
 
 class.df <- expand.grid(levels(OLM.stack.classes)[[1]]$ID, c(
   "Texture_000cm", "Texture_010cm", "Texture_030cm",
@@ -213,9 +219,6 @@ HUC.rast.class[, paste0("huc08", ".", class.possible.names) := 0]
   # get index - for rows of output - where data match the given HUC08
   # idx.row <- data.AZO$huc08 == huc08.unique[i]
 
-  # get the given HUC08 geometry from the WBD data
-  # huc08.polygon <- dplyr::filter(WBD, huc8 == huc08.unique[i])
-  huc08.polygon <- sf::read_sf(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8")
 
   # calculate the mean raster values in the HUC
   huc08.val <- exact_extract(OLM.stack.values, st_geometry(huc08.polygon), fun = "mean", stack_apply = TRUE)
@@ -224,7 +227,7 @@ HUC.rast.class[, paste0("huc08", ".", class.possible.names) := 0]
   HUC.rast.vals[, 2:ncol(HUC.rast.vals)] <- huc08.val
 
   # calculate the fraction of each raster class in the HUC
-  extract.raster.classes <- exact_extract(OLM.stack.classes, huc08.polygon, fun = "frac", stack_apply = TRUE)
+  extract.raster.classes <- exact_extract(OLM.stack.classes, st_geometry(huc08.polygon), fun = "frac", stack_apply = TRUE)
 
   # # get indexs - for columns of outout - where classes match the output
   idx.col <- which(class.possible.names %in% colnames(extract.raster.classes)) + 1
@@ -263,6 +266,6 @@ HUC.rast.class <- dplyr::rename_with(HUC.rast.class, ~ gsub("frac_1_", paste0("f
 
 
 ## ----Save the data to a geopackage (OSG open source format) ,echo=TRUE--------
-data.AZO.HUC08.OLM <- cbind(data.AZO, HUC.rast.vals, HUC.rast.class)
-sf::st_write(data.AZO.HUC08.OLM, paste0(path_base, "/Covariates/AZO_HUC08_OLM.gpkg"))
+data.AZO.HUC08.OLM <- cbind(HUC08=huc08.polygon$huc8, HUC.rast.vals, HUC.rast.class)
+sf::st_write(data.AZO.HUC08.OLM, paste0(path_base, "/AZO_HUC08_OLM.gpkg"))
 
