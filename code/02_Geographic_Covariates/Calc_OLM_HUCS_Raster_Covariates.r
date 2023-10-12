@@ -9,8 +9,8 @@ library(exactextractr)
 library(lubridate)
 library(tidyverse)
 library(data.table)
-library(nhdplusTools)
-
+# library(nhdplusTools)
+sf_use_s2(FALSE)
 
 ## ----pesticide and NHD WBD data, echo=FALSE-----------------------------------
 # Read in main pesticide data here
