@@ -6,18 +6,21 @@ sf_use_s2(F)
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 3
+COMPUTE_MODE <- 4
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
     ifelse(COMPUTE_MODE == 2,
       "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/",
       ifelse(COMPUTE_MODE == 3,
-        "/opt/", stop("COMPUTE_MODE should be one of 1, 2, or 3.\n")
+        "/opt/",
+        ifelse(COMPUTE_MODE == 4,
+          "~/Downloads/",
+          stop("COMPUTE_MODE should be one of 1, 2, 3, or 4.\n")
+        )
       )
     )
   )
-
 # future::plan(sequential)
 
 ## AZO
