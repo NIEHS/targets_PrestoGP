@@ -3,6 +3,8 @@
 # watershed boundary data folder
 input/
 
+# output rds
+output/*.rds
 
 # History files
 .Rhistory
