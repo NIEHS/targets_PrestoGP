@@ -33,8 +33,8 @@ path_base <-
   )
 
 ## HUCUNIT
-HUCUNIT <- "HUC10"
-layername <- paste0("WBD", gsub("C", "", HUCUNIT))
+HUCUNIT <- "huc10"
+layername <- paste0("WBD", toupper(gsub("c", "", HUCUNIT)))
 
 ## ----pesticide and NHD WBD data, echo=FALSE-----------------------------------
 # Read in main pesticide data here
@@ -192,7 +192,6 @@ names(OLM.stack.classes) <- c(
 
 
 ## ----Calculate exact grid points ,echo=TRUE-----------------------------------
-HUCUNIT <- "huc12"
 
 # HUC08
   # get the given HUC08 geometry from the WBD data
