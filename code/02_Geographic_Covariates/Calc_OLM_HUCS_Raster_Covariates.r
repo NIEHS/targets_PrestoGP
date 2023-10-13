@@ -7,6 +7,7 @@ library(sf)
 library(terra)
 library(exactextractr)
 library(lubridate)
+library(rlang)
 library(tidyverse)
 library(data.table)
 # library(nhdplusTools)
@@ -31,7 +32,9 @@ path_base <-
     )
   )
 
-
+## HUCUNIT
+HUCUNIT <- "HUC10"
+layername <- paste0("WBD", gsub("C", "", HUCUNIT))
 
 ## ----pesticide and NHD WBD data, echo=FALSE-----------------------------------
 # Read in main pesticide data here
@@ -46,7 +49,7 @@ US.bb <- terra::ext(c(-124.7844079, -66.9513812, 24.7433195, 49.3457868))
 # # NHD WBD Layer names
 WBD.layers <- st_layers(paste0(path_base, "WBD_National_GPKG.gpkg"))
 
-WBD <- st_read(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8") %>%
+WBD <- st_read(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = layername) %>%
   st_transform("EPSG:4326")
 
 
@@ -61,14 +64,14 @@ if (length(list.files(
   path = crop.dir,
   pattern = "*.tif$", full.names = T
 )) == 7) { # If the cropped rasters have been generated,read those in
-
-  pH.stack <- terra::rast(crop.dir, "OLM_US_Crop_pH.tif")
-  Clay_Content.stack <- terra::rast(crop.dir, "OLM_US_Crop_Clay_Content.tif")
-  Bulk_Density.stack <- terra::rast(crop.dir, "OLM_US_Crop_Bulk_Density.tif")
-  Sand_Content.stack <- terra::rast(crop.dir, "OLM_US_Crop_Sand_Content.tif")
-  Organic_Carbon.stack <- terra::rast(crop.dir, "OLM_US_Crop_Organic_Carbon.tif")
-  soil_order.stack <- terra::rast(crop.dir, "OLM_US_Crop_Soil_Order.tif")
-  texture.stack <- terra::rast(crop.dir, "OLM_US_Crop_Soil_Texture_Class.tif")
+  `%c%` <- function(x, y) paste0(x, y)
+  pH.stack <- terra::rast(crop.dir %c% "OLM_US_Crop_pH.tif")
+  Clay_Content.stack <- terra::rast(crop.dir %c% "OLM_US_Crop_Clay_Content.tif")
+  Bulk_Density.stack <- terra::rast(crop.dir %c% "OLM_US_Crop_Bulk_Density.tif")
+  Sand_Content.stack <- terra::rast(crop.dir %c% "OLM_US_Crop_Sand_Content.tif")
+  Organic_Carbon.stack <- terra::rast(crop.dir %c% "OLM_US_Crop_Organic_Carbon.tif")
+  soil_order.stack <- terra::rast(crop.dir %c% "OLM_US_Crop_Soil_Order.tif")
+  texture.stack <- terra::rast(crop.dir %c% "OLM_US_Crop_Soil_Texture_Class.tif")
 } else { # otherwise generate them which takes a bit of time (~ 1 hour)
 
   # Directories of individual raw OLM data
@@ -197,13 +200,14 @@ HUCUNIT <- "huc12"
   huc08.polygon <- WBD
   #sf::read_sf(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8")
 
-HUC.rast.vals <- data.table(!!sym(HUCUNIT) := unlist(huc08.polygon[["HUCUNIT"]]))
+HUC.nulltable <- data.table()
+HUC.rast.vals <- HUC.nulltable[, (HUCUNIT) := unlist(huc08.polygon[[HUCUNIT]])]
 
 # huc08.unique <- unique(data.AZO$huc08)
 
 HUC.rast.vals[, paste0(HUCUNIT, ".", names(OLM.stack.values)) := NA_real_]
 
-HUC.rast.class <- data.table(!!sym(HUCUNIT) := unlist(huc08.polygon[[HUCUNIT]]))
+HUC.rast.class <- HUC.nulltable[, (HUCUNIT) := unlist(huc08.polygon[[HUCUNIT]])]
 
 class.df <- expand.grid(levels(OLM.stack.classes)[[1]]$ID, c(
   "Texture_000cm", "Texture_010cm", "Texture_030cm",
