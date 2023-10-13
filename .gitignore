@@ -41,6 +41,14 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 
+
+# temporary files
+._* 
+.*
+._.*
+._.DS_Store
+.DS_Store 
+
 # R Environment Variables
 .Renviron
 
