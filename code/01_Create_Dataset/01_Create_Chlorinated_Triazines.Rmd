@@ -21,8 +21,6 @@ knitr::opts_chunk$set(echo = TRUE)
  Simazine, 04035, 122-34-9
 
 ```{r Specify Packages and Space/Time Domains}
-
-
 library(dataRetrieval)
 library(dplyr)
 library(beepr)
@@ -30,137 +28,154 @@ library(lubridate)
 library(tidyverse)
 library(data.table)
 
-param.chlorotriazines <- c("39632","04040","04038","04039","38535","04035")
+param.chlorotriazines <- c("39632", "04040", "04038", "04039", "38535", "04035")
 
 startDate <- "2000-01-01"
 endDate <- "2022-12-31"
 
-state.list <- state.abb[c(-2,-11)]
-
-
+state.list <- state.abb[c(-2, -11)]
 ```
 
 
 ```{r Get Data By State}
-state.fun.AZO <- function(x){
+state.fun.AZO <- function(x) {
   print(x)
-  temp <- whatWQPdata(statecode = state.list[x],
-                parameterCd=param.chlorotriazines)
+  temp <- whatWQPdata(
+    statecode = state.list[x],
+    parameterCd = param.chlorotriazines
+  )
 
-  temp <- temp[temp$MonitoringLocationTypeName=="Well",]
+  temp <- temp[temp$MonitoringLocationTypeName == "Well", ]
 
-  if (nrow(temp)>0){
-  site.info <- str_subset(temp$MonitoringLocationIdentifier,"(?<=USGS-)\\d+") %>%
-          str_extract("(?<=USGS-)\\d+")   %>%
-    readNWISsite() %>%
-    select(c(site_no,well_depth_va))
-  site.info$MonitoringLocationIdentifier <- paste0("USGS-",site.info$site_no)
-  data.chlorotriazines <- readWQPqw(temp$MonitoringLocationIdentifier, param.chlorotriazines,
-                                    startDate = startDate, endDate = endDate)
+  if (nrow(temp) > 0) {
+    site.info <- str_subset(temp$MonitoringLocationIdentifier, "(?<=USGS-)\\d+") %>%
+      str_extract("(?<=USGS-)\\d+") %>%
+      readNWISsite() %>%
+      select(c(site_no, well_depth_va))
+    site.info$MonitoringLocationIdentifier <- paste0("USGS-", site.info$site_no)
+    data.chlorotriazines <- readWQPqw(temp$MonitoringLocationIdentifier, param.chlorotriazines,
+      startDate = startDate, endDate = endDate
+    )
 
-  result <- left_join(data.chlorotriazines,temp,by = "MonitoringLocationIdentifier") %>%
-    left_join(site.info,by = "MonitoringLocationIdentifier")
+    result <- left_join(data.chlorotriazines, temp, by = "MonitoringLocationIdentifier") %>%
+      left_join(site.info, by = "MonitoringLocationIdentifier")
 
-  return(result)
+    return(result)
   }
 }
 
 data.AZO <- lapply(1:48, state.fun.AZO)
 beep(sound = 2)
 
-data.AZO.final<- do.call(rbind.data.frame, data.AZO)
+data.AZO.final <- do.call(rbind.data.frame, data.AZO)
 beep(sound = 2)
 ```
 
 ```{r Censoring}
-
-
-censored_text <- c("Not Detected",
-                   "Non-Detect",
-                   "Non Detect",
-                   "Detected Not Quantified",
-                   "Below Quantification Limit")
+censored_text <- c(
+  "Not Detected",
+  "Non-Detect",
+  "Non Detect",
+  "Detected Not Quantified",
+  "Below Quantification Limit"
+)
 
 data.AZO.censored <- data.AZO.final %>%
-  mutate(left_censored = grepl(paste(censored_text, collapse="|"),
-                               ResultDetectionConditionText,
-                               ignore.case = TRUE),
-         Year = lubridate::year(ActivityStartDate)) %>%
-  select(site_no = MonitoringLocationIdentifier,
-         startDate = ActivityStartDate,
-         Year,
-         parm_cd = USGSPCode,
-         ChemicalName = CharacteristicName,
-         left_censored,
-         lon,lat,well_depth = well_depth_va,
-         CountyName,StateName,
-         Units = ResultMeasure.MeasureUnitCode,
-         result_va = ResultMeasureValue,
-         detection_level = DetectionQuantitationLimitMeasure.MeasureValue,
-         dl_units = DetectionQuantitationLimitMeasure.MeasureUnitCode) %>%
+  mutate(
+    left_censored = grepl(paste(censored_text, collapse = "|"),
+      ResultDetectionConditionText,
+      ignore.case = TRUE
+    ),
+    Year = lubridate::year(ActivityStartDate)
+  ) %>%
+  select(
+    site_no = MonitoringLocationIdentifier,
+    startDate = ActivityStartDate,
+    Year,
+    parm_cd = USGSPCode,
+    ChemicalName = CharacteristicName,
+    left_censored,
+    lon, lat, well_depth = well_depth_va,
+    CountyName, StateName,
+    Units = ResultMeasure.MeasureUnitCode,
+    result_va = ResultMeasureValue,
+    detection_level = DetectionQuantitationLimitMeasure.MeasureValue,
+    dl_units = DetectionQuantitationLimitMeasure.MeasureUnitCode
+  ) %>%
   arrange(startDate, parm_cd)
-
 ```
 
 ```{r daily averaging}
 data.AZO.daily.avg <- data.AZO.censored %>%
-  group_by(ChemicalName,site_no,startDate) %>%
-  mutate("id" = cur_group_id(),"nsamples" = n()) %>%
-  summarise(concentration = fifelse(all(left_censored),max(detection_level),
-                                    fifelse(all(!left_censored),mean(result_va),
-                                            mean(result_va[!left_censored]),
-                                    )),
-            left_censored = fifelse(all(left_censored),TRUE,
-                                    fifelse(all(!left_censored),FALSE,
-                                            FALSE,
-                                    )),
-            Longitude = first(lon),
-            Latitude= first(lat),
-            ChemicalName = first(ChemicalName),
-            site_no = first(site_no),
-            parm_cd = first(parm_cd),
-            Units = first(coalesce(Units,dl_units)),
-            CountyName = first(CountyName),
-            StateName = first(StateName),
-            well_depth = first(well_depth),
-            Year = first(Year),
-            id = first(id),
-            nsamples = sum(nsamples))
-
+  group_by(ChemicalName, site_no, startDate) %>%
+  mutate("id" = cur_group_id(), "nsamples" = n()) %>%
+  summarise(
+    concentration = fifelse(
+      all(left_censored), max(detection_level),
+      fifelse(
+        all(!left_censored), mean(result_va),
+        mean(result_va[!left_censored]),
+      )
+    ),
+    left_censored = fifelse(
+      all(left_censored), TRUE,
+      fifelse(
+        all(!left_censored), FALSE,
+        FALSE,
+      )
+    ),
+    Longitude = first(lon),
+    Latitude = first(lat),
+    ChemicalName = first(ChemicalName),
+    site_no = first(site_no),
+    parm_cd = first(parm_cd),
+    Units = first(coalesce(Units, dl_units)),
+    CountyName = first(CountyName),
+    StateName = first(StateName),
+    well_depth = first(well_depth),
+    Year = first(Year),
+    id = first(id),
+    nsamples = sum(nsamples)
+  )
 ```
 
 ```{r, Year Average }
-
 getwd()
 data.AZO.year.avg <- data.AZO.daily.avg %>%
-  group_by(ChemicalName,site_no,Year) %>%
+  group_by(ChemicalName, site_no, Year) %>%
   mutate("id" = cur_group_id()) %>%
-  summarise(concentration = fifelse(all(left_censored),max(concentration),
-                                    fifelse(all(!left_censored),mean(concentration),
-                                            mean(concentration[!left_censored]),
-                                    )),
-            left_censored = fifelse(all(left_censored),TRUE,
-                                    fifelse(all(!left_censored),FALSE,
-                                            FALSE,
-                                    )),
-            Longitude = first(Longitude),
-            Latitude= first(Latitude),
-            ChemicalName = first(ChemicalName),
-            site_no = first(site_no),
-            parm_cd = first(parm_cd),
-            Units = first(Units),
-            CountyName = first(CountyName),
-            StateName = first(StateName),
-            well_depth = first(well_depth),
-            Year = first(Year),
-            id = first(id),
-            nsamples = sum(nsamples)) %>%
-  arrange(Year, site_no,parm_cd)
-
+  summarise(
+    concentration = fifelse(
+      all(left_censored), max(concentration),
+      fifelse(
+        all(!left_censored), mean(concentration),
+        mean(concentration[!left_censored]),
+      )
+    ),
+    left_censored = fifelse(
+      all(left_censored), TRUE,
+      fifelse(
+        all(!left_censored), FALSE,
+        FALSE,
+      )
+    ),
+    Longitude = first(Longitude),
+    Latitude = first(Latitude),
+    ChemicalName = first(ChemicalName),
+    site_no = first(site_no),
+    parm_cd = first(parm_cd),
+    Units = first(Units),
+    CountyName = first(CountyName),
+    StateName = first(StateName),
+    well_depth = first(well_depth),
+    Year = first(Year),
+    id = first(id),
+    nsamples = sum(nsamples)
+  ) %>%
+  arrange(Year, site_no, parm_cd)
 ```
 
 
 ```{r Save Data}
-save(data.AZO.year.avg,file = "input/data_process/data_AZO_year_avg.RData")
-
+save(data.AZO.year.avg, file = "input/data_process/data_AZO_year_avg.RData")
 ```

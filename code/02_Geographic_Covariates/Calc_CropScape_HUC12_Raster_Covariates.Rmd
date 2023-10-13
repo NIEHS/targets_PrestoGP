@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Required Libraries and Source Local Functions
 
 ```{r libraries and sourcing,echo=FALSE}
-
 library(sf)
 library(terra)
 library(exactextractr)
@@ -21,8 +20,6 @@ library(tidyverse)
 library(data.table)
 library(nhdplusTools)
 library(stringr)
-
-
 ```
 
 ## Prepare Pesticide Data - sf format
@@ -35,13 +32,12 @@ data.AZO <- sf::st_read("/Volumes/messierkp/Projects/CensoredGP/WaterData-Pestic
 AZO.geometry <- sf::st_geometry(data.AZO)
 
 # US bounding box
-US.bb <- terra::ext(c(-124.7844079 , -66.9513812, 24.7433195, 49.3457868))
+US.bb <- terra::ext(c(-124.7844079, -66.9513812, 24.7433195, 49.3457868))
 
 # NHD WBD Layer names
 WBD.layers <- st_layers("/Volumes/SHAG/WBD-National/WBD_National_GDB.gdb")
 
-WBD <- st_read("/Volumes/SHAG/WBD-National/WBD_National_GDB.gdb",layer = "WBDHU12")
-
+WBD <- st_read("/Volumes/SHAG/WBD-National/WBD_National_GDB.gdb", layer = "WBDHU12")
 ```
 
 
@@ -56,10 +52,10 @@ We use the terra package to read and process rasters, which is the most efficien
 method currently available in R for dealing with rasters.
 
 ```{r NASS CropScape raster data,echo=FALSE}
-# Cropped Raster directory 
+# Cropped Raster directory
 
-  
-  # Directories of individual raw OLM data
+
+# Directories of individual raw OLM data
 NASS2008 <- "/Volumes/SHAG/USDA_NASS/2008_30m_cdls.tif"
 NASS2009 <- "/Volumes/SHAG/USDA_NASS/2009_30m_cdls.tif"
 NASS2010 <- "/Volumes/SHAG/USDA_NASS/2010_30m_cdls.tif"
@@ -74,7 +70,7 @@ NASS2018 <- "/Volumes/SHAG/USDA_NASS/2018_30m_cdls.tif"
 NASS2019 <- "/Volumes/SHAG/USDA_NASS/2019_30m_cdls.tif"
 
 
-NASS_stack <- rast(c(NASS2008,NASS2009,NASS2010,NASS2011,NASS2012,NASS2013,NASS2014,NASS2015,NASS2016,NASS2017,NASS2018,NASS2019))
+NASS_stack <- rast(c(NASS2008, NASS2009, NASS2010, NASS2011, NASS2012, NASS2013, NASS2014, NASS2015, NASS2016, NASS2017, NASS2018, NASS2019))
 
 
 crop.classes <- levels(NASS_stack[[12]]$Class_Names) %>% as.data.frame()
@@ -82,17 +78,17 @@ crop.classes <- levels(NASS_stack[[12]]$Class_Names) %>% as.data.frame()
 crops.classes$Class_Names[65] <- "Non-Crop-Shrubland"
 crops.classes$Class_Names[66] <- "Non-Crop-Barren"
 
-for (i in 1:12){
-  levels(NASS_stack[[i]]) <- list(data.frame(ID = crop.classes$value,
-                                            crop_name = crop.classes$Class_Names))
+for (i in 1:12) {
+  levels(NASS_stack[[i]]) <- list(data.frame(
+    ID = crop.classes$value,
+    crop_name = crop.classes$Class_Names
+  ))
 }
 
-year.range <- c(2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)
-names(NASS_stack) <- paste0("crops",year.range)
+year.range <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019)
+names(NASS_stack) <- paste0("crops", year.range)
 
 crop.classes$value <- as.character(crop.classes$value)
-
-
 ```
 
 Here, we use the terra extract function to extract the exact raster value
@@ -100,7 +96,6 @@ at each of our pesticide locations. First, we have to convert the pesticide
 data to a SpatVect (terra package), a requirement of the extract function. 
 
 ```{r Calculate exact grid points ,echo=TRUE}
-
 # HUC12
 
 huc12.unique <- unique(data.AZO$huc12)
@@ -110,80 +105,74 @@ HUC.rast.class <- data.table("huc12" = data.AZO$huc12)
 
 
 # need to drop and resolve names/layers
-class.possible.names <- paste0("frac_",levels(NASS_stack)[[1]]$ID)
+class.possible.names <- paste0("frac_", levels(NASS_stack)[[1]]$ID)
 
-convert.name <- paste0("frac_",crops.classes$Class_Names)
-
-
-HUC.rast.class[,paste0("huc12",".",class.possible.names) := 0]
+convert.name <- paste0("frac_", crops.classes$Class_Names)
 
 
+HUC.rast.class[, paste0("huc12", ".", class.possible.names) := 0]
 
-for (i in 1:length(huc12.unique)){
-# for (i in 1:2){
+
+
+for (i in 1:length(huc12.unique)) {
+  # for (i in 1:2){
   print(i)
-  
+
   # get index - for rows of output - where data match the given HUC12
   idx.row <- which(data.AZO$huc12 == huc12.unique[i])
-  
+
   # get the given HUC12 geometry from the WBD data
-  huc12.polygon <- dplyr::filter(WBD,huc12 == huc12.unique[i])
- 
-   # calculate the fraction of each raster class in the HUC and by year 
-   # Note "frac" does not do stack applies, so we use an index to summarize
-  extract.raster.classes <- exact_extract(NASS_stack,huc12.polygon,fun = "frac",stack_apply = TRUE) %>% t()
-  
+  huc12.polygon <- dplyr::filter(WBD, huc12 == huc12.unique[i])
+
+  # calculate the fraction of each raster class in the HUC and by year
+  # Note "frac" does not do stack applies, so we use an index to summarize
+  extract.raster.classes <- exact_extract(NASS_stack, huc12.polygon, fun = "frac", stack_apply = TRUE) %>% t()
+
   # Create a dataframe with index to summarize, keep track of the crop value for
-  # placement in the output 
-  str.idx <- rep(NA_real_,length(extract.raster.classes))
-  crop.val <- rep(NA_real_,length(extract.raster.classes))
+  # placement in the output
+  str.idx <- rep(NA_real_, length(extract.raster.classes))
+  crop.val <- rep(NA_real_, length(extract.raster.classes))
   counter <- 1
-  for (j in 1:length(crop.classes$value)){
-    idx <- stringr::str_detect(rownames(extract.raster.classes),paste0("frac_",crop.classes$value[j],".crops"))
-    if (sum(idx)>0){
+  for (j in 1:length(crop.classes$value)) {
+    idx <- stringr::str_detect(rownames(extract.raster.classes), paste0("frac_", crop.classes$value[j], ".crops"))
+    if (sum(idx) > 0) {
       # print(counter)
       str.idx[idx] <- counter
-      counter = counter + 1
+      counter <- counter + 1
     }
-    
   }
-  
+
   # Extract the crop values for placement purposes
-  crop.val <- stringr::str_extract(rownames(extract.raster.classes),"\\d+")
+  crop.val <- stringr::str_extract(rownames(extract.raster.classes), "\\d+")
 
   # Calculate the mean for ecah crop over all of the years
-  raster.class.mean <-  data.table("classes" = extract.raster.classes[,1],"index" = str.idx,"crop.val" = crop.val) %>% 
-                      group_by(index) %>% 
-                      summarise(class.mean = mean(classes),crop.val = paste0("frac_",first(crop.val)))
-  
+  raster.class.mean <- data.table("classes" = extract.raster.classes[, 1], "index" = str.idx, "crop.val" = crop.val) %>%
+    group_by(index) %>%
+    summarise(class.mean = mean(classes), crop.val = paste0("frac_", first(crop.val)))
+
   # get indices - for columns of outout - where classes match the output - create column names for datatable reference
-  idx.col <- paste0("huc12.",class.possible.names[class.possible.names %in% raster.class.mean$crop.val])
+  idx.col <- paste0("huc12.", class.possible.names[class.possible.names %in% raster.class.mean$crop.val])
 
   # Assign the extracted class fractions to the appropriate location in the output
 
-    HUC.rast.class[idx.row , eval(idx.col) := as.list(raster.class.mean$class.mean)]  
-
+  HUC.rast.class[idx.row, eval(idx.col) := as.list(raster.class.mean$class.mean)]
 }
 
-#Correct some column names that will be problematic later
+# Correct some column names that will be problematic later
 
 # Classes column names updates - drop the HUC first column
-HUC.rast.class <- HUC.rast.class  %>% 
-rename_with(function(x) str_replace_all(x,"[.]","_")) %>% 
+HUC.rast.class <- HUC.rast.class %>%
+  rename_with(function(x) str_replace_all(x, "[.]", "_")) %>%
   select(-huc12)
 
-# Rename the number with the class name 
+# Rename the number with the class name
 colnames(HUC.rast.class)[colnames(HUC.rast.class) %in% eval(colnames(HUC.rast.class))] <- eval(convert.name)
 
-idx.drop <- which(str_detect(colnames(HUC.rast.class),"^frac_$"))
+idx.drop <- which(str_detect(colnames(HUC.rast.class), "^frac_$"))
 HUC.rast.class <- HUC.rast.class %>% select(-eval(idx.drop))
-
 ```
 
 
 ```{r Save the data to a geopackage (OSG open source format) ,echo=TRUE}
-
-sf::st_write(HUC.rast.class,"/Volumes/SHAG/PrestoGP_Covariates/AZO_HUC12_NASS_Crops.gpkg")
-
-
+sf::st_write(HUC.rast.class, "/Volumes/SHAG/PrestoGP_Covariates/AZO_HUC12_NASS_Crops.gpkg")
 ```
