@@ -77,33 +77,41 @@ colnames(nass_yearly_k) <- nass_names
 
 nass_yearly_clean <- nass_yearly_k %>%
     tidytable::select(huc, year, 2:38, 40:119, 121:ncol(.)) %>%
-    tidytable::mutate(across(everything(), ~ifelse(is.na(.), 0L, .)))
+    tidytable::mutate(across(everything(), ~ifelse(is.na(.), 0L, .))) %>%
+    # calculating mean cell counts
+    tidytable::group_by(huc) %>%
+    tidytable::summarize(across(corn:perennialice_snow, ~mean(., na.rm = TRUE))) %>%
+    tidytable::ungroup()
+    
 
-nass_yearly_clean_val <- nass_yearly_clean[,-1:-2] %>%
+nass_yearly_clean_val <- nass_yearly_clean[,-1] %>%
     as.matrix() %>%
     {./rowSums(.)}
 
-nass_yearly_clean[, 3:129] <- data.table(nass_yearly_clean_val)
+nass_yearly_clean[, 2:128] <- data.table(nass_yearly_clean_val)
 nass_yearly_clean <- nass_yearly_clean %>%
     mutate(huclevel = cut(nchar(as.character(huc)), c(6,8,10,12), labels = c("HUC08", "HUC10", "HUC12")))
 nass_yearly_cleanl <- nass_yearly_clean %>%
     split(., unlist(.$huclevel))
 
-nass_huc08 <- nass_yearly_cleanl$HUC08 #%>%
+nass_huc08 <- nass_yearly_cleanl$HUC08 %>%
+  select(-huclevel)
 #    mutate(huc = sprintf("%08d", as.integer(huc)))
-nass_huc10 <- nass_yearly_cleanl$HUC10 #%>%
+nass_huc10 <- nass_yearly_cleanl$HUC10 %>%
+  select(-huclevel)
 #    mutate(huc = sprintf("%10d", as.integer(huc)))
-nass_huc12 <- nass_yearly_cleanl$HUC12 #%>%
+nass_huc12 <- nass_yearly_cleanl$HUC12 %>%
+  select(-huclevel)
 #    mutate(huc = ifelse(nchar(as.character(huc)) == 11, paste0("0", as.character(huc)), as.character(huc)))
 
-names(nass_huc08)[-1:-2] <- paste0("nass_huc08_", names(nass_huc08)[-1:-2])
-names(nass_huc10)[-1:-2] <- paste0("nass_huc10_", names(nass_huc10)[-1:-2])
-names(nass_huc12)[-1:-2] <- paste0("nass_huc12_", names(nass_huc12)[-1:-2])
+names(nass_huc08)[-1] <- paste0("nass_huc08_", names(nass_huc08)[-1])
+names(nass_huc10)[-1] <- paste0("nass_huc10_", names(nass_huc10)[-1])
+names(nass_huc12)[-1] <- paste0("nass_huc12_", names(nass_huc12)[-1])
 
 
 ### OLM (HUC)
 olm_files <- list.files(
-    path_base %s% "AZO_covariates/",
+    path_base %s% "HUC_covariates/OLM/",
     "OLM.csv$",
     full.names = TRUE
 )
@@ -160,9 +168,9 @@ azo_covar <- azo %>%
     bind_cols(data.frame(st_coordinates(.))) %>%
     st_drop_geometry() %>%
     mutate(across(starts_with("huc"), ~bit64::as.integer64(.))) %>%
-    left_join(nass_huc08, by = c("huc08" = "huc", "Year" = "year")) %>%
-    left_join(nass_huc10, by = c("huc10" = "huc", "Year" = "year")) %>%
-    left_join(nass_huc12, by = c("huc12" = "huc", "Year" = "year")) %>%
+    left_join(nass_huc08, by = c("huc08" = "huc")) %>%
+    left_join(nass_huc10, by = c("huc10" = "huc")) %>%
+    left_join(nass_huc12, by = c("huc12" = "huc")) %>%
     left_join(olm_huc08, by = c("huc08" = "HUC08")) %>%
     left_join(olm_huc10, by = c("huc10" = "HUC10")) %>%
     left_join(olm_huc12, by = c("huc12" = "HUC12")) %>%

@@ -50,8 +50,9 @@ nass_yearly_k <- copy(nass_yearly)
 names(nass_yearly)
 # columns with trailing whitespace (actually duplicated) fix
 nass_yearly_k <- nass_yearly_k %>%
-  mutate(Pears = ifelse(is.na(Pears) & !is.na(`Pears `), `Pears `, Pears),
-         `Perennial Ice/Snow` = ifelse(is.na(`Perennial Ice/Snow`) & !is.na(`Perennial Ice/Snow `), `Perennial Ice/Snow `, `Perennial Ice/Snow`)) %>%
+  mutate(
+    Pears = ifelse(is.na(Pears) & !is.na(`Pears `), `Pears `, Pears),
+    `Perennial Ice/Snow` = ifelse(is.na(`Perennial Ice/Snow`) & !is.na(`Perennial Ice/Snow `), `Perennial Ice/Snow `, `Perennial Ice/Snow`)) %>%
   tidytable::select(-layer, -zone, -`Perennial Ice/Snow `, -`Pears `)
 
 nass_names <- names(nass_yearly_k)
@@ -89,7 +90,8 @@ nass_huc12 <- nass_yearly_cleanl$HUC12
 
 ## code sort: HUC02
 nass_huc08 <- nass_yearly_cleanl$HUC08 |>
-  mutate(huce = sprintf("%08d", as.integer(huc)),
+  mutate(
+    huce = sprintf("%08d", as.integer(huc)),
          huce02 = stri_sub(huce, 1, 2))
 nass_huc10 <- nass_yearly_cleanl$HUC10 |>
   mutate(huce = sprintf("%010d", as.integer(huc)),
@@ -131,7 +133,7 @@ nass_huc12 %>%
     gen_temporal_consistency(., pick = nrow(.))
 
 
-## rank
+## rank proportions of each crop class
 nass_huc08 %>%
     pivot_longer(cols = seq(3, ncol(.) - 3)) %>%
     group_by(huce02, name, year) %>%
@@ -161,3 +163,11 @@ nass_huc08 %>%
     tidytable::filter(huce02 == "14") %>%
     tidytable::arrange(-`2015`) %>%
     tidytable::select(1:2, 8:ncol(.))
+
+
+
+# conclusion: calculate spatially representative fractions
+# (remove temporal info)
+
+
+
