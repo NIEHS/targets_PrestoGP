@@ -9,6 +9,49 @@ sf_use_s2(F)
 
 Sys.getenv("TIGRIS_CACHE_DIR")
 # tigris::tigris_cache_dir("__cache__dir__")
+`%s%` <- function(x, y) paste0(x, y)
+
+## data path determination
+## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
+COMPUTE_MODE <- 1
+path_base <-
+  ifelse(COMPUTE_MODE == 1,
+    "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
+    ifelse(COMPUTE_MODE == 2,
+      "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/",
+      ifelse(COMPUTE_MODE == 3,
+        "/opt/",
+        ifelse(COMPUTE_MODE == 4,
+          "/tmp/AZO/",
+          stop("COMPUTE_MODE should be one of 1, 2, 3, or 4.\n")
+        )
+      )
+    )
+  )
+
+
+## pesticides county data
+download_txt <- function(years = seq(2000, 2012)) {
+  targ_dir <- paste0(path_base, "NAWQA_Pesticides_County/")
+  if (!dir.exists(targ_dir)) {
+    dir.create(targ_dir)
+  }
+  for (year in years) {
+    filename <- sprintf("EPest.county.estimates.%d.txt", year)
+    filename_full <- paste0(targ_dir, filename)
+    if (!file.exists(filename_full))
+      url_front <- "https://water.usgs.gov/nawqa/pnsp/usage/maps/county-level/PesticideUseEstimates/"
+      download.file(paste0(url_front, filename),
+                    filename_full)
+      Sys.sleep(1)
+  }
+
+}
+
+# download_txt()
+
+home_dir <- paste0(path_base, "NAWQA_Pesticides/")
+
 
 states <- tigris::states()
 statesdf <- states %>%
@@ -17,10 +60,16 @@ statesdf <- states %>%
 statesdf <- statesdf %>% filter(!STUSPS %in% c("HI", "VI", "GU", "AK", "PR", "MP"))
 # dim(statesdf)
 
-pestdir <- paste0(Sys.getenv("HOME"), "/Documents/pesticides/")
-txts <- list.files(path = pestdir, pattern = "*.txt$", full.names = TRUE)
 
-pests <- lapply(txts, fread)
+pestdir <- home_dir
+txts <- list.files(path = pestdir, pattern = "*.txt$", full.names = TRUE)
+txts_20c <- grepl("(19)[0-9]+{2,2}", txts)
+txts <- txts[!txts_20c]
+txtsr <- gsub("\\.20", "_20", txts)
+txtsr <- gsub("EPest\\.county\\.est", "EPest_county_est", txtsr)
+txtsr <- order(txtsr)
+
+pests <- lapply(txts[txtsr], fread)
 pests <- lapply(
   pests,
   function(x) {
@@ -33,7 +82,10 @@ pests_df <- pests_df %>%
   arrange(GEOID, YEAR, COMPOUND) %>%
   select(GEOID, YEAR, COMPOUND, starts_with("EPEST"))
 pests_df <- pests_df %>%
-  filter(YEAR >= 2000)
+  filter(YEAR >= 2000) |>
+  mutate(GEOID = plyr::mapvalues(GEOID, c("12025", "46113"), c("12086", "46102")))
+saveRDS(pests_df, paste0(home_dir, "county_pesticides_2000_2019.rds"))
+
 
 # wide frame
 pests_df_geoid <- pests_df %>%
@@ -153,7 +205,7 @@ gwrapped <-
   )
 gwrapped
 
-ggsave(filename = "./nonpresence.png", plot = gwrapped, width = 15, height = 9, units = "in", dpi = 300)
+ggsave(filename = "./output/pesticides_county_nonpresence.png", plot = gwrapped, width = 15, height = 9, units = "in", dpi = 300)
 
 # How many GEOIDs are present each year?
 pests_df_geoid <- pests_df %>%
@@ -238,3 +290,23 @@ cnty00 %>%
   filter(GEOID == "25019")
 # ... terra::intersect()
 # ... sf::st_interpolate_aw()
+
+
+
+## reflecting GEOID changes
+# temporal trend
+geoid_na_6pyears <- 
+  pests_df_geoid_nas |>
+  group_by(GEOID) |>
+  filter(sum(!value) >= 6) |>
+  ungroup() |>
+  _[["GEOID"]] |>
+  unique()
+pests_df |>
+  filter(GEOID %in% geoid_na_6pyears) |>
+  filter(grepl("AZINE", COMPOUND)) |>
+  ggplot(data = _, mapping = aes(x = YEAR)) +
+  geom_errorbar(mapping = aes(x = YEAR, ymin = EPEST_LOW_KG, ymax = EPEST_HIGH_KG)) +
+  facet_grid(GEOID ~ COMPOUND, scale = "free_y") +
+  ylab("Total usage (kg, high/low)") +
+  theme(text = element_text(size = 15))
