@@ -27,7 +27,7 @@ path_base <-
 
 ## AZO
 ## No HUC info in RData object.
-load("./input/data_process/data_AZO_year_avg.RData")
+load(paste0(path_base, "/data_process/data_AZO_year_avg.RData"))
 azo <- data.AZO.year.avg
 azo <- st_as_sf(azo, coords = c("Longitude", "Latitude"), crs = 4326)
 # azo = sf::read_sf(paste0("./data/data_process/data_AZO_watershed_huc_join.shp"))
@@ -39,7 +39,7 @@ azo_t <- terra::vect(azo_s)
 
 
 ## TWI
-twi <- paste0(path_base, "TWI/COUS_TWI_epsg5072_30m_unmasked.tif")
+twi <- paste0(path_base, "TWI/CONUS_TWI_epsg5072_30m_unmasked.tif")
 twi_ras <- terra::rast(twi)
 
 
@@ -48,4 +48,4 @@ azo_twi <- terra::extract(twi_ras, azo_t)
 azo_twi[["site_no"]] <- unlist(azo_t[["site_no"]])
 azo_twi[["Year"]] <- unlist(azo_t[["Year"]])
 
-write.csv(azo_twi, gsub("input", "output/AZO_TWI_extract.csv", path_base), row.names = FALSE)
+write.csv(azo_twi, gsub("input/", "output/AZO_TWI_extract.csv", path_base), row.names = FALSE)
