@@ -84,8 +84,52 @@ pests_df <- pests_df %>%
 pests_df <- pests_df %>%
   filter(YEAR >= 2000) |>
   mutate(GEOID = plyr::mapvalues(GEOID, c("12025", "46113"), c("12086", "46102")))
-saveRDS(pests_df, paste0(home_dir, "county_pesticides_2000_2019.rds"))
+# saveRDS(pests_df, paste0(home_dir, "county_pesticides_2000_2019.rds"))
 
+
+## chemical information
+length(unique(pests_df$COMPOUND))
+chemlist <- readxl::read_excel("./input/ChemicalList_EPAOPPIN.xlsx")
+chemlist <- chemlist %>% mutate(COMPOUND = toupper(`PREFERRED NAME`))
+
+# naive literal join
+pests_chem <- left_join(pests_df, chemlist %>% select(COMPOUND, SMILES))
+
+
+
+# stringdist join
+pests_chem_remain <- pests_chem %>%
+  filter(is.na(SMILES)) %>%
+  select(-SMILES)
+write.csv(pests_chem_remain %>% select(COMPOUND) %>% unique(),
+  "./input/NAWQA_nonjoined_compounds.csv", row.names = FALSE)
+write.csv(pests_df %>% select(COMPOUND) %>% unique(),
+  "./input/NAWQA_all_compounds.csv", row.names = FALSE)
+
+pests_compound_names <- pests_df %>%
+  select(COMPOUND) %>%
+  unique() %>%
+  mutate(compid = seq(1, nrow(.))) 
+
+
+## Join based on string distance
+pests_chem_f <- fuzzyjoin::stringdist_left_join(pests_chem_remain, chemlist %>% select(COMPOUND, SMILES))
+
+# get nonjoined elements
+pests_chem_f %>% filter(is.na(SMILES)) %>% select(COMPOUND.x) %>% unique
+chemlist %>% filter(grepl("DICHLOROPHENOXY)ACETIC", COMPOUND)) %>% .[[2]]
+chemlist %>% filter(grepl("MANCOZEB", COMPOUND)) %>% .[[2]]
+chemlist %>% filter(grepl("CARBAMATE", COMPOUND)) %>% .[[2]]
+chemlist %>% filter(grepl("INDOLE-", COMPOUND)) %>% .[[2]]
+chemlist %>% filter(grepl("BUTYRIC", COMPOUND)) %>% .[[2]]
+
+
+
+nrow(pests_chem_remain)
+nrow(pests_chem_f)
+
+pests_chem_f %>%
+  group_by(COMPOUND)
 
 # wide frame
 pests_df_geoid <- pests_df %>%
@@ -105,7 +149,88 @@ pests_df_geoid_nas <- pests_df_geoid %>%
   )
 pests_df_geoid_nas
 
+## Pesticide selection
+## [Atr|Prop|Sim]azine
+## KeyID starts with DTXCID... DSSTox Identifiers
+## CASRN and InChI lookup (as of 2018)
+sim_chem <- list.files(path = "./input/chemical_similarity/",
+  pattern = "*PhysChem.csv$", full.names = TRUE)
+sim_tox <- list.files(path = "./input/chemical_similarity/",
+  pattern = "*ToxRef.csv$", full.names = TRUE)
+azine_names <- c("atr", "prop", "sim")
+sim_chem_df <- sim_chem %>%
+  lapply(\(x) read.csv(x, header = FALSE)) %>%
+  lapply(\(x) {
+    xx <- x[-1,]
+    names(xx) <- x[1,]
+    xx <- t(xx)[,2:4]
+    return(xx)
+  }) %>%
+  lapply(\(x) x %>% select(-ends_with("_units")))
+sim_tox_df <- sim_tox %>%
+  lapply(\(x) read.csv(x, header = FALSE)) %>%
+  lapply(\(x) {
+    xx <- x[-1,]
+    names(xx) <- x[1,]
+    xx <- t(xx)[,2:4]
+    return(xx)
+  }) %>%
+  lapply(\(x) x %>% select(-ends_with("_units")))
 
+# assign names
+names(sim_chem_df) <- azine_names
+names(sim_tox_df) <- azine_names
+# dsstox_sid, cid
+sim_chem_df_c <- rbindlist(sim_chem_df, idcol = "azine") %>%
+  rename(compound = `3`,
+         dsstox_sid = `4`,
+         dsstox_cid = `5`) %>%
+  filter(compound != "" & compound != "preferred name") %>%
+  mutate(type = "chemical")
+sim_tox_df_c <- rbindlist(sim_tox_df, idcol = "azine") %>%
+  rename(compound = `3`,
+         dsstox_sid = `4`,
+         dsstox_cid = `5`) %>%
+  filter(compound != "" & compound != "preferred name") %>%
+  mutate(type = "toxic")
+
+sim_chemtox_df_c <- rbind(sim_chem_df_c, sim_tox_df_c)
+write.csv(sim_chemtox_df_c, "./input/GenRA_Azines_sim.csv", row.names = FALSE)
+
+## strategy: similarity tables... find synonyms; use another synonym 
+# to match USGS common names
+dsstox_syn <- fread("./input/DSSTox_Synonyms.csv")
+dsstox_syn <- dsstox_syn %>%
+  filter(startsWith(`Synonym Type`, "Synonym")) %>%
+  separate(Synonyms, sprintf("synonym_%d", 1:8), "|") %>%
+  select(1,3,4,8:15) %>%
+  pivot_longer(cols = 4:ncol(.)) %>%
+  select(-name) %>%
+  rename(synonyms = value) %>%
+  filter(!is.na(synonyms))
+
+## join all
+sim_dsstox_synonym <-
+  sim_chemtox_df_c %>%
+  left_join(dsstox_syn, by = c("dsstox_sid" = "DTXSID")) %>%
+  mutate(synonymscap = toupper(synonyms)) %>%
+  left_join(pests_compound_names, by = c("synonymscap" = "COMPOUND")) %>%
+  mutate(compoundcap = toupper(compound)) %>%
+  left_join(pests_compound_names, by = c("compoundcap" = "COMPOUND"))
+write.csv(sim_dsstox_synonym, "./input/sim_dsstox_synonym.csv", row.names = FALSE)
+
+sim_chemtox_df_c %>%
+  stringdist_left_join(dsstox_syn, by = c("compound" = "synonyms"))
+
+
+## lookup table
+dss_cas_lookup <- readxl::read_excel("./input/DSSTox_Identifiers_and_CASRN_with_InChIs_0927_2018.xlsx") %>%
+  select(1:3)
+## look at dsstox_substance_id
+
+
+#### Missing data visualization ####
+## Plots for the NA values
 cnty00 <- tigris::counties(year = 2000, cb = TRUE)
 cnty15 <- tigris::counties(year = 2015, cb = TRUE)
 
