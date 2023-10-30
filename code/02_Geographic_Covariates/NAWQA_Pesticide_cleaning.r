@@ -435,3 +435,67 @@ pests_df |>
   facet_grid(GEOID ~ COMPOUND, scale = "free_y") +
   ylab("Total usage (kg, high/low)") +
   theme(text = element_text(size = 15))
+
+
+
+### Cleaning and subsetting workflow: ####
+## use sim_dsstox_synonym.xlsx Final_name's unique values
+library(readxl)
+
+dsstox <- read_excel("./input/sim_dsstox_synonym.xlsx")
+dsstox_unames <- unique(dsstox$Final_name)
+dsstox_unames <- dsstox_unames[!is.na(dsstox_unames)]
+
+dsstox_unames
+
+in_data_unames <- pests_df %>%
+  filter(COMPOUND %in% dsstox_unames) %>%
+  .$COMPOUND %>%
+  unique
+# FLUVALINATE-TAU and FLUVALINATE TAU coexist
+dsstox_unames[!dsstox_unames %in% in_data_unames]
+unique(pests_df$COMPOUND) %>% sort
+
+
+pests_df_sub <-
+  pests_df %>%
+  filter(COMPOUND %in% dsstox_unames) %>%
+  mutate(COMPOUND = plyr::mapvalues(COMPOUND,
+    c("FLUVALINATE TAU"), c("FLUVALINATE-TAU")))
+
+pests_df_sub_w <-
+  pests_df_sub %>%
+  pivot_wider(names_from = COMPOUND,
+              values_from = c(EPEST_LOW_KG, EPEST_HIGH_KG))
+
+pests_df_sub_fullyear <-
+  expand.grid(GEOID = unique(pests_df_sub$GEOID),
+    YEAR = seq(2000, 2019)) %>%
+  left_join(., pests_df_sub_w)
+  
+
+skimr::skim(pests_df_sub_fullyear)
+
+
+pests_df_widecomp <-
+  pests_df_sub %>%
+  rename(low = EPEST_LOW_KG,
+    high = EPEST_HIGH_KG) %>%
+  pivot_wider(values_from = c(low, high),
+    names_from = c(COMPOUND))
+
+pests_df_wideyear <-
+  pests_df_sub %>%
+  rename(low = EPEST_LOW_KG,
+    high = EPEST_HIGH_KG) %>%
+  pivot_wider(values_from = c(low, high),
+    names_from = c(YEAR))
+
+pests_df_sub_filled <- pests_df_widecomp[,-1:-2] %>%
+  missRanger::missRanger(maxiter = 20L)
+
+pests_df_sub_filled2 <- cbind(pests_df_widecomp[,1:2], pests_df_sub_filled)
+pests_df_sub_filled2l <- pests_df_sub_filled2 %>%
+  pivot_longer(cols = 3:ncol(.))
+pests_df_sub_filled2l %>%
+  filter(name == "high_2,4-D")
