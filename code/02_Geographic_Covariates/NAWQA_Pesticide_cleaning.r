@@ -52,7 +52,6 @@ download_txt <- function(years = seq(2000, 2012)) {
 
 home_dir <- paste0(path_base, "NAWQA_Pesticides/")
 
-
 states <- tigris::states()
 statesdf <- states %>%
   select(3, 6, NAME) %>%
@@ -101,10 +100,10 @@ pests_chem <- left_join(pests_df, chemlist %>% select(COMPOUND, SMILES))
 pests_chem_remain <- pests_chem %>%
   filter(is.na(SMILES)) %>%
   select(-SMILES)
-write.csv(pests_chem_remain %>% select(COMPOUND) %>% unique(),
-  "./input/NAWQA_nonjoined_compounds.csv", row.names = FALSE)
-write.csv(pests_df %>% select(COMPOUND) %>% unique(),
-  "./input/NAWQA_all_compounds.csv", row.names = FALSE)
+# write.csv(pests_chem_remain %>% select(COMPOUND) %>% unique(),
+#   "./input/NAWQA_nonjoined_compounds.csv", row.names = FALSE)
+# write.csv(pests_df %>% select(COMPOUND) %>% unique(),
+#   "./input/NAWQA_all_compounds.csv", row.names = FALSE)
 
 pests_compound_names <- pests_df %>%
   select(COMPOUND) %>%
@@ -122,8 +121,6 @@ chemlist %>% filter(grepl("MANCOZEB", COMPOUND)) %>% .[[2]]
 chemlist %>% filter(grepl("CARBAMATE", COMPOUND)) %>% .[[2]]
 chemlist %>% filter(grepl("INDOLE-", COMPOUND)) %>% .[[2]]
 chemlist %>% filter(grepl("BUTYRIC", COMPOUND)) %>% .[[2]]
-
-
 
 nrow(pests_chem_remain)
 nrow(pests_chem_f)
@@ -195,7 +192,7 @@ sim_tox_df_c <- rbindlist(sim_tox_df, idcol = "azine") %>%
   mutate(type = "toxic")
 
 sim_chemtox_df_c <- rbind(sim_chem_df_c, sim_tox_df_c)
-write.csv(sim_chemtox_df_c, "./input/GenRA_Azines_sim.csv", row.names = FALSE)
+# write.csv(sim_chemtox_df_c, "./input/GenRA_Azines_sim.csv", row.names = FALSE)
 
 ## strategy: similarity tables... find synonyms; use another synonym 
 # to match USGS common names
@@ -217,7 +214,7 @@ sim_dsstox_synonym <-
   left_join(pests_compound_names, by = c("synonymscap" = "COMPOUND")) %>%
   mutate(compoundcap = toupper(compound)) %>%
   left_join(pests_compound_names, by = c("compoundcap" = "COMPOUND"))
-write.csv(sim_dsstox_synonym, "./input/sim_dsstox_synonym.csv", row.names = FALSE)
+# write.csv(sim_dsstox_synonym, "./input/sim_dsstox_synonym.csv", row.names = FALSE)
 
 sim_chemtox_df_c %>%
   stringdist_left_join(dsstox_syn, by = c("compound" = "synonyms"))
@@ -474,7 +471,7 @@ pests_df_sub_fullyear <-
   left_join(., pests_df_sub_w)
   
 
-skimr::skim(pests_df_sub_fullyear)
+pests_skimmed <- skimr::skim(pests_df_sub_fullyear)
 
 
 pests_df_widecomp <-
@@ -491,6 +488,73 @@ pests_df_wideyear <-
   pivot_wider(values_from = c(low, high),
     names_from = c(YEAR))
 
+
+# Using full GEOID-COMPOUND-YEAR combinations,
+# What types of values are missing?
+pests_df_avail <-
+  expand.grid(GEOID = unique(pests_df_sub$GEOID),
+    COMPOUND = unique(pests_df_sub$COMPOUND),
+    YEAR = seq(2000, 2019)) %>%
+  left_join(pests_df_sub) %>%
+  rename(low = EPEST_LOW_KG,
+    high = EPEST_HIGH_KG) %>%
+  pivot_wider(values_from = c(low, high),
+    names_from = c(YEAR)) %>%
+  pivot_longer(cols = seq(3, ncol(.))) %>%
+  mutate(YEAR = stringi::stri_extract(name, regex = "[0-9]{4,4}"),
+         VALUETYPE = stringi::stri_extract(name, regex = "(low|high)")) %>%
+  select(-name) %>%
+  pivot_wider(values_from = value, names_from = VALUETYPE) %>%
+  group_by(GEOID, COMPOUND) %>%
+  summarize(low_nas = sum(is.na(low)),
+            high_nas = sum(is.na(high))) %>%
+  ungroup()
+
+pests_df_avail %>%
+  filter(low_nas == 20 & high_nas == 20)
+# 33,896 County-Compound pairs reported no values
+# It should be carefully interpreted whether these are true zeros
+# non-surveyed values
+# Compounds with no values in 2000+ counties
+# Bromacil, CPPU, Dazomet, Fluometuron, Fluridone, Fluvalinate-tau, Formetanate,
+# Triadimenol
+pests_df_avail %>%
+  filter(low_nas == 20 & high_nas == 20) %>%
+  group_by(COMPOUND) %>%
+  summarize(Ncounties = n()) %>%
+  ungroup() %>%
+  data.frame()
+
+## Substitute with zeros
+pests_df_subszero <-
+  expand.grid(GEOID = unique(pests_df_sub$GEOID),
+    COMPOUND = unique(pests_df_sub$COMPOUND),
+    YEAR = seq(2000, 2019)) %>%
+  left_join(pests_df_sub) %>%
+  rename(low = EPEST_LOW_KG,
+    high = EPEST_HIGH_KG) %>%
+  pivot_wider(values_from = c(low, high),
+    names_from = c(YEAR)) %>%
+  pivot_longer(cols = seq(3, ncol(.))) %>%
+  mutate(YEAR = stringi::stri_extract(name, regex = "[0-9]{4,4}"),
+         VALUETYPE = stringi::stri_extract(name, regex = "(low|high)")) %>%
+  select(-name) %>%
+  pivot_wider(values_from = value, names_from = VALUETYPE) %>%
+  mutate(across(4:5, ~ifelse(is.na(.), 0, .)))
+
+### presence of county by year
+pests_df_sub %>%
+  transmute(GEOID = GEOID, YEAR = YEAR, val_pre = any(!is.na(EPEST_LOW_KG), !is.na(EPEST_HIGH_KG))) %>%
+  group_by(GEOID, YEAR) %>%
+  summarize(presence = any(val_pre)) %>%
+  ungroup() %>%
+  pivot_wider(values_from = presence, names_from = YEAR) %>%
+  summary
+# 3-18 counties reported no observations per year
+# TODO: join by yearly polygons (2000-2019)
+# confirm whether the census bureau record and the data record match
+
+##
 pests_df_sub_filled <- pests_df_widecomp[,-1:-2] %>%
   missRanger::missRanger(maxiter = 20L)
 
