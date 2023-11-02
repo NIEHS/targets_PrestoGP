@@ -159,6 +159,29 @@ geol_file <- path_base %s% "AZO_covariates/AZO_Geology.csv"
 geol <- data.table::fread(geol_file)
 names(geol)[3] <- "geology_unit_type"
 
+## Pesticides based on toxicological/chemical similarity
+## Top 20 (by the rank of 20-year total high estimates)
+
+## quick fix ...
+# azo <- sf::read_sf("./input/data_process/data_AZO_watershed_huc_join.shp")
+# azo_s <- azo %>%
+#   dplyr::select(ChmclNm, site_no, Year) %>%
+#   # unique() %>%
+#   st_transform("EPSG:5070")
+# azo_covar <- readRDS("output/data_AZO_covariates.rds")
+# azo_covar <- azo_covar %>%
+#   dplyr::left_join(azo_pest, by = c("ChmclNm", "site_no", "Year"))
+## quick fix end
+
+
+cnty_pests_top20_clean <- readRDS("./output/County_pesticide_similarity_top20.rds") |>
+  dplyr::select(-1:-2) %>%
+  st_transform("EPSG:5070")
+azo_pest <- st_join(azo_s, cnty_pests_top20_clean) %>%
+  st_drop_geometry()
+
+
+
 
 ## Join all
 azo
@@ -180,21 +203,34 @@ azo_covar <- azo %>%
     left_join(terra_sum, by = c("site_no" = "site_no", "Year" = "year")) %>%
     left_join(prism) %>%
     left_join(geol) %>%
+    left_join(azo_pest) %>%
     mutate(across(all_of(list_factors), ~as.factor(.)))
+
 
 
 saveRDS(azo_covar, "output/data_AZO_covariates.rds", compress = "xz")
 
+
+# minimal metadata (for covariate specification)
+# it does not include full description of
+# NAQWA site attributes.
 azo_covar_spec <- tribble(
-    ~prefix,    ~source,
+    ~prefix,    ~description,
+    "X|Y",    "coordinates (EPSG:5070)",
+    "Year",   "survey year",
+    "ChmclNm",  "chemical compound name",
+    "cncntrt",  "concentration",
+    "left_cns", "left censoring flag",
     "aquifer",  "Primary aquifer",
     "soilchem", "National geochemical survey",
+    "huc08|huc10|huc12",  "HUC-08 -10 -12 level ecoregion indicators from EPA",
     "terraClimate_mean", "terraClimate annual mean from monthly data",
     "terraClimate_sum", "terraClimate annual sum from monthly data",
     "prism",    "PRISM 30-year climate normals (1991-2020) from Oregon State University",
     "geology",  "USGS State Geologic Map Compilation",
     "nass",     "USDA NASS Cropscape (2008-)",
-    "olm",      "OpenLandMap"
+    "olm",      "OpenLandMap",
+    "pest",     "USGS NAWQA Pesticide county-level estimates (low and high)"
 )
 # write.csv(azo_covar_spec, "output/data_AZO_covariates_prefixes.csv", row.names = FALSE)
 
@@ -205,4 +241,4 @@ colindex <- grep(paste("^(", paste(prefixes, collapse = "|"), ")", sep = ""), na
 azo_covar_mat <- azo_covar %>%
     select(all_of(colindex)) %>%
     as.matrix()
-    
+# saveRDS(azo_covar_mat, file = "output/data_AZO_design_matrix.rds")

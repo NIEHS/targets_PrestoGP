@@ -4,7 +4,7 @@ if (!require(pacman)) {
   library(pacman)
 }
 
-p_load(data.table, tidytable, tigris, sf, terra, ggplot2, ggrepel, skimr)
+p_load(data.table, tidytable, tigris, sf, terra, ggplot2, ggrepel, readxl, skimr)
 sf_use_s2(F)
 
 Sys.getenv("TIGRIS_CACHE_DIR")
@@ -31,6 +31,12 @@ path_base <-
 
 
 ## pesticides county data
+## EPest-low and EPest-high take different methods to calculate estimates
+## When there are no missing/unreported value in crop reporting districts,
+## low and high estimates are the same (as reported)
+## However, when there are missing values, low estimates are calculated by
+## filling missing values into zeros, whereas high estimates are calculated
+## from the neighboring/same-region CRDs.
 download_txt <- function(years = seq(2000, 2012)) {
   targ_dir <- paste0(path_base, "NAWQA_Pesticides_County/")
   if (!dir.exists(targ_dir)) {
@@ -379,24 +385,16 @@ pests_df_geoid %>%
   filter(GEOID == "46113")
 ## Conclusion: name changes -> recode; establishment -> use the shapes in each year
 
-## WBD
-wbdpath <- "../../WBD_National_GDB.gdb"
-huc08 <- vect(wbdpath, layer = "WBDHU8")
-huc10 <- vect(wbdpath, layer = "WBDHU10")
-huc12 <- vect(wbdpath, layer = "WBDHU12")
+# cntys <-
+#   seq(2000, 2021) %>%
+#   split(., .) %>%
+#   lapply(function(x) tigris::counties(cb = TRUE, year = x))
 
-
-cntys <-
-  seq(2000, 2021) %>%
-  split(., .) %>%
-  lapply(function(x) tigris::counties(cb = TRUE, year = x))
-
-cnty00 <- tigris::counties(year = 2000, cb = TRUE)
-cnty07 <- tigris::counties(year = 2007, cb = TRUE)
-cnty10 <- tigris::counties(year = 2010, cb = TRUE)
-cnty20 <- tigris::counties(year = 2020, cb = TRUE)
-
-cnty14 <- tigris::counties(year = 2014, cb = TRUE)
+# cnty00 <- tigris::counties(year = 2000, cb = TRUE)
+# cnty07 <- tigris::counties(year = 2007, cb = TRUE)
+# cnty10 <- tigris::counties(year = 2010, cb = TRUE)
+# cnty14 <- tigris::counties(year = 2014, cb = TRUE)
+# cnty20 <- tigris::counties(year = 2020, cb = TRUE)
 
 
 cnty00 %>%
@@ -563,3 +561,127 @@ pests_df_sub_filled2l <- pests_df_sub_filled2 %>%
   pivot_longer(cols = 3:ncol(.))
 pests_df_sub_filled2l %>%
   filter(name == "high_2,4-D")
+
+
+
+### Decision: marginal sum (no temporal dimension)
+## use 2010 county polygons
+cnty10 <- tigris::counties(year = 2010)
+
+## 1. county cleaning
+# 46102 --> 46113 (Oglala Lakota to Shannon; retrospective)
+# 51515 --> 51019 (consolidated; Bedford city to Bedford county)
+from_fips <- c(46102, 51515)
+to_fips <- c(46113, 51019)
+
+cnty10e <- cnty10 %>%
+  dplyr::mutate(GEOID = plyr::mapvalues(GEOID10, from_fips, to_fips)) %>%
+  dplyr::group_by(GEOID) %>%
+  dplyr::summarize(Nsubcntys = dplyr::n()) %>%
+  dplyr::ungroup()
+
+pests_df_subszero_marg <- pests_df_subszero %>%
+  mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
+  group_by(GEOID, COMPOUND) %>%
+  summarize(low_2000_2019 = sum(low),
+    high_2000_2019 = sum(high)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = COMPOUND, values_from = c(low_2000_2019, high_2000_2019))
+
+# pick top 10/20 in terms of total national usage and zeros
+pests_df_subszero_top20 <-
+  pests_df_subszero %>%
+  mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
+  group_by(COMPOUND) %>%
+  summarize(p_zero_total = (sum(low == 0) + sum(high == 0)) / (2 * n()),
+    total_low = sum(low),
+    total_high = sum(high)) %>%
+  ungroup() %>%
+  arrange(-total_high) %>%
+  top_n(20)
+
+
+## county-pesticide-top-20 joined product
+cnty_pests_top20 <-
+  pests_df_subszero %>%
+  mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
+  group_by(GEOID, COMPOUND) %>%
+  summarize(low_2000_2019 = sum(low),
+    high_2000_2019 = sum(high)) %>%
+  ungroup() %>%
+  filter(COMPOUND %in% pests_df_subszero_top20$COMPOUND) %>%
+  pivot_wider(names_from = COMPOUND,
+    values_from = c(low_2000_2019, high_2000_2019)) %>%
+  dplyr::as_tibble() %>%
+  dplyr::left_join(cnty10e, .) %>%
+  dplyr::mutate(across(4:ncol(.), ~ifelse(is.na(.), 0, .)))
+names_target_cnty_pests <- grep("^(low|high)", names(cnty_pests_top20))
+names(cnty_pests_top20)[names_target_cnty_pests] <-
+  paste0("pest_", names(cnty_pests_top20)[names_target_cnty_pests])
+
+
+
+pests_df_subszero %>%
+  filter(COMPOUND == "BROMACIL") %>%
+  filter(high > 1500) %>%
+  data.frame
+
+pests_df_subszero %>%
+  filter(COMPOUND == "FLUOMETURON") %>%
+  filter(high > 1e4) %>%
+  data.frame
+
+# saveRDS(cnty_pests_top20, "./output/County_pesticide_similarity_top20.rds", compress="xz")
+
+
+# Interesting...
+## High total usage does not correspond to the low zero rate
+## Zero rate is calculated as (|zeros in low|+|zeros in high|)/(|low|+|high|)
+## According to the EPA pesticide fact sheets:
+## Fluometuron: cotton (83.1% zeros, 9th)
+## Bromacil: citrus and pineapple (97.7% zeros, 16th) -- Heavily used in Florida
+## Flufenacet: corn and soybeans (76.3% zeros, 10th)
+## Ziram: fungicide for stone fruits, pome fruits, nut crops, vegetables, and
+##    commercially grown ornamentals; rabbit repellents (59.0% zeros, 6th)
+## Pyrimethanil: almonds, pome fruit, citrus fruit, stone fruit, bananas, 
+##   grapes, onions, pistachios, strawberries, tomatoes, 
+##    tuberous vegetables (82.0% zeros, 19th)
+## Indoxacarb: insecticide for apples, pears, Brassica [cabbages], sweet corn,
+##   lettuce, and fruiting vegetables (76.0% zeros, 20th)
+
+# ridiculous cases? (total low > total high)?
+pests_df_subszero_marg %>%
+  filter(low_2000_2019 > high_2000_2019) %>%
+  tail()
+
+out_main <- c("02", "15", "60", "61", "66", "69", "72")
+cnty10e <- cnty10e %>%
+  filter(!grepl(sprintf("^(%s)", paste0(out_main, collapse = "|")), GEOID))
+cnty10e$GEOID
+
+# 42 mainland counties are not joined with pesticide data
+anti_join(cnty10e, pests_df_subszero_marg)
+# all pesticide counties are joined into 2010 (modified) counties
+anti_join(pests_df_subszero_marg, cnty10e, )
+
+# 42 mainland counties (county-equivalent) had no reported values
+anti_join(cnty10e, pests_df_subszero_marg) %>%
+  .$GEOID
+# D.C., Baltimore, St. Louis, Halifax, independent cities in Virginia
+# Bronx, Hudson (NJ), New York, ... -> all zeros
+
+
+## Join 
+cnty_pests_top20_clean <- cnty_pests_top20 %>%
+  st_transform("EPSG:5070") %>%
+  dplyr::select(-1:-2)
+
+
+##
+azo <- sf::read_sf("./input/data_process/data_AZO_watershed_huc_join.shp")
+azo_s <- azo %>%
+  dplyr::select(site_no, Year) %>%
+  # unique() %>%
+  st_transform("EPSG:5070")
+
+azo_pest <- st_join(azo_s, cnty_pests_top20_clean)
