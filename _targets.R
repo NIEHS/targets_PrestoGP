@@ -35,15 +35,15 @@ tar_option_set(
 
 # tar_make_clustermq() is an older (pre-{crew}) way to do distributed computing
 # in {targets}, and its configuration for your machine is below.
-options(clustermq.scheduler = "multicore")
+# options(clustermq.scheduler = "multicore")
 
 # tar_make_future() is an older (pre-{crew}) way to do distributed computing
 # in {targets}, and its configuration for your machine is below.
-future::plan(future.callr::callr)
+# future::plan(future.callr::callr)
 
 # Run the R scripts in the R/ folder with your custom functions:
 tar_source()
-# source("other_functions.R") # Source other scripts as needed.
+source("Curate_Data.R") # Source other scripts as needed.
 
 # Replace the target list below with your own:
 list(
