@@ -7,12 +7,12 @@ Sys.getenv("TIGRIS_CACHE_DIR")
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 1
+COMPUTE_MODE <- 2
 path_base <-
   ifelse(COMPUTE_MODE == 1,
-    "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
+    "/Volumes/SET/Projects/PrestoGP_Pesticides/",
     ifelse(COMPUTE_MODE == 2,
-      "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/",
+      "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/",
       ifelse(COMPUTE_MODE == 3,
         "/opt/",
         ifelse(COMPUTE_MODE == 4,

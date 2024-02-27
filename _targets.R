@@ -7,7 +7,7 @@ library(targets)
 
 # Set target options:
 tar_option_set(
-  packages = c("PrestoGP","tibble","sf","terra") # packages that your targets need to run
+  packages = c("PrestoGP", "dplyr", "sf", "terra") # packages that your targets need to run
   # format = "qs", # Optionally set the default storage format. qs is fast.
   #
   # For distributed computing in tar_make(), supply a {crew} controller
@@ -42,18 +42,41 @@ tar_option_set(
 # future::plan(future.callr::callr)
 
 # Run the R scripts in the R/ folder with your custom functions:
-tar_source()
-source("Curate_Data.R") # Source other scripts as needed.
+tar_source("code/00_Load_Packages/Load_Packages.r") # Source other scripts as needed.
+tar_source("code/03_Pesticide_Analysis/Curate_Data.R") # Source other scripts as needed.
 
 # Replace the target list below with your own:
 list(
   tar_target(
     name = data,
-    command = tibble(x = rnorm(100), y = rnorm(100))
+    command = fst::read_fst(file.path(path_base, "output/Covariates_Calculated/data_AZO_covariates_zerofill.fst"))
     # format = "feather" # efficient storage for large data frames
   ),
   tar_target(
-    name = model,
-    command = coefficients(lm(y ~ x, data = data))
+    name = data_sub,
+    command = subsetting(data)
+  ),
+  tar_target(
+    data_list,
+    preppresto(data_sub)
+  ),
+  tar_target(
+    prestomodel,
+    PrestoGP::VecchiaModel()
+  ),
+  tar_target(
+    prestomodelfit,
+    PrestoGP::prestogp_fit(
+      model = prestomodel,
+      locs = data_list$locs,
+      Y = data_list$Y,
+      X = data_list$X,
+      parallel = FALSE
+    )
+  ),
+  tar_target(
+    name = presto_simazine,
+    command = summary(prestomodelfit)
   )
 )
+

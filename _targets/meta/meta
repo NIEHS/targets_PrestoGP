@@ -1,0 +1,23 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+chemical|stem|bce069307a80d3a3|1f57d04ef8428fef|ef46db3751d8e999|-275828356||t19780.8589213574s|8a2d295a6f6be5b7|61|rds|local|vector|||1.307||
+data|stem|e334a32bda5afa9d|3ea77a26679a03b9|ef46db3751d8e999|33550471||t19780.8566754368s|e6a30631efb0553b|24207983|rds|local|vector|||2.956||
+data_sub|stem|b357e2a37b79395d|5826681a469d01d2|dba75be63b4741ac|-1622075393||t19780.8722180445s|160e5fe56f570cc0|15354899|rds|local|vector|||0.43||
+prestomodel|stem|5c7ab805052d159a|a4d9aaa5ce1bc7f4|ef46db3751d8e999|1907051626||t19780.8661491487s|5e2c7596dc405713|431|rds|local|vector|||1.615||
+prestomodelfit|stem||32870ce3c81044dc|5a6d96db79527b3c|1277502791||t19780.8722496502s||0|rds|local|vector|||236.035|NAs introduced by coercion. executing dopar sequentially no parallel backend registered. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion. NAs introduced by coercion|requires numericcomplex matrixvector arguments
+path_base|object|192e2ef884559417|||||||||||||||
+%s%|function|c51b0fd6db33a2db|||||||||||||||
+pkgs|object|bc4372498d7c773d|||||||||||||||
+.Random.seed|object|7e7ebe5c46c5831a|||||||||||||||
+nona|function|f0d2220c2c6626e7|||||||||||||||
+subsetting|function|2681d9601850526b|||||||||||||||
+COMPUTE_MODE|object|a26c7eb00fbd604a|||||||||||||||
+preppresto|function|f4c858dd319d9b11|||||||||||||||
+data_list|stem|c4d8c2837aef8912|2b460ecdf1687dfb|c5c34d9ac95a68e3|2033452966||t19780.8898368381s|0ecf47947120e411|15302314|rds|local|vector|||1.58||
+path_base|object|192e2ef884559417
+%s%|function|c51b0fd6db33a2db
+pkgs|object|bc4372498d7c773d
+.Random.seed|object|8a2ed8b2db57cb8d
+nona|function|f0d2220c2c6626e7
+subsetting|function|2681d9601850526b
+COMPUTE_MODE|object|a26c7eb00fbd604a
+preppresto|function|f4c858dd319d9b11
