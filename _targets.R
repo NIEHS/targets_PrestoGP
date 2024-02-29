@@ -50,7 +50,6 @@ list(
   tar_target(
     name = data,
     command = fst::read_fst(file.path(path_base, "output/Covariates_Calculated/data_AZO_covariates_zerofill.fst"))
-    # format = "feather" # efficient storage for large data frames
   ),
   tar_target(
     name = data_sub,
@@ -58,7 +57,7 @@ list(
   ),
   tar_target(
     data_list,
-    preppresto(data_sub)
+    preppresto(data_sub[1:2000, ])
   ),
   tar_target(
     prestomodel,
@@ -79,4 +78,3 @@ list(
     command = summary(prestomodelfit)
   )
 )
-
