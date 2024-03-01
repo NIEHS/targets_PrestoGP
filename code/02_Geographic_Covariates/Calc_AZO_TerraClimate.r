@@ -5,7 +5,7 @@ sf_use_s2(FALSE)
 ## data path determination
 ## compute_mode 
 ## 1 (wine mount), 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 3
+COMPUTE_MODE <- 2
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
@@ -19,10 +19,10 @@ path_base <-
 
 # path_base <- "~/Documents/"
 ## wbd
-ext_mainland <- c(xmin = -126, xmax = -64, ymin = 24, ymax = 51)
+ext_mainland <- c(xmin = -126, xmax = -64, ymin = 22, ymax = 51)
 ext_mainland <- terra::ext(ext_mainland)
 
-path_tc <- paste0(path_base, "terraClimate/NetCDF/")
+path_tc <- file.path(path_base, "input/terraClimate/NetCDF/")
 path_tc_files <- list.files(
   path = path_tc, pattern = "*.nc$",
   full.names = TRUE
@@ -91,14 +91,13 @@ bandnames_sum <- bandnames#[c(...)]
 # band for averaging
 bandnames_avg <- bandnames#[c(...)]
 
-
 netcdf_read_sum <-
   split(bandnames, bandnames) |>
   lapply(function(x) {
     grep(paste0("(", x, ")"), path_tc_files, value = TRUE)
   }) |>
   lapply(function(x) {
-    Reduce(c, lapply(x, terra::rast)) |> preprocess(ext_mainland, "sum")
+    preprocess(terra::rast(x), ext_mainland, "sum")
   }) |>
   Reduce(f = c, x = _)
 
@@ -108,7 +107,7 @@ netcdf_read_mean <-
     grep(paste0("(", x, ")"), path_tc_files, value = TRUE)
   }) |>
   lapply(function(x) {
-    Reduce(c, lapply(x, terra::rast)) |> preprocess(ext_mainland, "mean")
+    preprocess(terra::rast(x), ext_mainland, "mean")
   }) |>
   Reduce(f = c, x = _)
 

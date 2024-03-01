@@ -78,10 +78,16 @@ brattr_sf <- brattr_sf |>
   dplyr::select(LAB_ID, XNDRYCLASS, GEOL_AGE)
 # plot(brattr_sf[,"SPEC_NAME"])
 
+
+## geochem
+geochem <- fread(sprintf("%sgeochem/geochem.csv", path_base))
+
 ## Join the nearest
 azo_ngs <- azo_s %>%
   st_join(ngs, join = st_nearest_feature) %>%
   st_join(brattr_sf, join = st_nearest_feature) %>%
   st_join(ngdbsoil_attr, join = st_nearest_feature)
+
+
 
 write.csv(st_drop_geometry(azo_ngs), sprintf("%s/azo_soilchemistry.csv", path_base), row.names = FALSE)

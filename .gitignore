@@ -68,3 +68,4 @@ po/*~
 .DS_Store
 
 _targets/meta
+output/**/*.csv
