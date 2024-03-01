@@ -1,3 +1,6 @@
+## Custom PrestoGP with all arguments of Y and X replaced by y and x.
+## ISong 03/01/2024
+
 library(tidymodels)
 library(parsnip)
 library(PrestoGP)
@@ -5,22 +8,29 @@ library(PrestoGP)
 tidymodels_prefer(quiet = TRUE)
 
 # definition: initiate the model
-
 parsnip::set_new_model("prestogp_univecchia")
+
+# set regression mode
 parsnip::set_model_mode(
   model = "prestogp_univecchia",
   mode = "regression"
 )
+
+# set the engine
 parsnip::set_model_engine(
   model = "prestogp_univecchia",
   mode = "regression",
   eng = "prestogp"
 )
+
+# link the engine to the package
 parsnip::set_dependency(
   model = "prestogp_univecchia",
   eng = "prestogp",
   pkg = "PrestoGP"
 )
+
+# model definition: in this case we use VecchiaModel()
 parsnip::set_model_arg(
   model = "prestogp_univecchia",
   eng = "prestogp",
@@ -30,6 +40,7 @@ parsnip::set_model_arg(
   has_submodel = FALSE
 )
 
+# an object that will be used for tidymodels interface
 prestogp_univecchia <-
   function(mode = "regression",  n_neighbors = 30L) {
     # Check for correct mode
@@ -38,7 +49,7 @@ prestogp_univecchia <-
     }
 
     # Capture the arguments in quosures
-    args <- list(sub_classes = rlang::enquo(n_neighbors))
+    args <- list(n_neighbors = rlang::enquo(n_neighbors))
 
     # Save some empty slots for future parts of the specification
     new_model_spec(
@@ -69,48 +80,51 @@ prestogp_univecchia <-
 #   )
 # )
 
+# set_fit assumes that the model has standard fit and predict interface
+# where `formula` and `data` or `x` and `y` are passed.
 prestogp_uni_fit_set <-
   function(
     target_model = "prestogp_univecchia",
     engine = "prestogp",
     mode = "regression",
     locs,
-    Y,
-    X,
+    y,
+    x,
     parallel = FALSE
   ) {
     parsnip::set_fit(
-    model = target_model,
-    eng = engine,
-    mode = mode,
-    value = list(
-        interface = "formula",
-        protect = NULL,
+      model = target_model,
+      eng = engine,
+      mode = mode,
+      value = list(
+        interface = "matrix",
+        protect = list("data"),
         func = c(pkg = "PrestoGP", fun = "prestogp_fit"),
         defaults = list(
-        locs = locs,
-        Y = Y,
-        X = X,
-        parallel = FALSE
+          locs = rlang::enquo(locs),
+          # y = y,
+          # x = x,
+          parallel = FALSE
         )
       )
     )
   }
 
 
-
+# treating the predictor(s) and settings for the model specification
 parsnip::set_encoding(
   model = "prestogp_univecchia",
   eng = "prestogp",
   mode = "regression",
   options = list(
-    predictor_indicators = "traditional",
+    predictor_indicators = "none",
     compute_intercept = TRUE,
     remove_intercept = TRUE,
     allow_sparse_x = FALSE
   )
 )
 
+# Way of handling prediction results
 predict_info <-
   list(
     pre = NULL,
@@ -124,13 +138,14 @@ predict_info <-
         # since they don't exist yet. `type` is a simple object that
         # doesn't need to have its evaluation deferred.
         model = quote(object$fit),
-        X = quote(as.matrix(X)),
+        x = quote(x),
         locs = quote(locs_new),
         return.values = quote(c("mean", "meanvar")),
         type = NULL
       )
   )
 
+# setting the prediction method
 parsnip::set_pred(
   model = "prestogp_univecchia",
   eng = "prestogp",
@@ -139,21 +154,57 @@ parsnip::set_pred(
   value = predict_info
 )
 
+# look at the model specification
+translate(prestogp_univecchia() %>% set_engine("prestogp"))
+
+
 # nolint start
 ze <-
   fst::read_fst("../../../../group/set/Projects/PrestoGP_Pesticides/output/Covariates_Calculated/data_AZO_covariates_zerofill.fst")
 ze_simazine <- ze %>% filter(ChmclNm == "Simazine") %>% select(X, Y, Year, cncntrt, 21:957) %>% filter(X > 1.5e6 & Y < 1.0e6) %>%
     select(-where(is.factor)) %>% select(-where(anyNA))
-data_list <- list(locs = ze_simazine[, 1:3], Y = NULL, X = NULL)
-data_list2 <- list(Y = ze_simazine$cncntrt, X = ze_simazine[, seq(5, ncol(ze_simazine))])
-rlang::inject(prestogp_uni_fit_set(!!!data_list))
+# data_list <- list(locs = dd, y = NULL, x = NULL)
+data_list2 <- list(y = ze_simazine$cncntrt, x = ze_simazine[, seq(5, ncol(ze_simazine))])
+locs <- ze_simazine[, 1:3]
+y <- matrix(data_list2$y, ncol = 1)
+x <- as.matrix(data_list2$x)
+rownames(y) <- rownames(x)
+# rlang::inject(prestogp_uni_fit_set(!!!data_list))
+# prestogp_uni_fit_set(locs = locs, y = y, x = x)
 # nolint end
 
+
+# error: matrix_ is unknown
+# no clue in the documentation, package issues, even web search
 prestogp_univecchia() %>%
-  set_mode("regression") %>%
+  #set_mode("regression") %>%
   set_engine("prestogp") %>%
   parsnip::fit_xy(
-    x = data_list2$X,
-    y = data_list2$Y
+    x = x,
+    y = y
   )
 
+# Demonstration of raw running
+# dd <-
+#   prestogp_fit(
+#     model = VecchiaModel(),
+#     y = y,
+#     x = as.matrix(x),
+#     locs = as.matrix(locs)
+#   )
+
+# ze_simazine_other <- ze %>%
+#   filter(ChmclNm == "Simazine") %>%
+#   select(X, Y, Year, cncntrt, 21:957) %>%
+#   filter(!(X > 1.5e6 & Y < 1.0e6)) %>%
+#   select(-where(is.factor)) %>%
+#   select(all_of(names(ze_simazine)))
+# locshat <- as.matrix(ze_simazine_other[, 1:3])
+# xhat <- as.matrix(ze_simazine_other[, seq(5, ncol(ze_simazine_other))])
+
+# dx <- prestogp_predict(
+#   model = dd,
+#   x = xhat[1:24, ],
+#   locs = locshat[1:24, ]
+# )
+# ze_simazine_other$cncntrt[1:24] - unlist(dx$mean)
