@@ -1,7 +1,7 @@
 ## Join all calculated covariates
 ## 10/13/2023
 ## Insang Song
-pkgs <- c("tidytable", "rlang", "terra", "sf", "bit64")
+pkgs <- c("tidytable", "data.table", "rlang", "terra", "sf", "bit64")
 sapply(pkgs, library, character.only = TRUE)
 Sys.setenv(sf_use_s2 = FALSE)
 
@@ -9,7 +9,7 @@ Sys.setenv(sf_use_s2 = FALSE)
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 1
+COMPUTE_MODE <- 2
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/output/",
@@ -55,7 +55,7 @@ nass_yearly <-
     }, ., seq(2008, 2022) %>% split(.,.), SIMPLIFY = FALSE) %>%
     data.table::rbindlist(., use.names = TRUE, fill = TRUE)
 
-nass_yearly_k <- copy(nass_yearly)
+nass_yearly_k <- data.table::copy(nass_yearly)
 names(nass_yearly)
 # columns with trailing whitespace (actually duplicated) fix
 nass_yearly_k <- nass_yearly_k %>%
@@ -90,18 +90,18 @@ nass_yearly_clean_val <- nass_yearly_clean[,-1] %>%
 
 nass_yearly_clean[, 2:128] <- data.table(nass_yearly_clean_val)
 nass_yearly_clean <- nass_yearly_clean %>%
-    mutate(huclevel = cut(nchar(as.character(huc)), c(6,8,10,12), labels = c("HUC08", "HUC10", "HUC12")))
+    tidytable::mutate(huclevel = cut(nchar(as.character(huc)), c(6,8,10,12), labels = c("HUC08", "HUC10", "HUC12")))
 nass_yearly_cleanl <- nass_yearly_clean %>%
     split(., unlist(.$huclevel))
 
 nass_huc08 <- nass_yearly_cleanl$HUC08 %>%
-  select(-huclevel)
+  tidytable::select(-huclevel)
 #    mutate(huc = sprintf("%08d", as.integer(huc)))
 nass_huc10 <- nass_yearly_cleanl$HUC10 %>%
-  select(-huclevel)
+  tidytable::select(-huclevel)
 #    mutate(huc = sprintf("%10d", as.integer(huc)))
 nass_huc12 <- nass_yearly_cleanl$HUC12 %>%
-  select(-huclevel)
+  tidytable::select(-huclevel)
 #    mutate(huc = ifelse(nchar(as.character(huc)) == 11, paste0("0", as.character(huc)), as.character(huc)))
 
 names(nass_huc08)[-1] <- paste0("nass_huc08_", names(nass_huc08)[-1])
@@ -123,36 +123,81 @@ names(olm_huc10)[1] <- "HUC10"
 
 ### point-based spatial join products (join by site_no and year)
 ## aquifer
-aqui_file = path_base %s% "AZO_covariates/AZO_PrimaryAquifer.csv"
+aqui_file <- path_base %s% "AZO_covariates/AZO_PrimaryAquifer.csv"
 aqui <- data.table::fread(aqui_file)
-names(aqui)[-1:-2] <- paste0("aquifer_", names(aqui)[-1:-2])
+names(aqui)[seq(-1, -2)] <- paste0("aquifer_", names(aqui)[seq(-1, -2)])
 aqui <- aqui[,-c(4, 6)]
 
 ## soilchem 
 schem_file <- path_base %s% "AZO_covariates/AZO_soilchemistry.csv"
 schem <- data.table::fread(schem_file)
-names(schem)[-1:-2] <- paste0("soilchem_", names(schem)[-1:-2])
-schem_keep <- c(1,2,9:55,61:141)
-schem <- schem %>% select(all_of(schem_keep))
+names(schem)[seq(-1, -2)] <- paste0("soilchem_", names(schem)[seq(-1, -2)])
+schem_keep <- c(1, 2, seq(9, 55), seq(61, 141))
+schem <- schem %>% tidytable::select(all_of(schem_keep))
+
+## terraClimate - HUC ####
+# aet (Actual Evapotranspiration, monthly total), units = mm
+# def (Climate Water Deficit, monthly total), units = mm
+# PDSI (Palmer Drought Severity Index, at end of month), units = unitless
+# pet (Potential evapotranspiration, monthly total), units = mm
+# ppt (Precipitation, monthly total), units = mm
+# q (Runoff, monthly total), units = mm
+# soil (Soil Moisture, total column - at end of month), units = mm
+# srad (Downward surface shortwave radiation), units = W/m2
+# swe (Snow water equivalent - at end of month), units = mm
+# tmax (Max Temperature, average for month), units = C
+# tmin (Min Temperature, average for month), units = C
+# vap (Vapor pressure, average for month), units  = kPa
+# vpd (Vapor Pressure Deficit, average for month), units = kpa
+# ws (Wind speed, average for month), units = m/s
+# sum: aet, def, pet, ppt, q, soil, swe(?)
+# mean: PDSI, srad, tmax(?), tmin(?), vap, vpd, ws
 
 ## terraClimate (mean)
-terra_mean_file <- path_base %s% "AZO_covariates/AZO_terraclimate_yearly_mean.csv"
-terra_mean <- data.table::fread(terra_mean_file)
-terra_mean <- terra_mean[,-1]
-names(terra_mean)[1:(ncol(terra_mean)-2)] <- paste0("terraClimate_mean_", names(terra_mean)[1:(ncol(terra_mean)-2)])
-# terra_mean_sel <- c("aet", "def", "pet", "ppt", "q")
+terra_mean_huc08 <- file.path(path_base, "terraclimate_huc08_azo_mean.csv") |>
+  data.table::fread()
+terra_mean_huc10 <- file.path(path_base, "terraclimate_huc10_azo_mean.csv") |>
+  data.table::fread()
+terra_mean_huc12 <- file.path(path_base, "terraclimate_huc12_azo_mean.csv") |>
+  data.table::fread()
+# terra_mean_sel <- c("PDSI", "srad", "tmax", "tmin", "vap", "vpd", "ws")
 
 ## terraClimate (sum)
-terra_sum_file <- path_base %s% "AZO_covariates/AZO_terraclimate_yearly_sum.csv"
-terra_sum <- data.table::fread(terra_sum_file)
-terra_sum <- terra_sum[,-1]
-names(terra_sum)[1:(ncol(terra_sum)-2)] <- paste0("terraClimate_sum_", names(terra_sum)[1:(ncol(terra_sum)-2)])
+terra_sum_huc08 <- file.path(path_base, "terraclimate_huc08_azo_sum.csv") |>
+  data.table::fread() |>
+  tidytable::mutate(huc8 = bit64::as.integer64(huc8))
+terra_sum_huc10 <- file.path(path_base, "terraclimate_huc10_azo_sum.csv") |>
+  data.table::fread() |>
+  tidytable::mutate(huc10 = bit64::as.integer64(huc10))
+terra_sum_huc12 <- file.path(path_base, "terraclimate_huc12_azo_sum.csv") |>
+  data.table::fread() |>
+  tidytable::mutate(huc12 = bit64::as.integer64(huc12))
 
 ## PRISM
-prism_file <- path_base %s% "AZO_covariates/AZO_PRISM.csv"
-prism <- data.table::fread(prism_file)
-prism <- prism[,-3]
-names(prism)[3:ncol(prism)] <- paste0("prism_", names(prism)[3:ncol(prism)])
+prism_huc08 <- path_base %s% "HUC08_PRISM_mean.csv"
+prism_huc10 <- path_base %s% "HUC10_PRISM_mean.csv"
+prism_huc12 <- path_base %s% "HUC12_PRISM_mean.csv"
+
+prism_huc08 <- data.table::fread(prism_huc08)
+prism_huc10 <- data.table::fread(prism_huc10)
+prism_huc12 <- data.table::fread(prism_huc12)
+
+prism_huc08 <- setNames(
+  prism_huc08,
+  sub("fun.", "prism_huc08_", names(prism_huc08))
+)
+prism_huc10 <- setNames(
+  prism_huc10,
+  sub("fun.", "prism_huc10_", names(prism_huc10))
+)
+prism_huc12 <- setNames(
+  prism_huc12,
+  sub("fun.", "prism_huc12_", names(prism_huc12))
+)
+names(prism_huc08)[ncol(prism_huc08)] <- "huc08"
+names(prism_huc10)[ncol(prism_huc10)] <- "huc10"
+names(prism_huc12)[ncol(prism_huc12)] <- "huc12"
+
 
 ## geol
 geol_file <- path_base %s% "AZO_covariates/AZO_Geology.csv"
@@ -173,48 +218,57 @@ names(geol)[3] <- "geology_unit_type"
 #   dplyr::left_join(azo_pest, by = c("ChmclNm", "site_no", "Year"))
 ## quick fix end
 
-
-cnty_pests_top20_clean <- readRDS("./output/County_pesticide_similarity_top20.rds") |>
+## Read prepared top20 pesticides at county level
+## 20-year total low and high estimates
+## 2000-2019
+cnty_pests_top20_clean <-
+  readRDS(path_base %s% "County_pesticide_similarity_top20.rds") |>
   dplyr::select(-1:-2) %>%
   st_transform("EPSG:5070")
+azo_s <- st_transform(azo_s, "EPSG:5070")
 azo_pest <- st_join(azo_s, cnty_pests_top20_clean) %>%
   st_drop_geometry()
-
-
-
 
 ## Join all
 azo
 list_factors <- c("geology_unit_type", "aquifer_ROCK_NAME", "aquifer_AQ_NAME")
 
 azo_covar <- azo %>%
-    bind_cols(data.frame(st_coordinates(.))) %>%
-    st_drop_geometry() %>%
-    mutate(across(starts_with("huc"), ~bit64::as.integer64(.))) %>%
-    left_join(nass_huc08, by = c("huc08" = "huc")) %>%
-    left_join(nass_huc10, by = c("huc10" = "huc")) %>%
-    left_join(nass_huc12, by = c("huc12" = "huc")) %>%
-    left_join(olm_huc08, by = c("huc08" = "HUC08")) %>%
-    left_join(olm_huc10, by = c("huc10" = "HUC10")) %>%
-    left_join(olm_huc12, by = c("huc12" = "HUC12")) %>%
-    left_join(aqui) %>%
-    left_join(schem) %>%
-    left_join(terra_mean, by = c("site_no" = "site_no", "Year" = "year")) %>%
-    left_join(terra_sum, by = c("site_no" = "site_no", "Year" = "year")) %>%
-    left_join(prism) %>%
-    left_join(geol) %>%
-    left_join(azo_pest) %>%
-    mutate(across(all_of(list_factors), ~as.factor(.)))
-
+  dplyr::bind_cols(data.frame(st_coordinates(.))) %>%
+  st_drop_geometry() %>%
+  dplyr::mutate(across(starts_with("huc"), ~bit64::as.integer64(.))) %>%
+  dplyr::left_join(nass_huc08, by = c("huc08" = "huc")) %>%
+  dplyr::left_join(nass_huc10, by = c("huc10" = "huc")) %>%
+  dplyr::left_join(nass_huc12, by = c("huc12" = "huc")) %>%
+  dplyr::left_join(olm_huc08, by = c("huc08" = "HUC08")) %>%
+  dplyr::left_join(olm_huc10, by = c("huc10" = "HUC10")) %>%
+  dplyr::left_join(olm_huc12, by = c("huc12" = "HUC12")) %>%
+  dplyr::left_join(aqui) %>%
+  dplyr::left_join(schem) %>%
+  dplyr::left_join(terra_mean_huc08, by = c("huc08" = "huc8", "Year" = "year")) %>%
+  dplyr::left_join(terra_mean_huc10, by = c("huc10" = "huc10", "Year" = "year")) %>%
+  dplyr::left_join(terra_mean_huc12, by = c("huc12" = "huc12", "Year" = "year")) %>%
+  dplyr::left_join(terra_sum_huc08, by = c("huc08" = "huc8", "Year" = "year")) %>%
+  dplyr::left_join(terra_sum_huc10, by = c("huc10" = "huc10", "Year" = "year")) %>%
+  dplyr::left_join(terra_sum_huc12, by = c("huc12" = "huc12", "Year" = "year")) %>%
+  dplyr::left_join(prism_huc08, by = c("huc08" = "huc08")) %>%
+  dplyr::left_join(prism_huc10, by = c("huc10" = "huc10")) %>%
+  dplyr::left_join(prism_huc12, by = c("huc12" = "huc12")) %>%
+  dplyr::left_join(geol) %>%
+  dplyr::left_join(azo_pest) %>%
+  dplyr::mutate(dplyr::across(dplyr::all_of(list_factors), ~as.factor(.)))
 
 
 saveRDS(azo_covar, "output/data_AZO_covariates.rds", compress = "xz")
+qs::qsave(azo_covar, "output/data_AZO_covariates.qs", nthreads = 8L)
+saveRDS(azo_covar, path_base %s% "data_AZO_covariates.rds", compress = "xz")
+qs::qsave(azo_covar, path_base %s% "data_AZO_covariates.qs", nthreads = 8L)
 
 
 # minimal metadata (for covariate specification)
 # it does not include full description of
 # NAQWA site attributes.
-azo_covar_spec <- tribble(
+azo_covar_spec <- dplyr::tribble(
     ~prefix,    ~description,
     "X|Y",    "coordinates (EPSG:5070)",
     "Year",   "survey year",
@@ -224,15 +278,15 @@ azo_covar_spec <- tribble(
     "aquifer",  "Primary aquifer",
     "soilchem", "National geochemical survey",
     "huc08|huc10|huc12",  "HUC-08 -10 -12 level ecoregion indicators from EPA",
-    "terraClimate_mean", "terraClimate annual mean from monthly data",
-    "terraClimate_sum", "terraClimate annual sum from monthly data",
+    "tclim_mean", "terraClimate annual mean from monthly data",
+    "tclim_sum", "terraClimate annual sum from monthly data",
     "prism",    "PRISM 30-year climate normals (1991-2020) from Oregon State University",
     "geology",  "USGS State Geologic Map Compilation",
     "nass",     "USDA NASS Cropscape (2008-)",
     "olm",      "OpenLandMap",
     "pest",     "USGS NAWQA Pesticide county-level estimates (low and high)"
 )
-# write.csv(azo_covar_spec, "output/data_AZO_covariates_prefixes.csv", row.names = FALSE)
+write.csv(azo_covar_spec, "output/data_AZO_covariates_prefixes.csv", row.names = FALSE)
 
 prefixes <- azo_covar_spec$prefix
 colindex <- grep(paste("^(", paste(prefixes, collapse = "|"), ")", sep = ""), names(azo_covar))

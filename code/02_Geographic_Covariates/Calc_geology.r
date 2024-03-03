@@ -5,7 +5,7 @@ sf_use_s2(FALSE)
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 3
+COMPUTE_MODE <- 2
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
@@ -19,7 +19,7 @@ path_base <-
 
 NUM_WORKERS <- 10
 
-future::plan(multicore, workers = NUM_WORKERS)
+future::plan(future::multicore, workers = NUM_WORKERS)
 
 # abbrev: [aqui]fer, [geol]ogy, [ecor]egions
 path_aqui <- paste0(path_base, "Aquifers/aquifrp025/")

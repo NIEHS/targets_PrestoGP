@@ -13,7 +13,7 @@ Sys.getenv("TIGRIS_CACHE_DIR")
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 1
+COMPUTE_MODE <- 2
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
@@ -74,21 +74,24 @@ txtsr <- gsub("\\.20", "_20", txts)
 txtsr <- gsub("EPest\\.county\\.est", "EPest_county_est", txtsr)
 txtsr <- order(txtsr)
 
-pests <- lapply(txts[txtsr], fread)
+pests <- lapply(txts[txtsr], data.table::fread)
 pests <- lapply(
   pests,
   function(x) {
-    x %>% mutate(GEOID = sprintf("%02d%03d", STATE_FIPS_CODE, COUNTY_FIPS_CODE))
+    x %>%
+      tidytable::mutate(
+        GEOID = sprintf("%02d%03d", STATE_FIPS_CODE, COUNTY_FIPS_CODE)
+      )
   }
 )
 
 pests_df <- rbindlist(pests)
 pests_df <- pests_df %>%
-  arrange(GEOID, YEAR, COMPOUND) %>%
-  select(GEOID, YEAR, COMPOUND, starts_with("EPEST"))
+  tidytable::arrange(GEOID, YEAR, COMPOUND) %>%
+  tidytable::select(GEOID, YEAR, COMPOUND, starts_with("EPEST"))
 pests_df <- pests_df %>%
-  filter(YEAR >= 2000) |>
-  mutate(GEOID = plyr::mapvalues(GEOID, c("12025", "46113"), c("12086", "46102")))
+  tidytable::filter(YEAR >= 2000) |>
+  tidytable::mutate(GEOID = plyr::mapvalues(GEOID, c("12025", "46113"), c("12086", "46102")))
 # saveRDS(pests_df, paste0(home_dir, "county_pesticides_2000_2019.rds"))
 
 
@@ -437,14 +440,14 @@ pests_df |>
 ## use sim_dsstox_synonym.xlsx Final_name's unique values
 library(readxl)
 
-dsstox <- read_excel("./input/sim_dsstox_synonym.xlsx")
+dsstox <- read_excel(file.path(path_base, "sim_dsstox_synonym.xlsx"))
 dsstox_unames <- unique(dsstox$Final_name)
 dsstox_unames <- dsstox_unames[!is.na(dsstox_unames)]
 
 dsstox_unames
 
 in_data_unames <- pests_df %>%
-  filter(COMPOUND %in% dsstox_unames) %>%
+  tidytable::filter(COMPOUND %in% dsstox_unames) %>%
   .$COMPOUND %>%
   unique
 # FLUVALINATE-TAU and FLUVALINATE TAU coexist
@@ -452,38 +455,39 @@ dsstox_unames[!dsstox_unames %in% in_data_unames]
 unique(pests_df$COMPOUND) %>% sort
 
 
+## NAWQA data cleaning using tox
 pests_df_sub <-
   pests_df %>%
-  filter(COMPOUND %in% dsstox_unames) %>%
-  mutate(COMPOUND = plyr::mapvalues(COMPOUND,
+  tidytable::filter(COMPOUND %in% dsstox_unames) %>%
+  tidytable::mutate(COMPOUND = plyr::mapvalues(COMPOUND,
     c("FLUVALINATE TAU"), c("FLUVALINATE-TAU")))
 
 pests_df_sub_w <-
   pests_df_sub %>%
-  pivot_wider(names_from = COMPOUND,
+  tidytable::pivot_wider(names_from = COMPOUND,
               values_from = c(EPEST_LOW_KG, EPEST_HIGH_KG))
 
 pests_df_sub_fullyear <-
   expand.grid(GEOID = unique(pests_df_sub$GEOID),
     YEAR = seq(2000, 2019)) %>%
-  left_join(., pests_df_sub_w)
-  
+  tidytable::left_join(., pests_df_sub_w)
+
 
 pests_skimmed <- skimr::skim(pests_df_sub_fullyear)
 
 
 pests_df_widecomp <-
   pests_df_sub %>%
-  rename(low = EPEST_LOW_KG,
+  tidytable::rename(low = EPEST_LOW_KG,
     high = EPEST_HIGH_KG) %>%
-  pivot_wider(values_from = c(low, high),
+  tidytable::pivot_wider(values_from = c(low, high),
     names_from = c(COMPOUND))
 
 pests_df_wideyear <-
   pests_df_sub %>%
-  rename(low = EPEST_LOW_KG,
+  tidytable::rename(low = EPEST_LOW_KG,
     high = EPEST_HIGH_KG) %>%
-  pivot_wider(values_from = c(low, high),
+  tidytable::pivot_wider(values_from = c(low, high),
     names_from = c(YEAR))
 
 
@@ -493,23 +497,23 @@ pests_df_avail <-
   expand.grid(GEOID = unique(pests_df_sub$GEOID),
     COMPOUND = unique(pests_df_sub$COMPOUND),
     YEAR = seq(2000, 2019)) %>%
-  left_join(pests_df_sub) %>%
-  rename(low = EPEST_LOW_KG,
+  tidytable::left_join(pests_df_sub) %>%
+  tidytable::rename(low = EPEST_LOW_KG,
     high = EPEST_HIGH_KG) %>%
-  pivot_wider(values_from = c(low, high),
+  tidytable::pivot_wider(values_from = c(low, high),
     names_from = c(YEAR)) %>%
-  pivot_longer(cols = seq(3, ncol(.))) %>%
-  mutate(YEAR = stringi::stri_extract(name, regex = "[0-9]{4,4}"),
+  tidytable::pivot_longer(cols = seq(3, ncol(.))) %>%
+  tidytable::mutate(YEAR = stringi::stri_extract(name, regex = "[0-9]{4,4}"),
          VALUETYPE = stringi::stri_extract(name, regex = "(low|high)")) %>%
-  select(-name) %>%
-  pivot_wider(values_from = value, names_from = VALUETYPE) %>%
-  group_by(GEOID, COMPOUND) %>%
-  summarize(low_nas = sum(is.na(low)),
+  tidytable::select(-name) %>%
+  tidytable::pivot_wider(values_from = value, names_from = VALUETYPE) %>%
+  tidytable::group_by(GEOID, COMPOUND) %>%
+  tidytable::summarize(low_nas = sum(is.na(low)),
             high_nas = sum(is.na(high))) %>%
-  ungroup()
+  tidytable::ungroup()
 
 pests_df_avail %>%
-  filter(low_nas == 20 & high_nas == 20)
+  tidytable::filter(low_nas == 20 & high_nas == 20)
 # 33,896 County-Compound pairs reported no values
 # It should be carefully interpreted whether these are true zeros
 # non-surveyed values
@@ -517,10 +521,10 @@ pests_df_avail %>%
 # Bromacil, CPPU, Dazomet, Fluometuron, Fluridone, Fluvalinate-tau, Formetanate,
 # Triadimenol
 pests_df_avail %>%
-  filter(low_nas == 20 & high_nas == 20) %>%
-  group_by(COMPOUND) %>%
-  summarize(Ncounties = n()) %>%
-  ungroup() %>%
+  tidytable::filter(low_nas == 20 & high_nas == 20) %>%
+  tidytable::group_by(COMPOUND) %>%
+  tidytable::summarize(Ncounties = n()) %>%
+  tidytable::ungroup() %>%
   data.frame()
 
 ## Substitute with zeros
@@ -528,25 +532,25 @@ pests_df_subszero <-
   expand.grid(GEOID = unique(pests_df_sub$GEOID),
     COMPOUND = unique(pests_df_sub$COMPOUND),
     YEAR = seq(2000, 2019)) %>%
-  left_join(pests_df_sub) %>%
-  rename(low = EPEST_LOW_KG,
+  tidytable::left_join(pests_df_sub) %>%
+  tidytable::rename(low = EPEST_LOW_KG,
     high = EPEST_HIGH_KG) %>%
-  pivot_wider(values_from = c(low, high),
+  tidytable::pivot_wider(values_from = c(low, high),
     names_from = c(YEAR)) %>%
-  pivot_longer(cols = seq(3, ncol(.))) %>%
-  mutate(YEAR = stringi::stri_extract(name, regex = "[0-9]{4,4}"),
+  tidytable::pivot_longer(cols = seq(3, ncol(.))) %>%
+  tidytable::mutate(YEAR = stringi::stri_extract(name, regex = "[0-9]{4,4}"),
          VALUETYPE = stringi::stri_extract(name, regex = "(low|high)")) %>%
-  select(-name) %>%
-  pivot_wider(values_from = value, names_from = VALUETYPE) %>%
-  mutate(across(4:5, ~ifelse(is.na(.), 0, .)))
+  tidytable::select(-name) %>%
+  tidytable::pivot_wider(values_from = value, names_from = VALUETYPE) %>%
+  tidytable::mutate(across(4:5, ~ifelse(is.na(.), 0, .)))
 
 ### presence of county by year
 pests_df_sub %>%
-  transmute(GEOID = GEOID, YEAR = YEAR, val_pre = any(!is.na(EPEST_LOW_KG), !is.na(EPEST_HIGH_KG))) %>%
-  group_by(GEOID, YEAR) %>%
-  summarize(presence = any(val_pre)) %>%
-  ungroup() %>%
-  pivot_wider(values_from = presence, names_from = YEAR) %>%
+  tidytable::transmute(GEOID = GEOID, YEAR = YEAR, val_pre = any(!is.na(EPEST_LOW_KG), !is.na(EPEST_HIGH_KG))) %>%
+  tidytable::group_by(GEOID, YEAR) %>%
+  tidytable::summarize(presence = any(val_pre)) %>%
+  tidytable::ungroup() %>%
+  tidytable::pivot_wider(values_from = presence, names_from = YEAR) %>%
   summary
 # 3-18 counties reported no observations per year
 # TODO: join by yearly polygons (2000-2019)
@@ -581,37 +585,41 @@ cnty10e <- cnty10 %>%
   dplyr::ungroup()
 
 pests_df_subszero_marg <- pests_df_subszero %>%
-  mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
-  group_by(GEOID, COMPOUND) %>%
-  summarize(low_2000_2019 = sum(low),
+  tidytable::mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
+  tidytable::group_by(GEOID, COMPOUND) %>%
+  tidytable::summarize(low_2000_2019 = sum(low),
     high_2000_2019 = sum(high)) %>%
-  ungroup() %>%
-  pivot_wider(names_from = COMPOUND, values_from = c(low_2000_2019, high_2000_2019))
+  tidytable::ungroup() %>%
+  tidytable::pivot_wider(names_from = COMPOUND, values_from = c(low_2000_2019, high_2000_2019))
 
 # pick top 10/20 in terms of total national usage and zeros
 pests_df_subszero_top20 <-
   pests_df_subszero %>%
-  mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
-  group_by(COMPOUND) %>%
-  summarize(p_zero_total = (sum(low == 0) + sum(high == 0)) / (2 * n()),
+  tidytable::mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
+  tidytable::group_by(COMPOUND) %>%
+  tidytable::summarize(p_zero_total = (sum(low == 0) + sum(high == 0)) / (2 * n()),
     total_low = sum(low),
     total_high = sum(high)) %>%
-  ungroup() %>%
-  arrange(-total_high) %>%
-  top_n(20)
+  tidytable::ungroup() %>%
+  tidytable::arrange(-total_high) %>%
+  tidytable::top_n(20)
 
 
 ## county-pesticide-top-20 joined product
 cnty_pests_top20 <-
   pests_df_subszero %>%
-  mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
-  group_by(GEOID, COMPOUND) %>%
-  summarize(low_2000_2019 = sum(low),
-    high_2000_2019 = sum(high)) %>%
-  ungroup() %>%
-  filter(COMPOUND %in% pests_df_subszero_top20$COMPOUND) %>%
-  pivot_wider(names_from = COMPOUND,
-    values_from = c(low_2000_2019, high_2000_2019)) %>%
+  tidytable::mutate(GEOID = plyr::mapvalues(GEOID, from_fips, to_fips)) %>%
+  tidytable::group_by(GEOID, COMPOUND) %>%
+  tidytable::summarize(
+    low_2000_2019 = sum(low),
+    high_2000_2019 = sum(high)
+  ) %>%
+  tidytable::ungroup() %>%
+  tidytable::filter(COMPOUND %in% pests_df_subszero_top20$COMPOUND) %>%
+  tidytable::pivot_wider(
+    names_from = COMPOUND,
+    values_from = c(low_2000_2019, high_2000_2019)
+  ) %>%
   dplyr::as_tibble() %>%
   dplyr::left_join(cnty10e, .) %>%
   dplyr::mutate(across(4:ncol(.), ~ifelse(is.na(.), 0, .)))
