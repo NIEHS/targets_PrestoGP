@@ -1,5 +1,5 @@
 ## Join all calculated covariates
-## 10/13/2023
+## 03/03/2024
 ## Insang Song
 pkgs <- c("tidytable", "data.table", "rlang", "terra", "sf", "bit64")
 sapply(pkgs, library, character.only = TRUE)
@@ -264,6 +264,59 @@ qs::qsave(azo_covar, "output/data_AZO_covariates.qs", nthreads = 8L)
 saveRDS(azo_covar, path_base %s% "data_AZO_covariates.rds", compress = "xz")
 qs::qsave(azo_covar, path_base %s% "data_AZO_covariates.qs", nthreads = 8L)
 
+# read qs file to edit column names
+azo_covar <- qs::qread(path_base %s% "data_AZO_covariates.qs")
+fixnames <- names(azo_covar)[seq(422, 760)]
+fixnames_huc <- regmatches(fixnames, regexpr("huc[0-9]{2,2}", fixnames))
+fixnames_noheader <- gsub("huc[0-9]{2,2}(_|_OpenLand_)", "", fixnames)
+fixnames_to <- sprintf("%s%s%s%s", "olm_", fixnames_huc, "_", fixnames_noheader)
+names(azo_covar)[seq(422, 760)] <- fixnames_to
+
+# sum: aet, def, pet, ppt, q, soil, swe(?)
+# mean: PDSI, srad, tmax(?), tmin(?), vap, vpd, ws
+tclim_sums <- c("aet", "def", "pet", "ppt", "q", "soil", "swe")
+tclim_means <- c("PDSI", "srad", "tmax", "tmin", "vap", "vpd", "ws")
+tclim_sums_excl <- sprintf("%s_%s_", "tclim_sum", tclim_means)
+tclim_means_excl <- sprintf("%s_%s_", "tclim_mean", tclim_sums)
+cns <- names(azo_covar)
+cns_sums_excl <- grep(paste0("^(", paste(tclim_sums_excl, collapse = "|"), ")"), cns)
+cns_means_excl <- grep(paste0("^(", paste(tclim_means_excl, collapse = "|"), ")"), cns)
+
+# exclude selected columns
+azo_covar_sel <-
+  azo_covar %>%
+  dplyr::select(
+    -dplyr::all_of(cns_sums_excl),
+    -dplyr::all_of(cns_means_excl)
+  ) %>%
+  dplyr::mutate(
+    dplyr::across(
+      dplyr::starts_with("nass_"),
+      ~ifelse(is.na(.), 0, .)
+    )
+  )
+
+idx_nass_huc08 <- grep("nass_huc08_", names(azo_covar_sel))
+idx_nass_huc10 <- grep("nass_huc10_", names(azo_covar_sel))
+idx_nass_huc12 <- grep("nass_huc12_", names(azo_covar_sel))
+
+azo_covar_sel[, idx_nass_huc08] <-
+  azo_covar_sel[, idx_nass_huc08] %>%
+  {. / rowSums(.)}
+azo_covar_sel[, idx_nass_huc10] <-
+  azo_covar_sel[, idx_nass_huc10] %>%
+  {. / rowSums(.)}
+azo_covar_sel[, idx_nass_huc12] <-
+  azo_covar_sel[, idx_nass_huc12] %>%
+  {. / rowSums(.)}
+
+
+# check if the calculation was done as expected
+# azo_covar_sel %>% filter(Year == 2019) %>% select(starts_with("nass_")) %>% summary
+# azo_covar_sel %>% filter(Year == 2019) %>% select(starts_with("nass_huc10")) %>% rowSums()
+azo_covar_sel %>% select(starts_with("nass_")) %>% summary()
+
+# qs::qsave(azo_covar_sel, path_base %s% "data_AZO_covariates_cleaned_03032024.qs", nthreads = 8L)
 
 # minimal metadata (for covariate specification)
 # it does not include full description of
@@ -277,7 +330,6 @@ azo_covar_spec <- dplyr::tribble(
     "left_cns", "left censoring flag",
     "aquifer",  "Primary aquifer",
     "soilchem", "National geochemical survey",
-    "huc08|huc10|huc12",  "HUC-08 -10 -12 level ecoregion indicators from EPA",
     "tclim_mean", "terraClimate annual mean from monthly data",
     "tclim_sum", "terraClimate annual sum from monthly data",
     "prism",    "PRISM 30-year climate normals (1991-2020) from Oregon State University",

@@ -16,7 +16,7 @@ sf_use_s2(FALSE)
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 4
+COMPUTE_MODE <- 2
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
@@ -44,20 +44,20 @@ data.AZO <- sf::st_read(paste0(path_base, "./data_process/data_AZO_watershed_huc
 AZO.geometry <- sf::st_geometry(data.AZO)
 
 # # US bounding box
-US.bb <- terra::ext(c(-124.7844079, -66.9513812, 24.7433195, 49.3457868))
+US.bb <- terra::ext(c(-126, -64, 24, 51))
 
 # # NHD WBD Layer names
 WBD.layers <- st_layers(paste0(path_base, "WBD_National_GPKG.gpkg"))
 
-WBD <- st_read(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = layername) %>%
+WBD <- st_read(paste0(path_base, "WBD-National/WBD_National_GPKG.gpkg"), layer = layername) %>%
   st_transform("EPSG:4326")
 
 
 ## ----OLM raster data,echo=FALSE-----------------------------------------------
 # Cropped Raster directory
 # cropped.raster.dir <- "/Volumes/SHAG/OpenLandMapData/OLM_Combined/"
-cropped.raster.dir <- ""#"OpenLandMapData/OLM_Combined/"
-crop.dir <- paste0(path_base, cropped.raster.dir)
+cropped.raster.dir <- "OpenLandMapData/OLM_Combined/"
+crop.dir <- file.path(path_base, cropped.raster.dir)
 
 
 if (length(list.files(
@@ -157,8 +157,6 @@ if (length(list.files(
 }
 
 
-
-
 # Combine the rasters in which we are calculating a mean value into one raster stack with
 # many layers
 OLM.stack.values <- c(
@@ -194,10 +192,10 @@ names(OLM.stack.classes) <- c(
 ## ----Calculate exact grid points ,echo=TRUE-----------------------------------
 
 # HUC08
-  # get the given HUC08 geometry from the WBD data
-  # huc08.polygon <- dplyr::filter(WBD, huc8 == huc08.unique[i])
-  huc08.polygon <- WBD
-  #sf::read_sf(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8")
+# get the given HUC08 geometry from the WBD data
+# huc08.polygon <- dplyr::filter(WBD, huc8 == huc08.unique[i])
+huc08.polygon <- WBD
+# sf::read_sf(paste0(path_base, "WBD_National_GPKG.gpkg"), layer = "WBDHU8")
 
 HUC.nulltable <- data.table()
 HUC.rast.vals <- HUC.nulltable[, (HUCUNIT) := unlist(huc08.polygon[[HUCUNIT]])]
@@ -222,24 +220,28 @@ HUC.rast.class[, paste0(HUCUNIT, ".", class.possible.names) := 0]
 # for (i in 1:length(huc08.unique)) {
 #   print(i)
 
-  # get index - for rows of output - where data match the given HUC08
-  # idx.row <- data.AZO$huc08 == huc08.unique[i]
+# get index - for rows of output - where data match the given HUC08
+# idx.row <- data.AZO$huc08 == huc08.unique[i]
 
+# calculate the mean raster values in the HUC
+huc08.val <- exact_extract(
+  OLM.stack.values,
+  st_geometry(huc08.polygon),
+  fun = "mean",
+  stack_apply = TRUE
+)
 
-  # calculate the mean raster values in the HUC
-  huc08.val <- exact_extract(OLM.stack.values, st_geometry(huc08.polygon), fun = "mean", stack_apply = TRUE)
+# Assign the extracted values to the appropriate location in the output
+HUC.rast.vals[, 2:ncol(HUC.rast.vals)] <- huc08.val
 
-  # Assign the extracted values to the appropriate location in the output
-  HUC.rast.vals[, 2:ncol(HUC.rast.vals)] <- huc08.val
+# calculate the fraction of each raster class in the HUC
+extract.raster.classes <- exact_extract(OLM.stack.classes, st_geometry(huc08.polygon), fun = "frac", stack_apply = TRUE, force_df = TRUE)
 
-  # calculate the fraction of each raster class in the HUC
-  extract.raster.classes <- exact_extract(OLM.stack.classes, st_geometry(huc08.polygon), fun = "frac", stack_apply = TRUE)
+# # get indexs - for columns of outout - where classes match the output
+idx.col <- which(class.possible.names %in% colnames(extract.raster.classes)) + 1
 
-  # # get indexs - for columns of outout - where classes match the output
-  idx.col <- which(class.possible.names %in% colnames(extract.raster.classes)) + 1
-
-  # Assign the extracted class fractions to the appropriate location in the output
-  HUC.rast.class[, idx.col] <- extract.raster.classes
+# Assign the extracted class fractions to the appropriate location in the output
+HUC.rast.class[, idx.col] <- extract.raster.classes
 
 
 # Correct some column names that will be problematic later

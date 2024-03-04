@@ -6,7 +6,6 @@
 "left_cns","left censoring flag"
 "aquifer","Primary aquifer"
 "soilchem","National geochemical survey"
-"huc08|huc10|huc12","HUC-08 -10 -12 level ecoregion indicators from EPA"
 "tclim_mean","terraClimate annual mean from monthly data"
 "tclim_sum","terraClimate annual sum from monthly data"
 "prism","PRISM 30-year climate normals (1991-2020) from Oregon State University"
