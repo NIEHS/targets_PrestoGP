@@ -7,8 +7,8 @@ library(targets)
 
 # Set target options:
 tar_option_set(
-  packages = c("PrestoGP","tibble","sf","terra") # packages that your targets need to run
-  # format = "qs", # Optionally set the default storage format. qs is fast.
+  packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse"),
+  format = "qs"
   #
   # For distributed computing in tar_make(), supply a {crew} controller
   # as discussed at https://books.ropensci.org/targets/crew.html.
@@ -42,18 +42,25 @@ tar_option_set(
 # future::plan(future.callr::callr)
 
 # Run the R scripts in the R/ folder with your custom functions:
-tar_source()
-source("Curate_Data.R") # Source other scripts as needed.
+tar_source("code/03_Pesticide_Analysis/Target_Helpers.R")
 
-# Replace the target list below with your own:
+#  The TARGET LIST
 list(
   tar_target(
-    name = data,
-    command = tibble(x = rnorm(100), y = rnorm(100))
-    # format = "feather" # efficient storage for large data frames
+    name = set_path,
+    command = set_local_data_path(COMPUTE_MODE = 1)
   ),
   tar_target(
-    name = model,
-    command = coefficients(lm(y ~ x, data = data))
+    name = readQS,
+    command = read_data(set_path,"data_AZO_covariates_cleaned_03032024")
+  ),
+  tar_target(
+    name = filterNA_Covariates,
+    command = filter_NA(readQS)
+  ),
+  tar_target(
+    name = read_pesticide_data,
+    command = read_pesticide_data(COMPUTE_MODE = 1)
   )
 )
+# Created by use_targets().

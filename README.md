@@ -12,7 +12,9 @@
 5. Run `PrestoGP`
   - Subset Test Locally
   - `geo` cluster setup
-  - Run `PrestoGP`
+  - Run `PrestoGP` on `geo` cluster
+  - Spatiotemporal Cross-Validation (branches)
+  - Model Selection
 6. Save `PrestoGP` Results
 7. Exploratory Analysis of `PrestoGP` Results
   - Maps of `PrestoGP` Results

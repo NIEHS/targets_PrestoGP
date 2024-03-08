@@ -1,0 +1,10 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+filter_NA|function|9d4e77e689ee34c6|||||||||||||||
+filterNA_Covariates|stem|335a5f6ca4ee573d|76c427c375c78687|878d5910cf77a28b|1066545991||t19790.9135113804s|00b6a0dcc9ec5aeb|86458845|qs|local|vector|||0.007||
+read_data|function|e94ff23f6a216ea4|||||||||||||||
+readQS|stem|0d0f43457705740e|fbd44d08ee3b0291|23046222c02ba004|272066984||t19790.9134966741s|1d578777ca7e0747|92461123|qs|local|vector|||3.046||
+readRDS|stem|30d13634fc33f3b0|737fe80589c40445|4f0911f72ff7c033|-1881388877||t19783.8526752459s|3ecc6d8d174470dc|57036021|qs|local|vector|||3.068||
+save_as_qs|function|126849d4e4b26b27|||||||||||||||
+saveQS|stem|04c4afd93e0382b6|321ebaea420056bf|e7cce5d1d976aca8|-1327603547||t19783.8526984237s|6efc4bfe9d27bd5a|46|qs|local|vector|||1.982||
+set_local_data_path|function|bd98579ff809e889|||||||||||||||
+set_path|stem|22982f128e9919a8|e52d2ca109a11c95|dedd4ccda1aa143b|-782108320||t19790.9134451023s|1701aa42bd45be76|89|qs|local|vector|||2.314||
