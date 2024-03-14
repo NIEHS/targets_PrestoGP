@@ -67,5 +67,6 @@ po/*~
 **/.DS_Store
 .DS_Store
 
-_targets/meta
+
 output/**/*.csv
+_targets/meta/meta

@@ -2,9 +2,10 @@
 # We are using the targets package to develop a pipeline for the analysis of pesticide data.
 
 # First, we load the targets package and the tidyverse package.
-library(targets)
-library(tidyverse)
-options(tidyverse.quiet = TRUE)
+# options(tidyverse.quiet = TRUE)
+readin <- function(path = ".") {
+  fst::read_fst(file.path(path, "output/Covariates_Calculated/data_AZO_covariates_zerofill.fst"))
+}
 
 subsetting <- function(data) {
   ChmclNm <- NULL
