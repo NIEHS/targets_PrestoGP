@@ -3,7 +3,7 @@
 
 # First, we load the targets package and the tidyverse package.
 # options(tidyverse.quiet = TRUE)
-readin <- function(path = ".") {
+readin <- function(path = "../../../../group/set/Projects/PrestoGP_Pesticides") {
   fst::read_fst(file.path(path, "output/Covariates_Calculated/data_AZO_covariates_zerofill.fst"))
 }
 
@@ -32,4 +32,17 @@ nona <- function(data) {
     noncomplete <- noncomplete > 0
     complete <- seq_len(ncol(data))[!noncomplete]
     data[, complete]
+}
+
+
+init_presto <- function(modeltype = PrestoGP::VecchiaModel(), dat) {
+  
+  fit <- PrestoGP::prestogp_fit(
+    model = modeltype,
+    locs = dat$locs,
+    y = dat$Y,
+    x = dat$X,
+    parallel = FALSE
+  )
+  fit
 }
