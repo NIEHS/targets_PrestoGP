@@ -28,15 +28,18 @@ preppresto <- function(data) {
 }
 
 nona <- function(data) {
-    noncomplete <- sapply(data, function(x) sum(is.na(x)))
-    noncomplete <- noncomplete > 0
-    complete <- seq_len(ncol(data))[!noncomplete]
-    data[, complete]
+  noncomplete <- sapply(data, function(x) sum(is.na(x)))
+  complete <- noncomplete == 0
+  complete <- seq_len(ncol(data))[complete]
+  datac <- data[, complete]
+  datacu <- sapply(datac, function(x) length(unique(x)) >= ceiling(0.6 * length(x)))
+  datacu <- datac[, seq_along(datacu)[datacu]]
+  return(datacu)
 }
 
 
 init_presto <- function(modeltype = PrestoGP::VecchiaModel(), dat) {
-  
+
   fit <- PrestoGP::prestogp_fit(
     model = modeltype,
     locs = dat$locs,

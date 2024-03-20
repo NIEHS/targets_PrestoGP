@@ -185,13 +185,22 @@ prestogp_univecchia() %>%
   )
 
 # Demonstration of raw running
-# dd <-
-#   prestogp_fit(
-#     model = VecchiaModel(),
-#     y = y,
-#     x = as.matrix(x),
-#     locs = as.matrix(locs)
-#   )
+dd <-
+  prestogp_fit(
+    model = VecchiaModel(),
+    y = y,
+    x = as.matrix(x),
+    locs = as.matrix(locs)
+  )
+
+
+ddm <-
+  prestogp_fit(
+    model = MultivariateVecchiaModel(n_neighbors = 33),
+    y = list(as.matrix(y), k = as.matrix(rpois(111, 12))),
+    x = list(as.matrix(x)[,c(2,327)], as.matrix(x)[,c(2,327)]),
+    locs = list(as.matrix(locs), as.matrix(locs))
+  )
 
 # ze_simazine_other <- ze %>%
 #   filter(ChmclNm == "Simazine") %>%
@@ -208,3 +217,9 @@ prestogp_univecchia() %>%
 #   locs = locshat[1:24, ]
 # )
 # ze_simazine_other$cncntrt[1:24] - unlist(dx$mean)
+
+
+
+
+
+

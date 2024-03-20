@@ -5,20 +5,20 @@
 # Load packages required to define the pipeline:
 library(targets)
 library(crew.cluster)
-
+Sys.setenv(OMP_NUM_THREADS = 1)
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP", "dplyr", "sf", "terra", "exactextractr",
                "data.table", "fst", "crew", "crew.cluster"),
   # packages that your targets need to run
-  format = "qs", # Optionally set the default storage format. qs is fast.
+  format = "qs"#, # Optionally set the default storage format. qs is fast.
   #
   # For distributed computing in tar_make(), supply a {crew} controller
   # as discussed at https://books.ropensci.org/targets/crew.html.
   # Choose a controller that suits your needs. For example, the following
   # sets a controller with 2 workers which will run as local R processes:
   #
-  controller = crew::crew_controller_local(workers = 2)
+  #controller = crew::crew_controller_local(name = "persistent")
   #
   # Alternatively, if you want workers to run on a high-performance computing
   # cluster, select a controller from the {crew.cluster} package. The following
@@ -64,7 +64,7 @@ list(
   ),
   tar_target(
     data_list,
-    preppresto(data_sub[1:20000, ])
+    preppresto(data_sub)
   ),
   # tar_target(
   #   prestomodel,
