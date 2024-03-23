@@ -127,7 +127,7 @@ unique_vals <- function(data){
 drop_bad_cols <- function(data, idx, threshold){
   # Subset `data` by column where idx > threshold
   data <- data %>% 
-    select(-which(idx > threshold))
+    select(which(idx > threshold))
   
 
   
