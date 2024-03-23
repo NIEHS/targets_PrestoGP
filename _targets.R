@@ -7,7 +7,7 @@ library(targets)
 
 # Set target options:
 tar_option_set(
-  packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse"),
+  packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr"),
   format = "qs"
   #
   # For distributed computing in tar_make(), supply a {crew} controller
@@ -54,13 +54,25 @@ list(
     name = readQS,
     command = read_data(set_path,"data_AZO_covariates_cleaned_03032024")
   ),
-  tar_target(
+  tar_target( # This target filters out the NA values in the COVARIATES
     name = filterNA_Covariates,
     command = filter_NA(readQS)
   ),
   tar_target(
-    name = read_pesticide_data,
+    name = read_pesticide,
     command = read_pesticide_data(COMPUTE_MODE = 1)
+  ),
+  tar_target( # This target runs skimr::skim to look at the summary stats of COVARIATES
+    name = explore_skim, # Covariates start at column 41
+    command = skim(filterNA_Covariates[,41:ncol(filterNA_Covariates)])
+  ),
+  tar_target(# This target calculates the percent of unique values in each of the the COVARIATES
+    name = explore_unique,
+    command = unique_vals(filterNA_Covariates)
+  ),
+  tar_target(
+    name = drop_cols,
+    command = drop_bad_cols(filterNA_Covariates, explore_unique, 0.0001)
   )
 )
 # Created by use_targets().

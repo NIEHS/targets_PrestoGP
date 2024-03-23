@@ -106,17 +106,32 @@ get_covariates <- function(data){
 #' @export
 #'
 #' @examples
-exploratory_analysis <- function(data){
+unique_vals <- function(data){
   
-  # Create a correlation matrix
-  cor_matrix <- cor(data)
+# Create a logical index for all columns after the 41st column
   
-  # Create a scatterplot matrix
-  scatterplot_matrix <- ggplot2::ggpairs(data)
+  idx <- which(colnames(data) %in% colnames(data)[41:ncol(data)])
   
-  # Return the correlation matrix and scatterplot matrix
-  return(list(cor_matrix, scatterplot_matrix))
+  n_unique <- data |> 
+    dplyr::select(idx) |>
+    dplyr::summarise_all(n_distinct) |> 
+    dplyr::mutate_all(~ . / nrow(data) * 100)  
   
+  # Add a generic value for the first 41 columns and prepend it to the data frame
+  nu <- c(rep(100,41), t(n_unique))
+
+  return(n_unique)
+}
+
+
+drop_bad_cols <- function(data, idx, threshold){
+  # Subset `data` by column where idx > threshold
+  data <- data %>% 
+    select(-which(idx > threshold))
+  
+
+  
+  return(data)
 }
 
 
