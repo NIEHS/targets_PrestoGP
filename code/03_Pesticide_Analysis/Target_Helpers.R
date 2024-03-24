@@ -107,44 +107,20 @@ drop_bad_cols <- function(data, idx, threshold){
 }
 
 
-read_pesticide_data <- function(COMPUTE_MODE = 1){
-  
-  path_base <-
-    ifelse(COMPUTE_MODE == 1,
-           "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
-           ifelse(COMPUTE_MODE == 2,
-                  "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/",
-                  ifelse(COMPUTE_MODE == 3,
-                         "/opt/", stop("COMPUTE_MODE should be one of 1, 2, or 3.\n")
-                  )
-           )
-    )
-  
-  azo <- sf::read_sf(paste0(path_base, "data_process/data_AZO_watershed_huc_join.shp"))
-
-  
-  # Return the data
-  return(azo)
-  
-}
-
-
-
 #' plot_cv_map
 #'
-#' @param read_pesticide 
+#' @param pesticide 
 #' @param kfold_cv 
 #'
 #' @return p ggplot object
 #' @export
 #'
 #' @examples
-plot_cv_map <- function(read_pesticide, kfold_cv) {
+plot_cv_map <- function(pesticide) {
   
   # Create a ggplot object
-  read_pesticide$kfold_cv <- kfold_cv
   p <- ggplot() +
-    geom_sf(data = read_pesticide, aes(color = as.factor(kfold_cv))) +
+    geom_sf(data = pesticide, aes(color = kfolds )) +
     scale_fill_viridis_d() +
     theme_minimal() +
     theme(legend.position = "bottom")
