@@ -1,12 +1,15 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-drop_bad_cols|function|fb349760d9440c19|||||||||||||||
-drop_cols|stem|7424f902978cf057|912c35726ac745c3|93eb8a3f4ef1244f|1706491127||t19805.1641089125s|42ca56bbce333d09|83818966|qs|local|vector|||0.008||
+coords_mat|stem|8c6fcf0770b48437|58206130a849a496|7396ed3a182b90ee|-1325898640||t19806.1244031185s|00aa42012bfd1799|480703|qs|local|vector|||0.002||
+drop_bad_cols|function|8336546cb99c9058|||||||||||||||
+drop_cols|stem|7424f902978cf057|912c35726ac745c3|2043911956db975e|1706491127||t19806.1152689423s|42ca56bbce333d09|83818966|qs|local|vector|||0.009||
 exploratory_analysis|function|2ced13a281b826d0|||||||||||||||
 explore_skim|stem|197d4bc28118d473|3bacdc10c67c51bf|24834b62a47f0ff8|163196915||t19805.1631822556s|3907395383c5dc9b|34588|qs|local|vector|||30.175||
 explore_unique|stem|8bfbcedf7b79209b|b61fbbcdddae70e3|98e756e56d45a916|2081862389||t19805.1628329566s|fa3c2e01f63937b5|8124|qs|local|vector|||0.882|1m22mUsing an external vector in selections was deprecated in tidyselect 1.1.0.36mℹ39m Please use all_of or any_of instead.   Was  data  selectidx   Now  data  selectall_ofidxSee httpstidyselect.rlib.orgreferencefaqexternalvector.html.|
 filter_NA|function|9d4e77e689ee34c6|||||||||||||||
 filterNA_Covariates|stem|335a5f6ca4ee573d|76c427c375c78687|878d5910cf77a28b|1066545991||t19790.9135113804s|00b6a0dcc9ec5aeb|86458845|qs|local|vector|||0.007||
+generate_block_sp_index|function|c427aaf275b32689|||||||||||||||
 get_covariates|function|3d049105db8afb89|||||||||||||||
+kfold_cv|stem|ebcd7e22756e03c1|1d4ab837ec57d902|5bb7cff20eedbf4c|-1865240154||t19806.1248514655s|51865c8346c060c0|7702|qs|local|vector|||0.013||
 read_data|function|e94ff23f6a216ea4|||||||||||||||
 read_pesticide|stem|095f351bf7715392|33b56338d5e00661|ba324ac192f3a717|-722807119||t19791.1945053265s|d1cd1822fb2e3e83|2512392|qs|local|vector|||25.841||
 read_pesticide_data|function|0e9818003f83ac36|||||||||||||||

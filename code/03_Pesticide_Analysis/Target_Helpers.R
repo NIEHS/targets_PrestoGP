@@ -48,21 +48,6 @@ read_data <- function(path, pesticide_data = pesticide_data){
 }
 
 
-# Save data as a qs file
-#' save_as_qs
-#'
-#' @param dataRDS 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-save_as_qs <- function(dataRDS){
-  
-  # Save the data as a qs file
-  qs::qsave(dataRDS, "myfile.qs")
-
-}
 
 
 
@@ -83,19 +68,6 @@ filter_NA <- function(data){
 
 }
 
-
-# Extract the covariates
-
-get_covariates <- function(data){
-  
-  # Extract the covariates
-  covariates <- data %>% 
-    select(-c("pesticide", "date", "site", "lat", "long", "elev", "soiltype", "soilchem"))
-  
-  # Return the covariates
-  return(covariates)
-  
-}
 
 # Create a function for exploratory analysis of the covariates
 #' exploratory_analysis
@@ -126,8 +98,8 @@ unique_vals <- function(data){
 
 drop_bad_cols <- function(data, idx, threshold){
   # Subset `data` by column where idx > threshold
-  data <- data %>% 
-    select(which(idx > threshold))
+  data <- data |>
+    select(which(idx > threshold)) 
   
 
   
@@ -153,5 +125,30 @@ read_pesticide_data <- function(COMPUTE_MODE = 1){
   
   # Return the data
   return(azo)
+  
+}
+
+
+
+#' plot_cv_map
+#'
+#' @param read_pesticide 
+#' @param kfold_cv 
+#'
+#' @return p ggplot object
+#' @export
+#'
+#' @examples
+plot_cv_map <- function(read_pesticide, kfold_cv) {
+  
+  # Create a ggplot object
+  read_pesticide$kfold_cv <- kfold_cv
+  p <- ggplot() +
+    geom_sf(data = read_pesticide, aes(color = as.factor(kfold_cv))) +
+    scale_fill_viridis_d() +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+  
+  return(p)
   
 }

@@ -7,7 +7,8 @@ library(targets)
 
 # Set target options:
 tar_option_set(
-  packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr"),
+  packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
+               "rsample","stats","ggplot2"),
   format = "qs"
   #
   # For distributed computing in tar_make(), supply a {crew} controller
@@ -70,9 +71,29 @@ list(
     name = explore_unique,
     command = unique_vals(filterNA_Covariates)
   ),
-  tar_target(
+  tar_target( # This target drops columns with less than 0.0001 unique values (i.e. keeps them all)
     name = drop_cols,
     command = drop_bad_cols(filterNA_Covariates, explore_unique, 0.0001)
-  )
+  ),
+  tar_target( # This target extracts coordinates for CV input
+    name = coords_mat,
+    command = st_coordinates(read_pesticide) 
+  ),
+  tar_target( # This target creates 10-fold CV using RSAMPLE
+    name = kfold_cv,
+    command = kmeans(coords_mat, centers = 10)$cluster
+  ),
+  tar_target( # This target plots the CV folds
+    name = plot_kfolds,
+    command = plot_cv_map(read_pesticide, kfold_cv)
+  ),
 )
 # Created by use_targets().
+
+# TODO
+# 1. Setup LBLO Cross-Validation rsample
+# dynamic branching - tar_group_by https://docs.ropensci.org/tarchetypes/reference/tar_group_by.html
+# 2. Setup PrestoGP
+# 3. Setup PrestoGP with LBLO Cross-Validation
+# 4. Run analysis on local machine - assume all values are observed
+# 5. Run analysis on HPC-GEO - assume all values are observed
