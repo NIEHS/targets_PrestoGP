@@ -15,11 +15,12 @@ library(skimr)
 library(rsample)
 library(stats)
 library(ggplot2)
-
+library(parsnip)
+library(fastDummies)
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
-               "rsample","stats","ggplot2","tarchetypes"),
+               "rsample","stats","ggplot2","tarchetypes","parsnip","fastDummies"),
   format = "qs"
   #
   # For distributed computing in tar_make(), supply a {crew} controller
@@ -81,11 +82,15 @@ list(
   tar_target( # This target drops columns with less than 0.0001 unique values (i.e. keeps them all)
     name = drop_cols,
     command = drop_bad_cols(filterNA_Covariates, explore_unique, 0.0001)
-  ),
+  ),  
+  tar_target( # This target creates k-1 indicator variables for each categorical variable
+    name = create_dummies,
+    command = create_dummy_vars(drop_cols)
+  ),    
   tar_target( # This target re-projects the combined, filtered data into an sf object
     name = sf_pesticide,
     # use st_sf to create an sf object with the Albers Equal Area projection
-    command = st_as_sf(drop_cols, coords = c("X","Y"), crs = 5070)
+    command = st_as_sf(create_dummies, coords = c("X","Y"), crs = 5070)
   ),
   tar_target( # This target extracts coordinates for CV input
     name = coords_mat,
@@ -102,22 +107,40 @@ list(
   tar_target( # This target plots the CV folds 
     name = plot_kfolds,
     command = plot_cv_map(sf_pesticide_cv)
-  )  
-  # tar_target( # This target uses dynamic branching to create the CV folds with the data
-  #   name = sf_pesticide_grp,
-  #   command = tar_group_by(sf_pesticide_cv, kfolds),
-  #   pattern = map(sf_pesticide_cv, kfolds)
-  # )
+  ),  
+  list( # Dynamic branching with tar_group_by and plotting kfolds
+    tar_group_by(
+      sf_pesticide_cv_group,
+      sf_pesticide_cv,
+      kfolds
+    ),
+    tar_target(
+      plot_by_kfold,
+      plot_single_map(sf_pesticide_cv_group),
+      pattern = map(sf_pesticide_cv_group),
+      iteration = "list"
+    )
+  )
+  # list( # Dynamic branching with tar_group_by and fitting lasso model to each pesticide group
+  #   tar_group_by(
+  #     sf_pesticide_individual,
+  #     sf_pesticide,
+  #     ChmclNm
+  #   ),
+  #   tar_target(
+  #     lasso_fit_by_chem,
+  #     fit_lasso(sf_pesticide_individual),
+  #     pattern = map(sf_pesticide_individual),
+  #     iteration = "list"
+  #   )
+  # )  
 )
 # Created by use_targets().
-
-# Re-project the data to a common projection
-# Convert both the AZO points and HUC to Albers Equal Area projected coordinate system
-#AZO.t <- st_transform(AZO.points, "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0
-# +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
-# 1. Setup LBLO Cross-Validation rsample 
-# dynamic branching - tar_group_by https://docs.ropensci.org/tarchetypes/reference/tar_group_by.html
-# 2. Setup PrestoGP
+# 1. Create dummy variables before exploratory analysis 
+# 2. drop the aquifer_ROCKNAME, keep other factors, including NA covariates (ie. unknown geology/aquifer)
+# 3. Make exploratory analysis and drop_vars not hard coded (unique_vals uses 41 as covariate- make a target that defines covariates)
+# Variables that need to be converted to indicator vars
+# geology_unit_type, aquifer_AQ_NAME, aquifer_ROCK_NAME
 # 3. Setup PrestoGP with LBLO Cross-Validation
 # 4. Run analysis on local machine - assume all values are observed
 # 5. Run analysis on HPC-GEO - assume all values are observed

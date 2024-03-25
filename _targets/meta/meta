@@ -1,31 +1,35 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-.Random.seed|object|e08055060a8bbfd3|||||||||||||||
-coords_mat|stem|8c6fcf0770b48437|ff2c16ce22b84eec|bcae9367132bdd97|-1325898640||t19806.7365385104s|00aa42012bfd1799|480703|qs|local|vector|||0.001||
+.Random.seed|object|fe6de4517e3f3b27|||||||||||||||
+coords_mat|stem|8c6fcf0770b48437|ff2c16ce22b84eec|c543d0aa65355c83|-1325898640||t19807.6510802298s|00aa42012bfd1799|480703|qs|local|vector|||0.002||
+create_dummies|stem|9967dc623a964f93|adf287298fe34b32|40cbe923fa64cbd2|1525017976||t19807.803751512s|a99a8404db22efe7|175250|qs|local|vector|||2.99||
+create_dummy_vars|function|e46493e1d28e291b|||||||||||||||
 drop_bad_cols|function|8336546cb99c9058|||||||||||||||
-drop_cols|stem|7424f902978cf057|912c35726ac745c3|2043911956db975e|1706491127||t19806.1152689423s|42ca56bbce333d09|83818966|qs|local|vector|||0.009||
-exploratory_analysis|function|2ced13a281b826d0|||||||||||||||
-explore_skim|stem|197d4bc28118d473|3bacdc10c67c51bf|24834b62a47f0ff8|163196915||t19805.1631822556s|3907395383c5dc9b|34588|qs|local|vector|||30.175||
-explore_unique|stem|8bfbcedf7b79209b|b61fbbcdddae70e3|98e756e56d45a916|2081862389||t19805.1628329566s|fa3c2e01f63937b5|8124|qs|local|vector|||0.882|1m22mUsing an external vector in selections was deprecated in tidyselect 1.1.0.36mℹ39m Please use all_of or any_of instead.   Was  data  selectidx   Now  data  selectall_ofidxSee httpstidyselect.rlib.orgreferencefaqexternalvector.html.|
+drop_cols|stem|457320163977a1f5|912c35726ac745c3|d35f616ce2d80810|1706491127||t19807.8037533784s||94022|qs|local|vector|||0.044||Cant subset columns past the end.1m22m36mℹ39m Location 882 doesnt exist.36mℹ39m There are only 881 columns.
+explore_skim|stem|197d4bc28118d473|3bacdc10c67c51bf|24834b62a47f0ff8|163196915||t19807.651050939s|3907395383c5dc9b|34588|qs|local|vector|||30.726||
+explore_unique|stem|f5c5ae1da3a5a7f0|b61fbbcdddae70e3|08394f2931867db0|2081862389||t19807.6506952749s|acc33ea125d3140e|5423|qs|local|vector|||0.581||
 filter_NA|function|9d4e77e689ee34c6|||||||||||||||
-filterNA_Covariates|stem|335a5f6ca4ee573d|76c427c375c78687|878d5910cf77a28b|1066545991||t19790.9135113804s|00b6a0dcc9ec5aeb|86458845|qs|local|vector|||0.007||
-generate_block_sp_index|function|c427aaf275b32689|||||||||||||||
-get_covariates|function|3d049105db8afb89|||||||||||||||
-kfold_cv|stem|ebcd7e22756e03c1|1d4ab837ec57d902|5bb7cff20eedbf4c|-1865240154||t19806.1248514655s|51865c8346c060c0|7702|qs|local|vector|||0.013||
+filterNA_Covariates|stem|335a5f6ca4ee573d|76c427c375c78687|878d5910cf77a28b|1066545991||t19807.6506391161s|00b6a0dcc9ec5aeb|86458845|qs|local|vector|||0.006||
+fit_lasso|function|3d5e01c376d947b3|||||||||||||||
+kfold_cv|stem|ebcd7e22756e03c1|1d4ab837ec57d902|5bb7cff20eedbf4c|-1865240154||t19807.6510804721s|51865c8346c060c0|7702|qs|local|vector|||0.012||
+plot_by_kfold|pattern|fc038f08d4a64542|86a50e5d0be82ec1||-304556969||||439852613|qs|local|list||plot_by_kfold_30f81072*plot_by_kfold_4a29d55d*plot_by_kfold_0a9fb352*plot_by_kfold_986ace05*plot_by_kfold_8f91f24d*plot_by_kfold_3718ae42*plot_by_kfold_db3785e2*plot_by_kfold_bbb69460*plot_by_kfold_678f0eb6*plot_by_kfold_85169ee0|0.023||
+plot_by_kfold_0a9fb352|branch|4815f88fc1f8ed8d|86a50e5d0be82ec1|cbf564a34a9bbb4e|-1267092269||t19807.6512322319s|70caffcfcd30bbcc|23619140|qs|local|list|plot_by_kfold||0.002||
+plot_by_kfold_30f81072|branch|58067050b3a92eb0|86a50e5d0be82ec1|cbf564a34a9bbb4e|1623801160||t19807.6512166975s|2462341bc44cfbce|75311668|qs|local|list|plot_by_kfold||0.002||
+plot_by_kfold_3718ae42|branch|a9709444c44c2bd3|86a50e5d0be82ec1|cbf564a34a9bbb4e|-1160322864||t19807.6512566732s|a77385144f008dd0|35153768|qs|local|list|plot_by_kfold||0.002||
+plot_by_kfold_4a29d55d|branch|6a4f6654f017faf1|86a50e5d0be82ec1|cbf564a34a9bbb4e|591826778||t19807.6512280019s|d3d135e4ea56e5d5|53752228|qs|local|list|plot_by_kfold||0.004||
+plot_by_kfold_678f0eb6|branch|b8eb9cbdad48cc8a|86a50e5d0be82ec1|cbf564a34a9bbb4e|-219218865||t19807.6512788093s|b64cca0066491ce8|59761625|qs|local|list|plot_by_kfold||0.002||
+plot_by_kfold_85169ee0|branch|b876b9bb9aa6b06f|86a50e5d0be82ec1|cbf564a34a9bbb4e|-50779131||t19807.6512822325s|b6a0dacfa4bd6aee|19204905|qs|local|list|plot_by_kfold||0.003||
+plot_by_kfold_8f91f24d|branch|7a7c94b51d704b3c|86a50e5d0be82ec1|cbf564a34a9bbb4e|-577587338||t19807.6512501137s|4ec8375f37b2513a|67104272|qs|local|list|plot_by_kfold||0.002||
+plot_by_kfold_986ace05|branch|e742e047dea9f8f1|86a50e5d0be82ec1|cbf564a34a9bbb4e|-970669457||t19807.6512386282s|3b88fb2b5e3cdf40|38319655|qs|local|list|plot_by_kfold||0.002||
+plot_by_kfold_bbb69460|branch|a54ca5385a919a81|86a50e5d0be82ec1|cbf564a34a9bbb4e|-2056178442||t19807.6512685099s|6214e432b5bb88df|35586030|qs|local|list|plot_by_kfold||0.002||
+plot_by_kfold_db3785e2|branch|44ec3bae95ac9f0c|86a50e5d0be82ec1|cbf564a34a9bbb4e|-1196135195||t19807.6512622111s|3eb782d12f273c74|32039322|qs|local|list|plot_by_kfold||0.002||
 plot_cv_map|function|5999ad56e3406b82|||||||||||||||
-plot_kfolds|stem|115e69278ca43f2d|143ef385b8694b4d|cbcec6a941c22f86|1985386312||t19806.7577894308s|c76daa3677088c48|501417826|qs|local|vector|||0.019||
-prj_pesticide|stem|74e0ea186754d7d1|45c685a28d8a94a6|bc18c40745963134|1005471620||t19806.731081529s|c049bbb0093bff94|83566845|qs|local|vector|||0.02||
-prj_pesticide_cv|stem||ee642531c8e02502|d5ef3f7fa35f3f10|-853800126||t19806.731781835s||0|qs|local|vector|||0.003||object prj_pesticide not found
-prj_pesticide_grps|stem||65aade5069659a4b|c1bb2f0583c61d7d|-2144261308||t19806.7310820381s||0|qs|local|vector|||0.014||no columns to group by.
+plot_kfolds|stem|5977eeb621f20969|143ef385b8694b4d|7bd2ab8461309531|1985386312||t19807.6512022034s|f615620ad438caf1|517686064|qs|local|vector|||0.014||
+plot_single_map|function|9b1ff0592c3048ed|||||||||||||||
 read_data|function|e94ff23f6a216ea4|||||||||||||||
-read_pesticide|stem|095f351bf7715392|33b56338d5e00661|ba324ac192f3a717|-722807119||t19791.1945053265s|d1cd1822fb2e3e83|2512392|qs|local|vector|||25.841||
-read_pesticide_data|function|0e9818003f83ac36|||||||||||||||
-readQS|stem|0d0f43457705740e|fbd44d08ee3b0291|23046222c02ba004|272066984||t19790.9134966741s|1d578777ca7e0747|92461123|qs|local|vector|||3.046||
-readRDS|stem|30d13634fc33f3b0|737fe80589c40445|4f0911f72ff7c033|-1881388877||t19783.8526752459s|3ecc6d8d174470dc|57036021|qs|local|vector|||3.068||
-save_as_qs|function|126849d4e4b26b27|||||||||||||||
-saveQS|stem|04c4afd93e0382b6|321ebaea420056bf|e7cce5d1d976aca8|-1327603547||t19783.8526984237s|6efc4bfe9d27bd5a|46|qs|local|vector|||1.982||
+readQS|stem|0d0f43457705740e|fbd44d08ee3b0291|23046222c02ba004|272066984||t19807.6506244594s|1d578777ca7e0747|92461123|qs|local|vector|||3.39||
 set_local_data_path|function|bd98579ff809e889|||||||||||||||
-set_path|stem|22982f128e9919a8|e52d2ca109a11c95|dedd4ccda1aa143b|-782108320||t19790.9134451023s|1701aa42bd45be76|89|qs|local|vector|||2.314||
-sf_pesticide|stem|74e0ea186754d7d1|45c685a28d8a94a6|bc18c40745963134|-749829516||t19806.7365380931s|c049bbb0093bff94|83566845|qs|local|vector|||0.023||
-sf_pesticide_cv|stem|fac0df352622bd40|4f38ef817bca02cd|74dacc9407dda691|1101330710||t19806.7412268433s|44dcd16cbcaa5a40|83574662|qs|local|vector|||0.007||
-sf_pesticide_grps|stem||fbfeea76e435d6ec|556a7c7f9becb9a4|-2017667155||t19806.7375208316s||0|qs|local|vector|||0.014||no columns to group by.
-unique_vals|function|8b5405b635f11ab0|||||||||||||||
+set_path|stem|22982f128e9919a8|e52d2ca109a11c95|dedd4ccda1aa143b|-782108320||t19807.6060019523s|1701aa42bd45be76|89|qs|local|vector|||0.001||
+sf_pesticide|stem|311a19f3da7c7ed6|45c685a28d8a94a6|228afd2f82eda527|-749829516||t19807.6510798167s||86231032|qs|local|vector|||0.037||Cant subset columns that dont exist.31m39m Columns X and Y dont exist.
+sf_pesticide_cv|stem|c4b03d5a1f97084e|4f38ef817bca02cd|808826f750e5d8f2|1101330710||t19807.6510946537s|e213995900e489b8|86235130|qs|local|vector|||0.003||
+sf_pesticide_cv_group|stem|1fa89cdbe280d06f|b61bb4e2b5cd1a79|466d7d3c9c619bf8|-72964414||t19807.6511093361s|81e87c8503e04fab|86246869|qs|local|group||sf_pesticide_cv_group_01e939ba*sf_pesticide_cv_group_c5201afe*sf_pesticide_cv_group_80fb1ab1*sf_pesticide_cv_group_920d7f54*sf_pesticide_cv_group_56b75ec2*sf_pesticide_cv_group_6855955e*sf_pesticide_cv_group_922ab107*sf_pesticide_cv_group_49c36edc*sf_pesticide_cv_group_ee853a6c*sf_pesticide_cv_group_f4610119|0.007||
+unique_vals|function|d1bdc49311bd76e5|||||||||||||||
