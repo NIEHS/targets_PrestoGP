@@ -17,10 +17,13 @@ library(stats)
 library(ggplot2)
 library(parsnip)
 library(fastDummies)
+library(scales)
+library(ggridges)
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
-               "rsample","stats","ggplot2","tarchetypes","parsnip","fastDummies"),
+               "rsample","stats","ggplot2","tarchetypes","parsnip","fastDummies",
+               "scales","ggridges"),
   format = "qs"
   #
   # For distributed computing in tar_make(), supply a {crew} controller
@@ -67,51 +70,64 @@ list(
     name = readQS,
     command = read_data(set_path,"data_AZO_covariates_cleaned_03032024")
   ),
-  tar_target( # This target filters out the NA values in the COVARIATES
-    name = filterNA_Covariates,
-    command = filter_NA(readQS)
-  ),
-  tar_target( # This target runs skimr::skim to look at the summary stats of COVARIATES
-    name = explore_skim, # Covariates start at column 41
-    command = skim(filterNA_Covariates[,41:ncol(filterNA_Covariates)])
-  ),
-  tar_target(# This target calculates the percent of unique values in each of the the COVARIATES
-    name = explore_unique,
-    command = unique_vals(filterNA_Covariates)
-  ),
-  tar_target( # This target drops columns with less than 0.0001 unique values (i.e. keeps them all)
-    name = drop_cols,
-    command = drop_bad_cols(filterNA_Covariates, explore_unique, 0.0001)
-  ),  
-  tar_target( # This target creates k-1 indicator variables for each categorical variable
-    name = create_dummies,
-    command = create_dummy_vars(drop_cols)
-  ),    
-  tar_target( # This target re-projects the combined, filtered data into an sf object
+  tar_target( # This target re-projects the data into an sf object
     name = sf_pesticide,
     # use st_sf to create an sf object with the Albers Equal Area projection
-    command = st_as_sf(create_dummies, coords = c("X","Y"), crs = 5070)
+    command = st_as_sf(readQS, coords = c("X","Y"), crs = 5070)
+  ),  
+  tar_target( # This target separates the data into (1)outcome (2) covariates/features (3) ancillary info
+    name = sf_pesticide_partition,
+    command = partition_datasets(sf_pesticide)
+  ),  
+  tar_target( # This target runs skimr::skim to look at the summary stats of COVARIATES
+    name = explore_skim, 
+    command = skim(sf_pesticide_partition[[2]]) #List element 2 is the covariates
+  ),
+  tar_target( # This target runs skimr::skim to look at the summary stats of COVARIATES
+    name = explore_outcome_ridges, 
+    command = plot_pesticide_ridges(sf_pesticide_partition[[1]]) #List element 1 is the Pesticide data
+  ),  
+  tar_target(# This target prepares the numeric and factor covariates for analysis
+    name = sf_pesticide_partition_cleaned,
+    command = covariate_prep(sf_pesticide_partition, 0.00001)
+  ),
+  tar_target( # This target pivots the covariates
+    name = sf_covariates_pivot, 
+    command = pivot_covariates(sf_pesticide_partition_cleaned[[2]])
+  ),
+  list( # Dynamic branching with tar_group_by and plotting covariates
+    tar_group_by(
+      sf_explore_cov_maps,
+      sf_covariates_pivot,
+      covariate
+    ),
+    tar_target(
+      plot_covariate_maps,
+      plot_exploratory_covariates(sf_explore_cov_maps),
+      pattern = map(sf_explore_cov_maps),
+      iteration = "list"
+    )
   ),
   tar_target( # This target extracts coordinates for CV input
     name = coords_mat,
-    command = st_coordinates(sf_pesticide) 
+    command = st_coordinates(sf_pesticide_partition_cleaned[[1]]) 
   ),
   tar_target( # This target creates 10-fold CV using RSAMPLE
     name = kfold_cv,
     command = kmeans(coords_mat, centers = 10)$cluster
   ),
   tar_target( # This target joins the CV folds with the data
-    name = sf_pesticide_cv,
-    command = add_column(sf_pesticide, kfolds = as.factor(kfold_cv))
+    name = sf_pesticide_dummies_cv,
+    command = lapply(sf_pesticide_partition_cleaned, add_column, kfolds = as.factor(kfold_cv))
   ),
   tar_target( # This target plots the CV folds 
     name = plot_kfolds,
-    command = plot_cv_map(sf_pesticide_cv)
+    command = plot_cv_map(sf_pesticide_dummies_cv)
   ),  
   list( # Dynamic branching with tar_group_by and plotting kfolds
     tar_group_by(
       sf_pesticide_cv_group,
-      sf_pesticide_cv,
+      sf_pesticide_dummies_cv[[1]],
       kfolds
     ),
     tar_target(

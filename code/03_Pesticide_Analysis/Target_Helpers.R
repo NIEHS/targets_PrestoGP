@@ -49,62 +49,97 @@ read_data <- function(path, pesticide_data = pesticide_data){
 
 
 
-
-
-#' filter_NA
-#'
-#' @param data 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-filter_NA <- function(data){
+partition_datasets <- function(data_sf) {
   
-  
-  data <- data %>% 
+  # drop the soil chemistry covariates (not needed and too difficult to work with)
+  data_sf <- data_sf %>% 
     select(-starts_with("soilchem"))
   
-
+  
+  # Partition the data into (1) outcome (2) covariates/features (3) ancillary info
+  outcome <- data_sf |> 
+    dplyr::select(c("id","ChmclNm","Year","cncntrt","lft_cns")) 
+  
+  covariates <- data_sf |> 
+    dplyr::select(c("id"),
+                  starts_with("nass"),
+                  starts_with("olm"),
+                  starts_with("aquifer"),
+                  starts_with("tclim"),
+                  starts_with("prism"),
+                  contains("geology_unit_type"),
+                  starts_with("pest")
+    )
+  
+  ancillary <- data_sf |> 
+    dplyr::select("id","site_no","parm_cd","Units","ContyNm","StateNm","wll_dpt",
+                  "nsampls","objectid","tnmid","metasource","sourcedata","sourceorig",
+                  "sourcefeat","loaddate","referenceg","areaacres","areasqkm",
+                  "states","huc12","huc10","huc08","huc06","huc04","huc02",
+                  "name","hutype","humod","tohuc","noncontrib","noncontr_1","globalid",
+                  "shape_Leng","shape_Area")
+  
+  return(list(outcome, covariates, ancillary))
 }
 
 
-# Create a function for exploratory analysis of the covariates
-#' exploratory_analysis
+
+#  Covariate preparation includes dropping continuous covariates that don't have enough unique values - and creating dummy variables for categorical covariates
+#' covariate_prep
 #'
-#' @param data
-#'
+#' @param data Partitioned data with 3 lists: outcome, covariates, ancillary
+#' @param threshold Threshold for the number of unique values in a numeric covariate
 #' @return
 #' @export
 #'
 #' @examples
-unique_vals <- function(data){
+covariate_prep <- function(data, threshold = 1e-5){
   
-# Create a logical index for all columns after the 41st column
+  # Get the covariates from the partitioned list
+  data_covariates <- data[[2]]
+
+  # Get the numeric covariates
+  covariates_num <- dplyr::select_if(data_covariates, is.numeric)
+
+  # Get the factor type covariates and drop aquifer_ROCK_NAME
+  covariates_factor <- dplyr::select_if(data_covariates, is.factor) |> 
+    select(-"aquifer_ROCK_NAME")
+
+  covariates_factor$aquifer_AQ_NAME <- fct_explicit_na(covariates_factor$aquifer_AQ_NAME, "unknown")
   
-  idx <- which(colnames(data) %in% colnames(data)[41:ncol(data)])
   
-  n_unique <- data |> 
-    dplyr::select(all_of(idx)) |>
+
+  # Calculate unique values for each numeric covariate
+  n_unique <- covariates_num |> 
     dplyr::summarise_all(n_distinct) |> 
-    dplyr::mutate_all(~ . / nrow(data) * 100)  
-  
-  # Add a generic value for the first 41 columns and prepend it to the data frame
-  nu <- c(rep(100,41), t(n_unique))
+    dplyr::mutate_all(~ . / nrow(covariates_num) * 100) |>
+    as.numeric() |>
+    t() 
 
-  return(nu)
+  # Filter the numeric covariates by the threshold
+  covariates_num_filter <- covariates_num |>
+    select(which(n_unique > threshold)) 
+
+  
+  
+  # Create dummy variables for the factor covariates
+  covariates_factor_dummy <- dummy_cols(covariates_factor, 
+                                        c("geology_unit_type", 
+                                          "aquifer_AQ_NAME"), 
+                                        remove_selected_columns = TRUE, 
+                                        ignore_na = FALSE) |>
+    st_as_sf() 
+
+  
+  # Combine the numeric and factor covariates
+  covariates_processed <- covariates_num_filter |>
+    cbind(covariates_factor_dummy) |>
+    select(-"geometry.1") 
+
+  
+  return(list(data[[1]], covariates_processed, data[[3]]))
 }
 
-
-drop_bad_cols <- function(data, idx, threshold){
-  # Subset `data` by column where idx > threshold
-  data <- data |>
-    select(which(idx > threshold)) 
-  
-
-  
-  return(data)
-}
 
 
 #' plot_cv_map
@@ -119,7 +154,7 @@ plot_cv_map <- function(pesticide) {
   
   # Create a ggplot object
   p <- ggplot() +
-    geom_sf(data = pesticide, aes(color = kfolds )) +
+    geom_sf(data = pesticide[[1]], aes(color = kfolds )) +
     scale_fill_viridis_d() +
     theme_minimal() +
     theme(legend.position = "bottom")
@@ -150,6 +185,26 @@ plot_single_map <- function(pesticide) {
   
 }
 
+pivot_covariates <- function(data) {
+  
+  # Variables to pivot 
+  
+  
+  vars_to_plot <- c("id","olm_huc12_frac_clay_loam_Texture_010cm","olm_huc12_Sand_200cm","olm_huc08_frac_clay_Texture_030cm","nass_huc08_potatoes","nass_huc08_developed_highintensity","nass_huc12_woodywetlands",
+    "pest_low_2000_2019_INDOXACARB","pest_low_2000_2019_ATRAZINE","pest_high_2000_2019_SIMAZINE","geology_unit_type_Baltimore.Gneiss","aquifer_AQ_NAME_Ordovician.aquifers",
+    "geology_unit_type_Ultramafic.rocks..chiefly.Mesozoic..unit.2..Western.Sierra.Nevada.and.Klamath.Mountains.","prism_huc12_solslope","tclim_sum_soil_huc08",
+    "aquifer_AQ_NAME_New.York.and.New.England.carbonate.rock.aquifers")
+  
+  data_temp <- data |>
+    select(all_of(vars_to_plot))
+  
+  # Pivot the covariates
+  data_pivot <- data_temp |>
+    pivot_longer(cols = c(-"id", -"geometry"), names_to = "covariate", values_to = "value")
+  
+  return(data_pivot)
+  
+}
 
 
 #' fit_lasso
@@ -180,7 +235,9 @@ fit_lasso <- function(data) {
 
 
 
-#' create_dummy_vars
+
+
+#' plot_exploratory_covariates
 #'
 #' @param data 
 #'
@@ -188,24 +245,51 @@ fit_lasso <- function(data) {
 #' @export
 #'
 #' @examples
-create_dummy_vars <- function(data){
+plot_exploratory_covariates <- function(data) {
   
-  data_all <- dummy_cols(data,c("geology_unit_type", "aquifer_AQ_NAME", "aquifer_ROCK_NAME"),remove_selected_columns = TRUE, ignore_na = TRUE)
-  
-  
-  # Select the dummy variables, calculate by column if it is all zeros, if so drop it
-  data_dummies <- data_all %>% 
-    select(starts_with("geology_unit_type"), starts_with("aquifer_AQ_NAME"), starts_with("aquifer_ROCK_NAME"))
-  
-  # # Convert NA to 0 in the data.table data_all
-  # data_dummies[is.na(data_dummies)] <- 0
-  # 
-  # data_n_distinct <- data_dummies |> 
-  # dplyr::summarise_all(n_distinct) |>
-  #   as.numeric()
-  # Confirmed that all of the dummy variables are binary (i.e. no all-zeros or all-ones)
-  
-  
-  return(data_dummies)
+  if (length(unique(data$value)) == 2) { # Discrete/Binary covariate
+    g <- ggplot() +
+      geom_sf(data = data, aes(color = as.factor(value))) +
+      theme_minimal() +
+      scale_color_viridis_d() +
+      ggtitle(data$covariate) +
+      theme(legend.position = "right")
+    
+    
+  } else { # Continuous covariate
+    g <- ggplot() +
+      geom_sf(data = data, aes(color = value )) +
+      theme_minimal() +
+      scale_color_viridis_c(option = "C",  trans = scales::pseudo_log_trans(sigma = 0.001)) +
+      ggtitle(data$covariate) +
+      theme(legend.position = "right")
+    
+    
+  }
+
+  return(g)
 }
 
+
+
+plot_pesticide_ridges <- function(data) {
+ 
+  df <- as.data.frame(data)
+  df$cncntrt[df$cncntrt == 0] <- 0.0001
+  
+  sample_size = df %>% group_by(ChmclNm) %>% summarize(num = n(), bd = sum(lft_cns)/length(lft_cns) * 100)
+ 
+  p <- 
+  df |>
+    left_join(sample_size) %>%
+    mutate(myaxis = paste0(ChmclNm, "\n", "n=", num," ","percentBD=",round(bd,1))) %>%
+    group_by(ChmclNm) %>% 
+    ggplot() +
+    geom_density_ridges(aes(x = cncntrt,y = as.factor(myaxis), fill = as.factor(lft_cns))) +
+     scale_x_log10(labels = trans_format("log10", math_format(10^.x))) +
+    scale_fill_viridis_d(option = "D") +
+    labs(y = "Chemical",x = "Concentration (ug/L)",fill = "Censored")
+  
+  return(p)
+  
+}
