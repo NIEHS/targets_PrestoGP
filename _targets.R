@@ -83,8 +83,8 @@ list(
     name = explore_skim, 
     command = skim(sf_pesticide_partition[[2]]) #List element 2 is the covariates
   ),
-  tar_target( # This target runs skimr::skim to look at the summary stats of COVARIATES
-    name = explore_outcome_ridges, 
+  tar_target( # This target makes a ridge density plot of the outcomes 
+    name = plot_outcome_ridgelines, 
     command = plot_pesticide_ridges(sf_pesticide_partition[[1]]) #List element 1 is the Pesticide data
   ),  
   tar_target(# This target prepares the numeric and factor covariates for analysis
@@ -108,6 +108,19 @@ list(
       iteration = "list"
     )
   ),
+  list( # Dynamic branching with tar_group_by and plotting maps of pesticide outcome
+    tar_group_by(
+      sf_plot_outcome_maps,
+      sf_pesticide_partition_cleaned[[1]],
+      ChmclNm
+    ),
+    tar_target(
+      plot_pesticide_maps,
+      plot_outcome_map(sf_plot_outcome_maps),
+      pattern = map(sf_plot_outcome_maps),
+      iteration = "list"
+    )
+  ),  
   tar_target( # This target extracts coordinates for CV input
     name = coords_mat,
     command = st_coordinates(sf_pesticide_partition_cleaned[[1]]) 

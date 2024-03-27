@@ -293,3 +293,26 @@ plot_pesticide_ridges <- function(data) {
   return(p)
   
 }
+
+
+
+plot_outcome_map <- function(data) {
+  
+  states <- st_as_sf(maps::map("state", plot = FALSE, fill = TRUE))
+
+  df_obs <- data |> filter(lft_cns == 0)
+  df_cens <- data |> filter(lft_cns == 1)
+  
+  p <- ggplot() +
+    geom_sf(data = df_cens, size = 0.5) +
+    geom_sf(data = df_obs, aes(color = cncntrt)) +
+    facet_wrap(~ Year) +
+    scale_color_viridis_c(option = "A", trans = scales::pseudo_log_trans(sigma = 0.005)) +
+    geom_sf(data = states, fill = NA, size=0.15) +
+    theme_minimal() +
+    theme(legend.position = "right") +
+    ggtitle(data$ChmclNm) 
+  
+  return(p)
+  
+}

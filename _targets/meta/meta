@@ -1,11 +1,18 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-.Random.seed|object|91999bd9a06e7789|||||||||||||||
+.Random.seed|object|20e95fabab8bdf5b|||||||||||||||
 coords_mat|stem|8c6fcf0770b48437|503df07fba4d9a96|3b0a6394321c1562|-1325898640||t19809.7354688286s|00aa42012bfd1799|480703|qs|local|vector|||0.001||
 covariate_prep|function|91c6dc74acfb81a6|||||||||||||||
 create_dummies|stem|9967dc623a964f93|adf287298fe34b32|40cbe923fa64cbd2|1525017976||t19807.803751512s|a99a8404db22efe7|175250|qs|local|vector|||2.99||
 create_dummy_vars|function|e46493e1d28e291b|||||||||||||||
 drop_bad_cols|function|8336546cb99c9058|||||||||||||||
 drop_cols|stem|457320163977a1f5|912c35726ac745c3|d35f616ce2d80810|1706491127||t19807.8037533784s||94022|qs|local|vector|||0.044||Cant subset columns past the end.1m22m36mℹ39m Location 882 doesnt exist.36mℹ39m There are only 881 columns.
+explore_outcome_maps|pattern|b6d678946dc95b50|867964fdb073d848||1038930678||||9565918|qs|local|list||explore_outcome_maps_b1f35340*explore_outcome_maps_a2d84b6a*explore_outcome_maps_b04ba7d9*explore_outcome_maps_51ac62ab*explore_outcome_maps_1843c324*explore_outcome_maps_f140183a|0.172||
+explore_outcome_maps_1843c324|branch|47388cf71b8c9eb3|867964fdb073d848|50bd77841ed056f5|-1944757260||t19809.8689612014s|78d70712a130b489|684792|qs|local|list|explore_outcome_maps||0.013||
+explore_outcome_maps_51ac62ab|branch|1c9c626063522a92|867964fdb073d848|50bd77841ed056f5|-527257037||t19809.8689605367s|ceaecbe9b9e4dac5|862819|qs|local|list|explore_outcome_maps||0.023||
+explore_outcome_maps_a2d84b6a|branch|65ec1c575d0d2de3|867964fdb073d848|50bd77841ed056f5|1758935322||t19809.868958539s|ff8d119cf4fd6f74|2380421|qs|local|list|explore_outcome_maps||0.022||
+explore_outcome_maps_b04ba7d9|branch|22e6042eac55b519|867964fdb073d848|50bd77841ed056f5|88508532||t19809.8689595033s|67356e425de2d103|1230787|qs|local|list|explore_outcome_maps||0.016||
+explore_outcome_maps_b1f35340|branch|9a6b638c441cbc84|867964fdb073d848|50bd77841ed056f5|391548430||t19809.8689569703s|5592fec44b398d2b|2296001|qs|local|list|explore_outcome_maps||0.07||
+explore_outcome_maps_f140183a|branch|3184bb1ad0318c89|867964fdb073d848|50bd77841ed056f5|-787273229||t19809.8689628692s|ab3985fc7585be6d|2111098|qs|local|list|explore_outcome_maps||0.028||
 explore_outcome_ridges|stem|2b4bbdb9121f4c43|b18c4aa5cdfcf430|8e248bceafa997e4|1117439053||t19809.831711027s|c3518c4ddf1d2902|3031661|qs|local|vector|||0.127||
 explore_skim|stem|6c516e3c5cfafb44|1f631f3ca078affb|5c4b1c1534265477|163196915||t19808.5918484996s|1a09eb2479cb95b9|34694|qs|local|vector|||34.113|Couldnt find skimmers for class sfc_POINT, sfc No userdefined sfl provided. Falling back to character.|
 explore_unique|stem|f5c5ae1da3a5a7f0|b61fbbcdddae70e3|8781d61bae8e4e98|2081862389||t19807.6506952749s||5423|qs|local|vector|||0.004||error in evaluating the argument x in selecting a method for function in object filterNA_Covariates not found
@@ -82,6 +89,15 @@ plot_covariate_maps_fc2dcb59|branch|5728581cf92161f9|3bd5bd580c1ab158|71c0eb6e5b
 plot_cv_map|function|7f6f6a570bd5ad27|||||||||||||||
 plot_exploratory_covariates|function|d0e73c2697565698|||||||||||||||
 plot_kfolds|stem|81e04c75159f6afe|7cdd30307440b667|22115ae0e0f6ec28|1985386312||t19809.7355143212s|edd09edb2bfd4d0b|89662522|qs|local|vector|||0.015||
+plot_outcome_map|function|fac51b1407439e47|||||||||||||||
+plot_outcome_ridgelines|stem|142525a58cd4e38e|b18c4aa5cdfcf430|8e248bceafa997e4|-599455749||t19809.8713417441s|0e91badd625e77be|3002725|qs|local|vector|||0.128||
+plot_pesticide_maps|pattern|dcd074f0be5d74da|52c7987c714d81b8||675288718||||9565881|qs|local|list||plot_pesticide_maps_48845dc4*plot_pesticide_maps_5cb9931a*plot_pesticide_maps_965b3285*plot_pesticide_maps_a755a7b9*plot_pesticide_maps_65403bf3*plot_pesticide_maps_d088dbd8|0.339||
+plot_pesticide_maps_48845dc4|branch|1ff1229711f409be|52c7987c714d81b8|50bd77841ed056f5|-1461534835||t19809.8713682269s|5592fec44b398d2b|2296001|qs|local|list|plot_pesticide_maps||0.242||
+plot_pesticide_maps_5cb9931a|branch|067a6cfd6d508497|52c7987c714d81b8|50bd77841ed056f5|-2134278246||t19809.8713700151s|cc6a19fda6085747|2380394|qs|local|list|plot_pesticide_maps||0.025||
+plot_pesticide_maps_65403bf3|branch|afe5b28d16296377|52c7987c714d81b8|50bd77841ed056f5|1792264835||t19809.8713723822s|3e29061cdfd3ce96|684787|qs|local|list|plot_pesticide_maps||0.015||
+plot_pesticide_maps_965b3285|branch|cd7ee3532d7df6f3|52c7987c714d81b8|50bd77841ed056f5|-403206380||t19809.8713710388s|67356e425de2d103|1230787|qs|local|list|plot_pesticide_maps||0.018||
+plot_pesticide_maps_a755a7b9|branch|54339b8d7f428e72|52c7987c714d81b8|50bd77841ed056f5|-276181086||t19809.8713717693s|ceaecbe9b9e4dac5|862819|qs|local|list|plot_pesticide_maps||0.015||
+plot_pesticide_maps_d088dbd8|branch|77c2c67f5f860e82|52c7987c714d81b8|50bd77841ed056f5|-1091342952||t19809.8713739538s|39808e6c4b6d4e8f|2111093|qs|local|list|plot_pesticide_maps||0.024||
 plot_pesticide_ridges|function|de44b6072d7db81e|||||||||||||||
 plot_single_map|function|9b1ff0592c3048ed|||||||||||||||
 read_data|function|e94ff23f6a216ea4|||||||||||||||
@@ -90,6 +106,7 @@ set_local_data_path|function|bd98579ff809e889|||||||||||||||
 set_path|stem|22982f128e9919a8|e52d2ca109a11c95|dedd4ccda1aa143b|-782108320||t19807.6060019523s|1701aa42bd45be76|89|qs|local|vector|||0.001||
 sf_covariates_pivot|stem|ea9299fc39735ea8|2f6599f74bfe52a7|5b67da35316a7760|2081176835||t19809.7543345878s|e53486fee8e8cfd6|1294414|qs|local|vector|||0.421||
 sf_explore_cov_maps|stem|8565dfd09f10cef1|f2febdc63f773962|2a2fbfeb8130b54f|1230089317||t19809.7543405056s|e45a881539ebbbea|1294778|qs|local|group||sf_explore_cov_maps_372023c1*sf_explore_cov_maps_2db55890*sf_explore_cov_maps_474194c5*sf_explore_cov_maps_91fdf094*sf_explore_cov_maps_152ef95e*sf_explore_cov_maps_b9da1cc5*sf_explore_cov_maps_1b6ab037*sf_explore_cov_maps_9fb13096*sf_explore_cov_maps_20ae5696*sf_explore_cov_maps_f1cf2cf0*sf_explore_cov_maps_bae41a65*sf_explore_cov_maps_bc91c0c2*sf_explore_cov_maps_8ee7b4bc*sf_explore_cov_maps_2cbb007c*sf_explore_cov_maps_38815f43|0.188||
+sf_explore_outcome_maps|stem|cca1ade374ca9cfe|49a633014dfb8e35|3b0a6394321c1562|701109624||t19809.8678887653s|8f3bd4c7c13ff63d|502957|qs|local|group||sf_explore_outcome_maps_37ece6c5*sf_explore_outcome_maps_cefc303e*sf_explore_outcome_maps_d535bb4c*sf_explore_outcome_maps_947a572f*sf_explore_outcome_maps_e639568d*sf_explore_outcome_maps_4d8972e1|0.012||
 sf_pesticide|stem|3330e4922d34730a|0db09c913253d85d|b665ce1a44993e2b|-749829516||t19808.1080937523s|c9c9d3d4603f3ff4|92182467|qs|local|vector|||0.022||
 sf_pesticide_cv|stem|c4b03d5a1f97084e|4f38ef817bca02cd|808826f750e5d8f2|1101330710||t19807.6510946537s|e213995900e489b8|86235130|qs|local|vector|||0.003||
 sf_pesticide_cv_group|stem|868f39e9a350a617|4ae824ffc75591a0|072d7b1997cdab7f|-72964414||t19809.7354940565s|b49a8dbcf3810ab9|512434|qs|local|group||sf_pesticide_cv_group_cbb87f5a*sf_pesticide_cv_group_415fe320*sf_pesticide_cv_group_078bc7da*sf_pesticide_cv_group_b9520eea*sf_pesticide_cv_group_bebca9d4*sf_pesticide_cv_group_4dd99057*sf_pesticide_cv_group_eac9c80e*sf_pesticide_cv_group_d49c684c*sf_pesticide_cv_group_f7be0318*sf_pesticide_cv_group_6842f789|0.006||
@@ -97,4 +114,5 @@ sf_pesticide_dummies_cv|stem|1a751c2d628e5b21|7a937d7e44907e33|12733cb59d9dc4a1|
 sf_pesticide_filtered_cleaned|stem||f56a97d457015fa8|dad3d6b19f01ab02|-930242163||t19808.5918488583s||0|qs|local|vector|||0.026||1m22mselect doesnt handle lists.
 sf_pesticide_partition|stem|1774da23b3fd85f9|7a0c055c8a17fa7c|aad861186c3f6ccf|-713680612||t19808.5857500409s|096a44659e94f169|86828523|qs|local|vector|||0.036||
 sf_pesticide_partition_cleaned|stem|537f997a691b255e|d87c1f0055f0c409|7558c6d48881d76d|1820727072||t19809.7354683973s|94267976bbd839f2|86932174|qs|local|vector|||4.536|1m22mfct_explicit_na was deprecated in forcats 1.0.0.36mℹ39m Please use fct_na_value_to_level instead.|
+sf_plot_outcome_maps|stem|cca1ade374ca9cfe|49a633014dfb8e35|3b0a6394321c1562|-1913193101||t19809.8713618913s|8f3bd4c7c13ff63d|502957|qs|local|group||sf_plot_outcome_maps_37ece6c5*sf_plot_outcome_maps_cefc303e*sf_plot_outcome_maps_d535bb4c*sf_plot_outcome_maps_947a572f*sf_plot_outcome_maps_e639568d*sf_plot_outcome_maps_4d8972e1|0.008||
 unique_vals|function|ac6736f8d13d8c75|||||||||||||||
