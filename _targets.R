@@ -149,20 +149,24 @@ list(
       pattern = map(sf_pesticide_cv_group),
       iteration = "list"
     )
+  ),
+  tar_target( # This target prepares the data for model fitting using tidymodels
+    name = sf_pesticide_for_fit,
+    command = prepare_pesticide_for_fit(sf_pesticide_dummies_cv)
+  ),
+  list( # Dynamic branching with tar_group_by and fitting lasso model to each pesticide group
+    tar_group_by(
+      sf_lasso_mvn,
+      sf_pesticide_for_fit,
+      kfolds
+    ),
+    tar_target(
+      lasso_fit_by_kfold,
+      fit_lasso(sf_lasso_mvn),
+      pattern = map(sf_lasso_mvn),
+      iteration = "list"
+    )
   )
-  # list( # Dynamic branching with tar_group_by and fitting lasso model to each pesticide group
-  #   tar_group_by(
-  #     sf_pesticide_individual,
-  #     sf_pesticide,
-  #     ChmclNm
-  #   ),
-  #   tar_target(
-  #     lasso_fit_by_chem,
-  #     fit_lasso(sf_pesticide_individual),
-  #     pattern = map(sf_pesticide_individual),
-  #     iteration = "list"
-  #   )
-  # )  
 )
 # Created by use_targets().
 # 1. Create dummy variables before exploratory analysis 

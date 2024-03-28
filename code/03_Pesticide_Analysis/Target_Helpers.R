@@ -43,6 +43,9 @@ read_data <- function(path, pesticide_data = pesticide_data){
   # Read in the data
   data <- qs::qread(paste0(path, pesticide_data, ".qs"))
   
+  data <- data |>
+    filter(cncntrt > 0) 
+  
   # Return the data
   return(data)
 }
@@ -209,14 +212,32 @@ pivot_covariates <- function(data) {
 
 #' fit_lasso
 #'
-#' @param  assume [[1]] is the outcome sf, [[2]] is the covariates sf
+#' @param data assume [[1]] is the outcome sf, [[2]] is the covariates sf
 #'
 #' @return
 #' @export
 #'
 #' @examples
-fit_lasso <- function(data_outcome, data_covariates) {
+fit_lasso <- function(data) {
   
+
+  
+   
+  # Fit using the linear_model function in Parsnip
+  lasso <- linear_reg(penalty = 1) %>%
+    set_engine("glmnet", family = "gaussian") %>%
+    set_mode("regression") %>%
+    fit(log(cncntrt) ~ ., data = data)
+
+  return(lasso)
+  
+}
+
+
+prepare_pesticide_for_fit <- function(data) {
+  data_outcome <- data[[1]]
+  
+  data_covariates <- data[[2]]
   
   # Put together the final dataframe
   
@@ -235,19 +256,8 @@ fit_lasso <- function(data_outcome, data_covariates) {
   data_fit <- left_join(data_outcome_to_join, data_covariates_to_join, by = "id") |>
     select(-"id")
   
-   
-  # Fit using the linear_model function in Parsnip
-  lasso <- linear_reg(penalty = 1) %>%
-    set_engine("glmnet", family = "mgaussian") %>%
-    set_mode("regression") %>%
-    fit(y_outcomes ~ ., data = pest_data)
-
-  return(lasso)
-  
+  return(data_fit)
 }
-
-
-
 
 
 #' plot_exploratory_covariates
