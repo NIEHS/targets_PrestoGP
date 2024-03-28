@@ -209,25 +209,38 @@ pivot_covariates <- function(data) {
 
 #' fit_lasso
 #'
-#' @param data 
+#' @param  assume [[1]] is the outcome sf, [[2]] is the covariates sf
 #'
 #' @return
 #' @export
 #'
 #' @examples
-fit_lasso <- function(data) {
+fit_lasso <- function(data_outcome, data_covariates) {
   
-  # Subset the outcome and covariates from the data
-  pest_data <- data |>
-    select(cncntrt, 40:ncol(data) -1)
   
-  pest_data <- st_drop_geometry(pest_data)
+  # Put together the final dataframe
   
+  data_outcome_to_join <- data_outcome |>
+    st_drop_geometry() |>
+    select(c("cncntrt","id")) |>
+    as.data.frame() |>
+    mutate(id = row_number()) 
+  
+  
+  data_covariates_to_join <- data_covariates |>
+    st_drop_geometry() |>
+    as.data.frame() |>
+    mutate(id = row_number())
+  
+  data_fit <- left_join(data_outcome_to_join, data_covariates_to_join, by = "id") |>
+    select(-"id")
+  
+   
   # Fit using the linear_model function in Parsnip
-  lasso <- linear_reg() %>%
-    set_engine("glmnet") %>%
+  lasso <- linear_reg(penalty = 1) %>%
+    set_engine("glmnet", family = "mgaussian") %>%
     set_mode("regression") %>%
-    fit(log10(cncntrt) ~ ., data = pest_data)
+    fit(y_outcomes ~ ., data = pest_data)
 
   return(lasso)
   
