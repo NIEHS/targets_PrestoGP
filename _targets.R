@@ -24,7 +24,8 @@ tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
                "rsample","stats","ggplot2","tarchetypes","parsnip","fastDummies",
                "scales","ggridges"),
-  format = "qs"
+  format = "qs",
+  sf_use_s2(FALSE)
   #
   # For distributed computing in tar_make(), supply a {crew} controller
   # as discussed at https://books.ropensci.org/targets/crew.html.
@@ -169,9 +170,8 @@ list(
   )
 )
 # Created by use_targets().
-# 1. Create dummy variables before exploratory analysis 
+# 1. Use `spatialsample` package to create spatially buffered cross-validation and leave-block-out cross-validation
 # 2. drop the aquifer_ROCKNAME, keep other factors, including NA covariates (ie. unknown geology/aquifer)
-# 3. Make exploratory analysis and drop_vars not hard coded (unique_vals uses 41 as covariate- make a target that defines covariates)
 # Variables that need to be converted to indicator vars
 # geology_unit_type, aquifer_AQ_NAME, aquifer_ROCK_NAME
 # 3. Setup PrestoGP with LBLO Cross-Validation
