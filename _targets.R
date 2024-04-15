@@ -19,6 +19,9 @@ library(parsnip)
 library(fastDummies)
 library(scales)
 library(ggridges)
+library(spatialsample)
+library(broom)
+library(yardstick)
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
@@ -80,9 +83,9 @@ list(
     name = sf_pesticide_partition,
     command = partition_datasets(sf_pesticide)
   ),  
-  tar_target( # This target runs skimr::skim to look at the summary stats of COVARIATES
+  tar_target( # This target runs skimr::skim to look at the summary stats 
     name = explore_skim, 
-    command = skim(sf_pesticide_partition[[2]]) #List element 2 is the covariates
+    command = skim(sf_pesticide_partition[[1]]) #List element 2 is the covariates
   ),
   tar_target( # This target makes a ridge density plot of the outcomes 
     name = plot_outcome_ridgelines, 
@@ -94,7 +97,7 @@ list(
   ),
   tar_target( # This target pivots the covariates
     name = sf_covariates_pivot, 
-    command = pivot_covariates(sf_pesticide_partition_cleaned[[2]])
+    command = pivot_covariates(sf_pesticide_partition_cleaned[[1]])
   ),
   list( # Dynamic branching with tar_group_by and plotting covariates
     tar_group_by(
@@ -122,58 +125,62 @@ list(
       iteration = "list"
     )
   ),  
-  tar_target( # This target extracts coordinates for CV input
-    name = coords_mat,
-    command = st_coordinates(sf_pesticide_partition_cleaned[[1]]) 
-  ),
-  tar_target( # This target creates 10-fold CV using RSAMPLE
-    name = kfold_cv,
-    command = kmeans(coords_mat, centers = 10)$cluster
-  ),
-  tar_target( # This target joins the CV folds with the data
-    name = sf_pesticide_dummies_cv,
-    command = lapply(sf_pesticide_partition_cleaned, add_column, kfolds = as.factor(kfold_cv))
+  tar_target( # This target creates 10-fold CV using Spatialsample
+    name = spatial_kfold,
+    command = spatial_block_cv(sf_pesticide_partition_cleaned[[1]])
   ),
   tar_target( # This target plots the CV folds 
-    name = plot_kfolds,
-    command = plot_cv_map(sf_pesticide_dummies_cv)
-  ),  
-  list( # Dynamic branching with tar_group_by and plotting kfolds
-    tar_group_by(
-      sf_pesticide_cv_group,
-      sf_pesticide_dummies_cv[[1]],
-      kfolds
-    ),
-    tar_target(
-      plot_by_kfold,
-      plot_single_map(sf_pesticide_cv_group),
-      pattern = map(sf_pesticide_cv_group),
-      iteration = "list"
-    )
+    name = plot_spatial_kfolds,
+    command = autoplot(spatial_kfold)
+  ), 
+  tar_target( # This target creates leave-one-year-out cross-validatoin
+    name = temporal_kfold,
+    command = group_vfold_cv(sf_pesticide_partition_cleaned[[1]], group = "Year")
   ),
-  tar_target( # This target prepares the data for model fitting using tidymodels
-    name = sf_pesticide_for_fit,
-    command = prepare_pesticide_for_fit(sf_pesticide_dummies_cv)
+  # list( # Dynamic branching with tar_group_by and fitting lasso model to each pesticide group
+  #   tar_group_by(
+  #     sf_lasso_mvn,
+  #     sf_pesticide_for_fit,
+  #     kfolds
+  #   ),
+  #   tar_target(
+  #     lasso_fit_by_kfold,
+  #     fit_lasso(sf_lasso_mvn),
+  #     pattern = map(sf_lasso_mvn),
+  #     iteration = "list"
+  #   )
+  # ),
+  tar_target(
+    kfolds_iter,
+    1:10
   ),
-  list( # Dynamic branching with tar_group_by and fitting lasso model to each pesticide group
-    tar_group_by(
-      sf_lasso_mvn,
-      sf_pesticide_for_fit,
-      kfolds
-    ),
-    tar_target(
-      lasso_fit_by_kfold,
-      fit_lasso(sf_lasso_mvn),
-      pattern = map(sf_lasso_mvn),
-      iteration = "list"
-    )
+  tar_target(
+    get_spatial_kfolds,
+    get_rsplit(spatial_kfold, kfolds_iter),
+    pattern = map(kfolds_iter),
+  ),
+  tar_target(
+    lasso_fit_spatial_kfold,
+    lasso_spatial_kfold_fit(get_spatial_kfolds, as.formula(log(cncntrt) ~ . -id - ChmclNm - Year -lft_cns)),
+    pattern = map(get_spatial_kfolds),
+    iteration = "list"
+  ),
+  tar_target(# This target will create a small subsample of the data for testing the PrestoGP model
+    name = sub_sample_data,
+    command = dplyr::filter(sf_pesticide_partition_cleaned[[1]],Year >= 2003 & Year <= 2004)
+
+  ),
+  tar_target( # This target creates 10-fold CV using Spatialsample
+    name = sub_sp_kfold,
+    command = spatial_block_cv(sub_sample_data, v = 3)
+  ),
+  tar_target( # This target creates leave-one-year-out cross-validatoin
+    name = sub_time_kfold,
+    command = group_vfold_cv(sub_sample_data, group = "Year")
   )
 )
 # Created by use_targets().
-# 1. Use `spatialsample` package to create spatially buffered cross-validation and leave-block-out cross-validation
-# 2. drop the aquifer_ROCKNAME, keep other factors, including NA covariates (ie. unknown geology/aquifer)
-# Variables that need to be converted to indicator vars
-# geology_unit_type, aquifer_AQ_NAME, aquifer_ROCK_NAME
-# 3. Setup PrestoGP with LBLO Cross-Validation
-# 4. Run analysis on local machine - assume all values are observed
-# 5. Run analysis on HPC-GEO - assume all values are observed
+# 3. Run PrestoGP model on local machine for small test case - create a spatial  and temporal kfold of the subsample data
+# 4. Run PrestoGP on local machine
+# 5. Run PrestoGP on HPC-GEO 
+# 6. Compare with penalized Tobit regression for single variables (https://github.com/TateJacobson/tobitnet)

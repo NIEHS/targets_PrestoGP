@@ -52,6 +52,40 @@ read_data <- function(path, pesticide_data = pesticide_data){
 
 
 
+# partition_datasets <- function(data_sf) {
+#   
+#   # drop the soil chemistry covariates (not needed and too difficult to work with)
+#   data_sf <- data_sf %>% 
+#     select(-starts_with("soilchem"))
+#   
+#   
+#   # Partition the data into (1) outcome (2) covariates/features (3) ancillary info
+#   outcome <- data_sf |> 
+#     dplyr::select(c("id","ChmclNm","Year","cncntrt","lft_cns")) 
+#   
+#   covariates <- data_sf |> 
+#     dplyr::select(c("id"),
+#                   starts_with("nass"),
+#                   starts_with("olm"),
+#                   starts_with("aquifer"),
+#                   starts_with("tclim"),
+#                   starts_with("prism"),
+#                   contains("geology_unit_type"),
+#                   starts_with("pest")
+#     )
+#   
+#   ancillary <- data_sf |> 
+#     dplyr::select("id","site_no","parm_cd","Units","ContyNm","StateNm","wll_dpt",
+#                   "nsampls","objectid","tnmid","metasource","sourcedata","sourceorig",
+#                   "sourcefeat","loaddate","referenceg","areaacres","areasqkm",
+#                   "states","huc12","huc10","huc08","huc06","huc04","huc02",
+#                   "name","hutype","humod","tohuc","noncontrib","noncontr_1","globalid",
+#                   "shape_Leng","shape_Area")
+#   
+#   return(list(outcome, covariates, ancillary))
+# }
+
+
 partition_datasets <- function(data_sf) {
   
   # drop the soil chemistry covariates (not needed and too difficult to work with)
@@ -59,20 +93,18 @@ partition_datasets <- function(data_sf) {
     select(-starts_with("soilchem"))
   
   
-  # Partition the data into (1) outcome (2) covariates/features (3) ancillary info
+  # Partition the data into (1) outcome + covariates/features (2) ancillary info
   outcome <- data_sf |> 
-    dplyr::select(c("id","ChmclNm","Year","cncntrt","lft_cns")) 
-  
-  covariates <- data_sf |> 
-    dplyr::select(c("id"),
+    dplyr::select("id","ChmclNm","Year","cncntrt","lft_cns",
                   starts_with("nass"),
                   starts_with("olm"),
                   starts_with("aquifer"),
                   starts_with("tclim"),
                   starts_with("prism"),
                   contains("geology_unit_type"),
-                  starts_with("pest")
-    )
+                  starts_with("pest")) 
+  
+
   
   ancillary <- data_sf |> 
     dplyr::select("id","site_no","parm_cd","Units","ContyNm","StateNm","wll_dpt",
@@ -82,15 +114,14 @@ partition_datasets <- function(data_sf) {
                   "name","hutype","humod","tohuc","noncontrib","noncontr_1","globalid",
                   "shape_Leng","shape_Area")
   
-  return(list(outcome, covariates, ancillary))
+  return(list(outcome, ancillary))
 }
-
 
 
 #  Covariate preparation includes dropping continuous covariates that don't have enough unique values - and creating dummy variables for categorical covariates
 #' covariate_prep
 #'
-#' @param data Partitioned data with 3 lists: outcome, covariates, ancillary
+#' @param data Partitioned data with 2 lists: main data and ancillary
 #' @param threshold Threshold for the number of unique values in a numeric covariate
 #' @return
 #' @export
@@ -98,8 +129,21 @@ partition_datasets <- function(data_sf) {
 #' @examples
 covariate_prep <- function(data, threshold = 1e-5){
   
-  # Get the covariates from the partitioned list
-  data_covariates <- data[[2]]
+    outcome <- data[[1]] |>
+      dplyr::select(c("id","ChmclNm","Year","cncntrt","lft_cns"))
+
+    data_covariates <- data[[1]] |>
+      dplyr::select(c("id"),
+                    starts_with("nass"),
+                    starts_with("olm"),
+                    starts_with("aquifer"),
+                    starts_with("tclim"),
+                    starts_with("prism"),
+                    contains("geology_unit_type"),
+                    starts_with("pest")
+      )
+
+
 
   # Get the numeric covariates
   covariates_num <- dplyr::select_if(data_covariates, is.numeric)
@@ -131,16 +175,17 @@ covariate_prep <- function(data, threshold = 1e-5){
                                           "aquifer_AQ_NAME"), 
                                         remove_selected_columns = TRUE, 
                                         ignore_na = FALSE) |>
-    st_as_sf() 
+                                        st_as_sf() 
 
   
   # Combine the numeric and factor covariates
-  covariates_processed <- covariates_num_filter |>
+  data_processed <- outcome |> 
+    cbind(covariates_num_filter) |>
     cbind(covariates_factor_dummy) |>
-    select(-"geometry.1") 
+    select(-"geometry.1",-"geometry.2",-"id.1") 
 
   
-  return(list(data[[1]], covariates_processed, data[[3]]))
+  return(list(data_processed, data[[2]]))
 }
 
 
@@ -166,27 +211,6 @@ plot_cv_map <- function(pesticide) {
   
 }
 
-
-#' plot_cv_map
-#'
-#' @param pesticide 
-#'
-#' @return p ggplot object
-#' @export
-#'
-#' @examples
-plot_single_map <- function(pesticide) {
-  
-
-  # Create a ggplot object
-  p <- ggplot() +
-    geom_sf(data = pesticide) +
-    theme_minimal() +
-    theme(legend.position = "bottom")
-  
-  return(p)
-  
-}
 
 pivot_covariates <- function(data) {
   
@@ -259,11 +283,44 @@ prepare_pesticide_for_fit <- function(data) {
   return(data_fit)
 }
 
+## splits will be the `rsplit` object with the 90/10 partition
+#' lasso_spatial_kfold_fit
+#'
+#' @param splits 
+#' @param ... a formula object
+#'
+#' @return
+#' @export
+#'
+#' @examples
+  lasso_spatial_kfold_fit <- function(splits, formula) {
+  
+  # Fit the model to the 90%
+  data_analysis <- splits |> 
+    analysis() |>
+    sf::st_drop_geometry()
+    
+    
+  # Fit using the linear_model function in Parsnip
+  lasso <- linear_reg(penalty = 1) %>%
+    set_engine("glmnet", family = "gaussian") %>%
+    set_mode("regression") %>%
+    fit(formula, data = data_analysis)
+  
+  # Save the 10%
+  holdout <-  splits |> 
+    assessment() |>
+    sf::st_drop_geometry()
+  # `augment` will save the predictions with the holdout data set
+  res <- broom::augment(lasso, new_data = holdout)
+  return(res)
+}
+
 
 #' plot_exploratory_covariates
 #'
 #' @param data 
-#'
+#'pl
 #' @return
 #' @export
 #'
@@ -339,3 +396,45 @@ plot_outcome_map <- function(data) {
   return(p)
   
 }
+
+
+
+fit_MV_Vecchia <- function(splits) {
+  
+  # Fit the model to the 90%
+  data_analysis <- splits |> 
+    analysis() |>
+    sf::st_drop_geometry()
+  
+  
+  # Fit using the linear_model function in Parsnip
+  lasso <- linear_reg(penalty = 1) %>%
+    set_engine("glmnet", family = "gaussian") %>%
+    set_mode("regression") %>%
+    fit(formula, data = data_analysis)
+  
+  # Save the 10%
+  holdout <-  splits |> 
+    assessment() |>
+    sf::st_drop_geometry()
+  # `augment` will save the predictions with the holdout data set
+  res <- broom::augment(lasso, new_data = holdout)
+  return(res)
+  
+  
+  ym <- list()
+  ym[[1]] <- soil[1:100,5]             # predict two nitrogen concentration levels
+  ym[[2]] <- soil[,7]
+  Xm <- list()
+  Xm[[1]] <- Xm[[2]] <- as.matrix(soil[,c(4,6,8,9)])
+  Xm[[1]] <- Xm[[1]][1:100,]
+  locsm <- list()
+  locsm[[1]] <- locsm[[2]] <- locs
+  locsm[[1]] <- locsm[[1]][1:100,]
+  soil.mvm <-  new("MultivariateVecchiaModel", n_neighbors = 10)
+  soil.mvm <- prestogp_fit(soil.mvm, ym, Xm, locsm)
+  return(lasso)
+  
+}
+
+
