@@ -177,10 +177,26 @@ list(
   tar_target( # This target creates leave-one-year-out cross-validatoin
     name = sub_time_kfold,
     command = group_vfold_cv(sub_sample_data, group = "Year")
-  )
+  ),
+  tar_target(
+    kfolds_iter3,
+    1:3
+  ),
+  tar_target(
+    get_sub_sp_kfolds,
+    get_rsplit(sub_sp_kfold, kfolds_iter3),
+    pattern = map(kfolds_iter3),
+  ),
+  tar_target(
+    PrestoGP_sub_fit,
+    fit_MV_Vecchia(get_sub_sp_kfolds),
+    pattern = map(get_sub_sp_kfolds),
+    iteration = "list"
+  )  
 )
 # Created by use_targets().
-# 3. Run PrestoGP model on local machine for small test case - create a spatial  and temporal kfold of the subsample data
+# 3. Run PrestoGP model on local machine for small test case 
+# 3a. Target for the model results 3b. Target for the model metrics
 # 4. Run PrestoGP on local machine
 # 5. Run PrestoGP on HPC-GEO 
 # 6. Compare with penalized Tobit regression for single variables (https://github.com/TateJacobson/tobitnet)

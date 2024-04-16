@@ -401,39 +401,108 @@ plot_outcome_map <- function(data) {
 
 fit_MV_Vecchia <- function(splits) {
   
-  # Fit the model to the 90%
+  # Fit the model to the training
   data_analysis <- splits |> 
     analysis() |>
     sf::st_drop_geometry()
   
-  
-  # Fit using the linear_model function in Parsnip
-  lasso <- linear_reg(penalty = 1) %>%
-    set_engine("glmnet", family = "gaussian") %>%
-    set_mode("regression") %>%
-    fit(formula, data = data_analysis)
-  
-  # Save the 10%
+  # Save the assessment split
   holdout <-  splits |> 
     assessment() |>
     sf::st_drop_geometry()
-  # `augment` will save the predictions with the holdout data set
-  res <- broom::augment(lasso, new_data = holdout)
-  return(res)
+
+  
+  # 1) A List of Y's, each element is a vector of the response variable
+  # 1a) Y normal vs log-transform?
+  # 2) A list of LOD, each element is a vector of the limit of detection
+  # 2a) If Y is log-transfor, then LOD is log-transformed
+  # 3) Impute.y = TRUE, impute the missing values in Y
+  # 4) A list of X's, each element is a matrix of the covariates
+  # 5) A list of locs, each element is a matrix of the locations
+  # 6) Apanasovich is TRUE
+  # 7) scaling = c(1,1,2) -> maybe needs to be list? could also do c(1,2,3) 
+  
+  # 1) A List of Y's, each element is a vector of the response variable
+  # use dplyr to create a separate list by each ChmlNm and extract only the cncntrt column
+  # If the variable lft_cns is 0, then the cncntrt is the value, otherwise we convert it to a 
+  # small value of 1e-9
+  pesticide_outcomes <- data_analysis |> 
+    group_by(ChmclNm) |> 
+    nest() |>
+    mutate(data = map(data, ~ ifelse(.x$lft_cns == 0, .x$cncntrt, 1e-9))) |>
+    pull(data)
+  
+  # 2) A list of LOD, each element is a vector of the limit of detection
+  # use dplyr to create a separate list by each ChmlNm and create an LOD. The 
+  # LOD should be the cncntrt
+  pesticide_lod <- data_analysis |> 
+    group_by(ChmclNm) |> 
+    nest() |>
+    mutate(data = map(data, ~ .x$cncntrt)) |>
+    pull(data)
+
+  #2a) Create a list of the of the lft_cns variable by ChmclNm
+  pesticide_lft_cns <- data_analysis |> 
+    group_by(ChmclNm) |> 
+    nest() |>
+    mutate(data = map(data, ~ .x$lft_cns)) |>
+    pull(data)
+  
+  # Comment for Sciome - I think a more standard or straight forward approach
+  # to implement an LOD would be to have 1 value for the cnct and then a binary
+  # for whether it is observed or a limit of detection. 
+  
+  # 3) Impute.y = TRUE, impute the missing values in Y
+  Impute.y = TRUE
+  
+  # 4) A list of X's, each element is a matrix of the covariates
+  # For now, we will use the covariates in the data_analysis
+  # Convert each list element to a matrix (i.e. is.matrix = TRUE)
+  pesticide_covariates <- data_analysis |> 
+    group_by(ChmclNm) |> 
+    nest() |>
+    mutate(data = map(data, ~ .x %>% select(-cncntrt, -lft_cns, -id, -id.1, -Year))) |>
+    pull(data)
+  
+  # convert to matrix, but retain dimensions
+  pesticide_covariates <- pesticide_covariates |> 
+    map(~ as.matrix(.x, is.matrix = TRUE))
+  
+  # 5) A list of locs, each element is a matrix of the locations
+
+  locs <- data_analysis |> 
+    group_by(ChmclNm) |> 
+    nest() |>
+    mutate(data = map(data, ~ .x %>% select(id, Year))) |>
+    pull(data)
   
   
-  ym <- list()
-  ym[[1]] <- soil[1:100,5]             # predict two nitrogen concentration levels
-  ym[[2]] <- soil[,7]
-  Xm <- list()
-  Xm[[1]] <- Xm[[2]] <- as.matrix(soil[,c(4,6,8,9)])
-  Xm[[1]] <- Xm[[1]][1:100,]
-  locsm <- list()
-  locsm[[1]] <- locsm[[2]] <- locs
-  locsm[[1]] <- locsm[[1]][1:100,]
-  soil.mvm <-  new("MultivariateVecchiaModel", n_neighbors = 10)
-  soil.mvm <- prestogp_fit(soil.mvm, ym, Xm, locsm)
-  return(lasso)
+  # Update the locs list
+  locs <- locs |> 
+    map(~ {
+      coords <- st_coordinates(.x)
+      mat <- as.matrix(data.frame(
+        X = coords[, "X"],
+        Y = coords[, "Y"],
+        Year = .x$Year
+      ))
+      return(mat)
+    })
+  
+
+  # 6) Apanasovich is TRUE
+  Apanasovich = TRUE
+  
+  # 7) scaling = c(1,1,2) -> maybe needs to be list? could also do c(1,2,3)
+  scaling = c(1,1,2)
+  
+  # Fit the model
+  
+  pesticide_mvm <-  new("MultivariateVecchiaModel", n_neighbors = 10)
+  pesticide_mvm <- prestogp_fit(pesticide_mvm, Y = pesticide_outcomes, lod = pesticide_lod, 
+                           impute.y = Impute.y, X = pesticide_covariates, locs = locs, 
+                           apanasovich = Apanasovich, scaling = scaling)
+  return(soil.mvm)
   
 }
 

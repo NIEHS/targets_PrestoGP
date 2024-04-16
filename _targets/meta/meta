@@ -1,5 +1,5 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-.Random.seed|object|d6fa54d648dc1fca|||||||||||||||
+.Random.seed|object|bcc335386a63a225|||||||||||||||
 coords_mat|stem|29a93bd67ca78c5f|503df07fba4d9a96|337c5f07b878144a|-1325898640||t19810.6691524591s|31da326e08ce3bbc|480689|qs|local|vector|||0.002||
 covariate_prep|function|c9eca70c452240cc|||||||||||||||
 create_dummies|stem|9967dc623a964f93|adf287298fe34b32|40cbe923fa64cbd2|1525017976||t19807.803751512s|a99a8404db22efe7|175250|qs|local|vector|||2.99||
@@ -19,7 +19,7 @@ explore_unique|stem|f5c5ae1da3a5a7f0|b61fbbcdddae70e3|8781d61bae8e4e98|208186238
 filter_NA|function|9d4e77e689ee34c6|||||||||||||||
 filterNA_Covariates|stem|335a5f6ca4ee573d|76c427c375c78687|878d5910cf77a28b|1066545991||t19807.6506391161s|00b6a0dcc9ec5aeb|86458845|qs|local|vector|||0.006||
 fit_lasso|function|9be9d8a163a801b5|||||||||||||||
-fit_MV_Vecchia|function|a03150f5e00f0153|||||||||||||||
+fit_MV_Vecchia|function|900307dda7cbebfd|||||||||||||||
 get_spatial_kfolds|pattern|f3ee9cd2e6541b6a|dc6170c30b420e41||464042241||||842560443|qs|local|vector||get_spatial_kfolds_7c65339c*get_spatial_kfolds_9a207942*get_spatial_kfolds_4e7c37ec*get_spatial_kfolds_bbd878ba*get_spatial_kfolds_bf78b4e2*get_spatial_kfolds_e7dbe3d8*get_spatial_kfolds_1be8c082*get_spatial_kfolds_88f58445*get_spatial_kfolds_7f89b48a*get_spatial_kfolds_9377e2ac|0.002||
 get_spatial_kfolds_1be8c082|branch|2e97b74595872137|dc6170c30b420e41|7288234b3ddab9bd|-1595811624||t19828.8207375894s|f05b88302c135a5b|84255964|qs|local|vector|get_spatial_kfolds||0||
 get_spatial_kfolds_4e7c37ec|branch|999cc5e91bcadcb6|dc6170c30b420e41|7288234b3ddab9bd|-1523565198||t19828.8206670157s|92336f21f1cd9b9f|84255834|qs|local|vector|get_spatial_kfolds||0||
@@ -31,9 +31,18 @@ get_spatial_kfolds_9a207942|branch|47d43b801966a5c7|dc6170c30b420e41|7288234b3dd
 get_spatial_kfolds_bbd878ba|branch|911dfe203b90e4d1|dc6170c30b420e41|7288234b3ddab9bd|153971940||t19828.8206847834s|36d442849cb9fbe0|84256341|qs|local|vector|get_spatial_kfolds||0||
 get_spatial_kfolds_bf78b4e2|branch|02fa895792b8ba78|dc6170c30b420e41|7288234b3ddab9bd|920439967||t19828.8207030757s|658f6e2fa5128135|84256627|qs|local|vector|get_spatial_kfolds||0||
 get_spatial_kfolds_e7dbe3d8|branch|c281df4efc3bf931|dc6170c30b420e41|7288234b3ddab9bd|-1629101034||t19828.8207205667s|89c83b4afcba4fa6|84255476|qs|local|vector|get_spatial_kfolds||0||
+get_sub_sp_kfolds|pattern|df886fd30486ee1d|99d6d99a185ad521||-439680417||||33825886|qs|local|vector||get_sub_sp_kfolds_4d6e87d6*get_sub_sp_kfolds_cde67306*get_sub_sp_kfolds_96fdde77|0||
+get_sub_sp_kfolds_4d6e87d6|branch|57f6a29b3988aebb|99d6d99a185ad521|569704226b055cf8|1006901564||t19829.5864847476s|58ea03c0abc8af26|11275168|qs|local|vector|get_sub_sp_kfolds||0||
+get_sub_sp_kfolds_4e7c37ec|branch|eb9d47f2f33ed9fc|e8f9c71d7309b45f|569704226b055cf8|-1209967702||t19829.557458826s|7db5afd4b6d62158|11275491|qs|local|vector|get_sub_sp_kfolds||0||
+get_sub_sp_kfolds_7c65339c|branch|57f6a29b3988aebb|e8f9c71d7309b45f|569704226b055cf8|1407232282||t19829.5574538842s|58ea03c0abc8af26|11275168|qs|local|vector|get_sub_sp_kfolds||0.001||
+get_sub_sp_kfolds_96fdde77|branch|eb9d47f2f33ed9fc|99d6d99a185ad521|569704226b055cf8|-2075480582||t19829.5864892684s|7db5afd4b6d62158|11275491|qs|local|vector|get_sub_sp_kfolds||0||
+get_sub_sp_kfolds_9a207942|branch|640dc78efbb0e3a9|e8f9c71d7309b45f|569704226b055cf8|-1475098483||t19829.5574562297s|a745ec195db9967d|11275227|qs|local|vector|get_sub_sp_kfolds||0||
+get_sub_sp_kfolds_bbd878ba|branch||e8f9c71d7309b45f|569704226b055cf8|-1216888219||t19829.5574591962s||0|qs|local|vector|get_sub_sp_kfolds||0.015||index must be a length1 integer between 1 and 3.31m39m A value of 4 was provided.
+get_sub_sp_kfolds_cde67306|branch|640dc78efbb0e3a9|99d6d99a185ad521|569704226b055cf8|-856222480||t19829.5864869809s|a745ec195db9967d|11275227|qs|local|vector|get_sub_sp_kfolds||0||
 get_unique_covariates|stem|aa833406e9ef1440|141aeed9c1e94e70|12797004ff525ee3|1128749230||t19808.5914536071s|2c9e502661ecd32d|146831|qs|local|vector|||1.029||
 kfold_cv|stem|9ce87fb23134293b|1d4ab837ec57d902|e59c9f0d8be4a2fd|-1865240154||t19810.6691611835s|51865c8346c060c0|7702|qs|local|vector|||0.013||
 kfolds_iter|stem|d86e8c057082e00b|a2f087abc972c6e3|ef46db3751d8e999|-841571486||t19828.7453813849s|7e02ad38317bcde4|55|qs|local|vector||kfolds_iter_ccba877f*kfolds_iter_084b9b29*kfolds_iter_91e9ed7e*kfolds_iter_0af15e67*kfolds_iter_06d3c0ed*kfolds_iter_280e29c8*kfolds_iter_37587497*kfolds_iter_ad604bd2*kfolds_iter_320243db*kfolds_iter_9641ec09|0.001||
+kfolds_iter3|stem|944204653e8e9b56|d2be359edfeb6802|ef46db3751d8e999|1346903058||t19829.5864680691s|ded833868582137a|50|qs|local|vector||kfolds_iter3_ccba877f*kfolds_iter3_084b9b29*kfolds_iter3_91e9ed7e|0||
 lasso_fit_by_chem|pattern|3696cb04a4828255|59c310154e4fab93||-627504797||||148049124|qs|local|list||lasso_fit_by_chem_8678f5ba*lasso_fit_by_chem_ee150fa4*lasso_fit_by_chem_2589c706*lasso_fit_by_chem_2808dfa1*lasso_fit_by_chem_7631fed6*lasso_fit_by_chem_729f5dc4*lasso_fit_by_chem_626e854f*lasso_fit_by_chem_68b90cee*lasso_fit_by_chem_4eeee620*lasso_fit_by_chem_236cf966|140.422||
 lasso_fit_by_chem_236cf966|branch|8c7d1509485a4b22|59c310154e4fab93|e37f48b5a8ab0ded|1383717114||t19810.7225486666s|dfc2e579d6020b56|6695297|qs|local|list|lasso_fit_by_chem||4.476||
 lasso_fit_by_chem_2589c706|branch|7966108728b1adb1|59c310154e4fab93|e37f48b5a8ab0ded|879367874||t19810.7215669976s|61239434f24aed6b|8182509|qs|local|list|lasso_fit_by_chem||7.426||
@@ -195,6 +204,7 @@ plot_single_map|function|9b1ff0592c3048ed|||||||||||||||
 plot_spatial_kfolds|stem|6d5cc7073022bae5|f1af16621c53d52e|7288234b3ddab9bd|1264283336||t19828.8208496563s|d2c7a5d34d4d381a|212882455|qs|local|vector|||1.468||
 plot_temporal_kfolds|stem||33ee2c6239d2e6a6|8b73ed0b6867a3c8|411136741||t19828.7994988454s||0|qs|local|vector|||0.032||1m22mObjects of class 34mgroup_vfold_cv39m are not supported by autoplot.36mℹ39m have you loaded the required package
 prepare_pesticide_for_fit|function|6f5e8efe0a873399|||||||||||||||
+PrestoGP_sub_fit_d1f3be6c|branch||9177347a3bbce0f9|8a2f1a0cee3fa149|-940071083||t19829.5864934691s||0|qs|local|list|PrestoGP_sub_fit||0.354||object soil not found
 read_data|function|39b9c0a82a427963|||||||||||||||
 readQS|stem|79cc4c669995e4d0|fbd44d08ee3b0291|96daafcfa9477cdb|272066984||t19810.668683658s|b35be61480b17d7e|92451759|qs|local|vector|||8.138||
 set_local_data_path|function|bd98579ff809e889|||||||||||||||
