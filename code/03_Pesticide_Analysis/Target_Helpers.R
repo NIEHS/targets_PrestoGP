@@ -386,7 +386,7 @@ plot_outcome_map <- function(data) {
   p <- ggplot() +
     geom_sf(data = df_cens, size = 0.5) +
     geom_sf(data = df_obs, aes(color = cncntrt)) +
-    facet_wrap(~ Year) +
+    # facet_wrap(~ Year) +
     scale_color_viridis_c(option = "A", trans = scales::pseudo_log_trans(sigma = 0.005)) +
     geom_sf(data = states, fill = NA, size=0.15) +
     theme_minimal() +

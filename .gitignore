@@ -67,3 +67,6 @@ po/*~
 **/.DS_Store
 .DS_Store
 
+# papers for literature review
+papers/
+figs/

@@ -1,5 +1,5 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-.Random.seed|object|bcc335386a63a225|||||||||||||||
+.Random.seed|object|43aea7227d2fa71b|||||||||||||||
 coords_mat|stem|29a93bd67ca78c5f|503df07fba4d9a96|337c5f07b878144a|-1325898640||t19810.6691524591s|31da326e08ce3bbc|480689|qs|local|vector|||0.002||
 covariate_prep|function|c9eca70c452240cc|||||||||||||||
 create_dummies|stem|9967dc623a964f93|adf287298fe34b32|40cbe923fa64cbd2|1525017976||t19807.803751512s|a99a8404db22efe7|175250|qs|local|vector|||2.99||
@@ -19,7 +19,7 @@ explore_unique|stem|f5c5ae1da3a5a7f0|b61fbbcdddae70e3|8781d61bae8e4e98|208186238
 filter_NA|function|9d4e77e689ee34c6|||||||||||||||
 filterNA_Covariates|stem|335a5f6ca4ee573d|76c427c375c78687|878d5910cf77a28b|1066545991||t19807.6506391161s|00b6a0dcc9ec5aeb|86458845|qs|local|vector|||0.006||
 fit_lasso|function|9be9d8a163a801b5|||||||||||||||
-fit_MV_Vecchia|function|900307dda7cbebfd|||||||||||||||
+fit_MV_Vecchia|function|769c672b111646a4|||||||||||||||
 get_spatial_kfolds|pattern|f3ee9cd2e6541b6a|dc6170c30b420e41||464042241||||842560443|qs|local|vector||get_spatial_kfolds_7c65339c*get_spatial_kfolds_9a207942*get_spatial_kfolds_4e7c37ec*get_spatial_kfolds_bbd878ba*get_spatial_kfolds_bf78b4e2*get_spatial_kfolds_e7dbe3d8*get_spatial_kfolds_1be8c082*get_spatial_kfolds_88f58445*get_spatial_kfolds_7f89b48a*get_spatial_kfolds_9377e2ac|0.002||
 get_spatial_kfolds_1be8c082|branch|2e97b74595872137|dc6170c30b420e41|7288234b3ddab9bd|-1595811624||t19828.8207375894s|f05b88302c135a5b|84255964|qs|local|vector|get_spatial_kfolds||0||
 get_spatial_kfolds_4e7c37ec|branch|999cc5e91bcadcb6|dc6170c30b420e41|7288234b3ddab9bd|-1523565198||t19828.8206670157s|92336f21f1cd9b9f|84255834|qs|local|vector|get_spatial_kfolds||0||
@@ -204,7 +204,7 @@ plot_single_map|function|9b1ff0592c3048ed|||||||||||||||
 plot_spatial_kfolds|stem|6d5cc7073022bae5|f1af16621c53d52e|7288234b3ddab9bd|1264283336||t19828.8208496563s|d2c7a5d34d4d381a|212882455|qs|local|vector|||1.468||
 plot_temporal_kfolds|stem||33ee2c6239d2e6a6|8b73ed0b6867a3c8|411136741||t19828.7994988454s||0|qs|local|vector|||0.032||1m22mObjects of class 34mgroup_vfold_cv39m are not supported by autoplot.36mℹ39m have you loaded the required package
 prepare_pesticide_for_fit|function|6f5e8efe0a873399|||||||||||||||
-PrestoGP_sub_fit_d1f3be6c|branch||9177347a3bbce0f9|8a2f1a0cee3fa149|-940071083||t19829.5864934691s||0|qs|local|list|PrestoGP_sub_fit||0.354||object soil not found
+PrestoGP_sub_fit_d1f3be6c|branch||9177347a3bbce0f9|6bcb859fcbdbb700|-940071083||t19829.5864934691s||0|qs|local|list|PrestoGP_sub_fit||0.834||1m22m36mℹ39m In argument data  mapdata, .x  selectcncntrt, lft_cns, id,  id.1, Year.36mℹ39m In group 1 ChmclNm  Atrazine.1mCaused by error in map22m1m22m36mℹ39m In index 1.1mCaused by error in select22m33m39m Cant select columns that dont exist.31m39m Column id.1 doesnt exist.
 read_data|function|39b9c0a82a427963|||||||||||||||
 readQS|stem|79cc4c669995e4d0|fbd44d08ee3b0291|96daafcfa9477cdb|272066984||t19810.668683658s|b35be61480b17d7e|92451759|qs|local|vector|||8.138||
 set_local_data_path|function|bd98579ff809e889|||||||||||||||
