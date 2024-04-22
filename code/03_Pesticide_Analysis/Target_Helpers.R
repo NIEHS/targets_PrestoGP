@@ -3,87 +3,29 @@
 
 
 
-#' set_local_data_path
-#'
-#' @param COMPUTE_MODE 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-set_local_data_path <- function(COMPUTE_MODE = 1){
+join_pesticide_huc <- function(points){
   
-    ifelse(COMPUTE_MODE == 1,
-           "/Volumes/SET/Projects/PrestoGP_Pesticides/output/",
-           ifelse(COMPUTE_MODE == 2,
-                  "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/output/",
-                  ifelse(COMPUTE_MODE == 3,
-                         "/opt/",
-                         ifelse(COMPUTE_MODE == 4,
-                                "/tmp/AZO/",
-                                stop("COMPUTE_MODE should be one of 1, 2, 3, or 4.\n")
-                         )
-                  )
-           )
-    )
+  HUC12 <- sf::st_read("input/WBD-National/WBD_National_GDB/WBD_National_GDB.gdb", layer = "WBDHU12")
+  
+  # Convert both the AZO points and HUC to Albers Equal Area projected coordinate system
+  AZO.t <- sf::st_transform(points, "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0
++ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+  
+  huc.t <- sf::st_transform(HUC12, "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0
++ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+  
+  AZO.HUC.join <- sf::st_join(AZO.t, huc.t)
+  
+  AZO.HUC.join$huc10 <- str_sub(AZO.HUC.join$huc12, 1, 10)
+  AZO.HUC.join$huc08 <- str_sub(AZO.HUC.join$huc12, 1, 8)
+  AZO.HUC.join$huc06 <- str_sub(AZO.HUC.join$huc12, 1, 6)
+  AZO.HUC.join$huc04 <- str_sub(AZO.HUC.join$huc12, 1, 4)
+  AZO.HUC.join$huc02 <- str_sub(AZO.HUC.join$huc12, 1, 2)
+  
+  return(AZO.HUC.join)
+  
 }
 
-
-#' read_data
-#'
-#' @param path 
-#' @param name 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-read_data <- function(path, pesticide_data = pesticide_data){
-  
-  # Read in the data
-  data <- qs::qread(paste0(path, pesticide_data, ".qs"))
-  
-  data <- data |>
-    filter(cncntrt > 0) 
-  
-  # Return the data
-  return(data)
-}
-
-
-
-# partition_datasets <- function(data_sf) {
-#   
-#   # drop the soil chemistry covariates (not needed and too difficult to work with)
-#   data_sf <- data_sf %>% 
-#     select(-starts_with("soilchem"))
-#   
-#   
-#   # Partition the data into (1) outcome (2) covariates/features (3) ancillary info
-#   outcome <- data_sf |> 
-#     dplyr::select(c("id","ChmclNm","Year","cncntrt","lft_cns")) 
-#   
-#   covariates <- data_sf |> 
-#     dplyr::select(c("id"),
-#                   starts_with("nass"),
-#                   starts_with("olm"),
-#                   starts_with("aquifer"),
-#                   starts_with("tclim"),
-#                   starts_with("prism"),
-#                   contains("geology_unit_type"),
-#                   starts_with("pest")
-#     )
-#   
-#   ancillary <- data_sf |> 
-#     dplyr::select("id","site_no","parm_cd","Units","ContyNm","StateNm","wll_dpt",
-#                   "nsampls","objectid","tnmid","metasource","sourcedata","sourceorig",
-#                   "sourcefeat","loaddate","referenceg","areaacres","areasqkm",
-#                   "states","huc12","huc10","huc08","huc06","huc04","huc02",
-#                   "name","hutype","humod","tohuc","noncontrib","noncontr_1","globalid",
-#                   "shape_Leng","shape_Area")
-#   
-#   return(list(outcome, covariates, ancillary))
-# }
 
 
 partition_datasets <- function(data_sf) {

@@ -22,33 +22,34 @@ library(ggridges)
 library(spatialsample)
 library(broom)
 library(yardstick)
+library(data.table)
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
                "rsample","stats","ggplot2","tarchetypes","parsnip","fastDummies",
-               "scales","ggridges"),
+               "scales","ggridges","spatialsample","broom","yardstick","data.table",
+               "nhdplusTools"),
   format = "qs",
-  sf_use_s2(FALSE)
+  sf_use_s2(FALSE),
   #
   # For distributed computing in tar_make(), supply a {crew} controller
   # as discussed at https://books.ropensci.org/targets/crew.html.
   # Choose a controller that suits your needs. For example, the following
   # sets a controller with 2 workers which will run as local R processes:
   #
-  #   controller = crew::crew_controller_local(workers = 2)
+  #controller = crew::crew_controller_local(workers = 2)
   #
-  # Alternatively, if you want workers to run on a high-performance computing
-  # cluster, select a controller from the {crew.cluster} package. The following
-  # example is a controller for Sun Grid Engine (SGE).
   # 
-  #   controller = crew.cluster::crew_controller_sge(
-  #     workers = 50,
-  #     # Many clusters install R as an environment module, and you can load it
-  #     # with the script_lines argument. To select a specific verison of R,
-  #     # you may need to include a version string, e.g. "module load R/4.3.0".
-  #     # Check with your system administrator if you are unsure.
-  #     script_lines = "module load R"
-  #   )
+    controller = crew.cluster::crew_controller_slurm(
+      workers = 12,
+      # Many clusters install R as an environment module, and you can load it
+      # with the script_lines argument. To select a specific verison of R,
+      # you may need to include a version string, e.g. "module load R/4.3.0".
+      # Check with your system administrator if you are unsure.
+      script_lines = "module load R",
+      slurm_partition = "geo"
+    )
+    # 
   #
   # Set other options as needed.
 )
@@ -62,23 +63,58 @@ tar_option_set(
 # future::plan(future.callr::callr)
 
 # Run the R scripts in the R/ folder with your custom functions:
-tar_source("code/03_Pesticide_Analysis/Target_Helpers.R")
+tar_source(c("code/03_Pesticide_Analysis/Target_Helpers.R",
+             "code/01_Create_Dataset/Target_Pesticide_Data.R",
+             "code/02_Geographic_Covariates/Calc_OLM.R")
+)
 
+# data_AZO_covariates_cleaned_03032024
 #  The TARGET LIST
-list(
-  tar_target(
-    name = set_path,
-    command = set_local_data_path(COMPUTE_MODE = 1)
+list( 
+  tar_target(# This target downloads the WBD database (WARNING LARGE)
+    name = wbd_data,
+    command = download_wbd(outdir = "input/WBD-National/")
+    ),
+  list( # Dynamic branch of the states for pesticide data from NWIS 
+    tar_target(
+      state_list,
+      state.abb[c(-2, -11)], # Remove Alaska and Hawaii
+    ),
+    tar_target( # This target creates the state-level Pesticide data from NWIS
+      name = state_pesticide,
+      command = state_fun_AZO(state_list),
+      pattern = map(state_list)
+    )
   ),
-  tar_target(
-    name = readQS,
-    command = read_data(set_path,"data_AZO_covariates_cleaned_03032024")
+  tar_target( # This target combines the state-level data into one dataset
+    name = state_pesticide_combined,
+    command = combine_state_data(state_pesticide)
+  ),
+  tar_target( # This target gets the censoring aspects of the data
+    name = pesticide_censored,
+    command = get_censored_data(state_pesticide_combined)
+  ),
+  tar_target( # This target gets the daily averages
+    name = pesticide_daily,
+    command = get_daily_averages(pesticide_censored)
+  ),
+  tar_target( # This target gets the yearly averages
+    name = pesticide_yearly,
+    command = get_yearly_averages(pesticide_daily)
+  ),
+  tar_target(# filter concentrations with vals <= 0
+    name = pesticide_yearly_filtered,
+    command = filter(pesticide_yearly, concentration > 0) 
   ),
   tar_target( # This target re-projects the data into an sf object
     name = sf_pesticide,
     # use st_sf to create an sf object with the Albers Equal Area projection
-    command = st_as_sf(readQS, coords = c("X","Y"), crs = 5070)
+    command = st_as_sf(pesticide_yearly_filtered, coords = c("Longitude","Latitude"), crs = 5070)
   ),  
+  tar_target( # This target joins the point pesticide data with HUC data
+    name = sf_pesticide_huc,
+    command = join_pesticide_huc(sf_pesticide)
+  ),
   tar_target( # This target separates the data into (1)outcome (2) covariates/features (3) ancillary info
     name = sf_pesticide_partition,
     command = partition_datasets(sf_pesticide)
