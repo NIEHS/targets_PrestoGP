@@ -3,18 +3,21 @@
 
 
 
-join_pesticide_huc <- function(points){
+join_pesticide_huc <- function(points, wbd_huc){
   
-  HUC12 <- sf::st_read("input/WBD-National/WBD_National_GDB/WBD_National_GDB.gdb", layer = "WBDHU12")
+  HUC12 <- sf::st_read(wbd_huc, layer = "WBDHU12")
   
   # Convert both the AZO points and HUC to Albers Equal Area projected coordinate system
-  AZO.t <- sf::st_transform(points, "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0
-+ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+#   AZO.t <- sf::st_transform(points, "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0
+# +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+  AZO.t <- sf::st_transform(points, crs = st_crs(HUC12))  
   
-  huc.t <- sf::st_transform(HUC12, "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0
-+ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+
   
-  AZO.HUC.join <- sf::st_join(AZO.t, huc.t)
+  AZO.HUC.join <- sf::st_join(AZO.t, HUC12)
+  
+  AZO.HUC.join <- sf::st_transform(AZO.HUC.join, "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0
++ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
   
   AZO.HUC.join$huc10 <- str_sub(AZO.HUC.join$huc12, 1, 10)
   AZO.HUC.join$huc08 <- str_sub(AZO.HUC.join$huc12, 1, 8)
