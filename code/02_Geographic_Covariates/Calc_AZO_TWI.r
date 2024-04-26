@@ -39,6 +39,7 @@ azo_t <- terra::vect(azo_s)
 
 
 ## TWI
+## data source https://zenodo.org/records/4460354
 twi <- paste0(path_base, "TWI/CONUS_TWI_epsg5072_30m_unmasked.tif")
 twi_ras <- terra::rast(twi)
 
