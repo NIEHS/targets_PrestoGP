@@ -5,6 +5,7 @@
 # Load packages required to define the pipeline:
 library(targets)
 library(tarchetypes)
+library(geotargets)
 library(PrestoGP)
 library(tibble)
 library(sf)
@@ -24,9 +25,11 @@ library(broom)
 library(yardstick)
 library(data.table)
 library(exactextractr)
+
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
+               "geotargets",
                "rsample","stats","ggplot2","tarchetypes","parsnip","fastDummies",
                "scales","ggridges","spatialsample","broom","yardstick","data.table",
                "nhdplusTools","exactextractr"),
@@ -118,113 +121,139 @@ list(
     command = join_pesticide_huc(sf_pesticide, wbd_data)
   ),
   tar_target(
-    olm_bulk_density_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Bulk_Density/",pattern = "*.tif",full.names = TRUE))
+    olm_names,
+    command = c("Bulk_Density","pH","Clay_Content","Organic_Carbon","Sand_Content","Soil_Order","USDA_Texture_Class"),
+    pattern = "vector"
   ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_bulk_density_crop,
-    command = olm_read_crop(olm_bulk_density_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
+  # tar_files_input(
+  #   name = olm_directory,
+  #   command = sprintf("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData"
+  # ),
   tar_target(
-    olm_pH_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/pH/",pattern = "*.tif",full.names = TRUE))
+    name = olm_layer_files, # provided that Sys.setenv("PROJECT_DIR" = "...location in ddn...")
+    command = list.files(
+      sprintf(
+         "%s/input/OpenLandMapData/%s", Sys.getenv("PROJECT_DIR"), olm_names
+      ),
+      pattern = "*.tif",
+      full.names = TRUE
+    ),
+    pattern = map(olm_names),
+    iteration = "list"
   ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_pH_crop,
-    command = olm_read_crop(olm_pH_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_clay_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Clay_Content/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_clay_crop,
-    command = olm_read_crop(olm_clay_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_oc_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Organic_Carbon/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_oc_crop,
-    command = olm_read_crop(olm_oc_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_sand_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Sand_Content/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_sand_crop,
-    command = olm_read_crop(olm_sand_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_soil_order_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Soil_Order/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_soil_order_crop,
-    command = olm_read_crop(olm_soil_order_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_texture_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/USDA_Texture_Class/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_texture_crop,
-    command = olm_read_crop(olm_texture_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_combined, 
-    command = c(olm_bulk_density_crop, olm_pH_crop, olm_clay_crop, olm_oc_crop, olm_sand_crop, olm_soil_order_crop, olm_texture_crop),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
+  geotargets::tar_terra_rast(
+    name = olm_layer_rast,
+    command = terra::rast(olm_layer_files, win = c(-124.7844079, -66.9513812, 24.7433195, 49.3457868)),
+    pattern = map(olm_layer_files),
+    iteration = "list"
   )
+)
+  # ,
+  # tar_target(# These targets are the raw OLM files
+  #   name = olm_bulk_density_crop,
+  #   command = olm_read_crop(olm_bulk_density_files),
+  #   format = tar_format(
+  #     read = function(path) terra::rast(path),
+  #     write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
+  #     marshal = function(object) terra::wrap(object),
+  #     unmarshal = function(object) terra::unwrap(object)
+  #   )
+  # ),
+  # tar_target(
+  #   olm_pH_files,
+  #   unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/pH/",pattern = "*.tif",full.names = TRUE))
+  # ),
+  # tar_target(# These targets are the raw OLM files
+  #   name = olm_pH_crop,
+  #   command = olm_read_crop(olm_pH_files),
+  #   format = tar_format(
+  #     read = function(path) terra::rast(path),
+  #     write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
+  #     marshal = function(object) terra::wrap(object),
+  #     unmarshal = function(object) terra::unwrap(object)
+  #   )
+  # ),
+  # tar_target(
+  #   olm_clay_files,
+  #   unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Clay_Content/",pattern = "*.tif",full.names = TRUE))
+  # ),
+  # tar_target(# These targets are the raw OLM files
+  #   name = olm_clay_crop,
+  #   command = olm_read_crop(olm_clay_files),
+  #   format = tar_format(
+  #     read = function(path) terra::rast(path),
+  #     write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
+  #     marshal = function(object) terra::wrap(object),
+  #     unmarshal = function(object) terra::unwrap(object)
+  #   )
+  # ),
+  # tar_target(
+  #   olm_oc_files,
+  #   unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Organic_Carbon/",pattern = "*.tif",full.names = TRUE))
+  # ),
+  # tar_target(# These targets are the raw OLM files
+  #   name = olm_oc_crop,
+  #   command = olm_read_crop(olm_oc_files),
+  #   format = tar_format(
+  #     read = function(path) terra::rast(path),
+  #     write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
+  #     marshal = function(object) terra::wrap(object),
+  #     unmarshal = function(object) terra::unwrap(object)
+  #   )
+  # ),
+  # tar_target(
+  #   olm_sand_files,
+  #   unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Sand_Content/",pattern = "*.tif",full.names = TRUE))
+  # ),
+  # tar_target(# These targets are the raw OLM files
+  #   name = olm_sand_crop,
+  #   command = olm_read_crop(olm_sand_files),
+  #   format = tar_format(
+  #     read = function(path) terra::rast(path),
+  #     write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
+  #     marshal = function(object) terra::wrap(object),
+  #     unmarshal = function(object) terra::unwrap(object)
+  #   )
+  # ),
+  # tar_target(
+  #   olm_soil_order_files,
+  #   unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Soil_Order/",pattern = "*.tif",full.names = TRUE))
+  # ),
+  # tar_target(# These targets are the raw OLM files
+  #   name = olm_soil_order_crop,
+  #   command = olm_read_crop(olm_soil_order_files),
+  #   format = tar_format(
+  #     read = function(path) terra::rast(path),
+  #     write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
+  #     marshal = function(object) terra::wrap(object),
+  #     unmarshal = function(object) terra::unwrap(object)
+  #   )
+  # ),
+  # tar_target(
+  #   olm_texture_files,
+  #   unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/USDA_Texture_Class/",pattern = "*.tif",full.names = TRUE))
+  # ),
+  # tar_target(# These targets are the raw OLM files
+  #   name = olm_texture_crop,
+  #   command = olm_read_crop(olm_texture_files),
+  #   format = tar_format(
+  #     read = function(path) terra::rast(path),
+  #     write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
+  #     marshal = function(object) terra::wrap(object),
+  #     unmarshal = function(object) terra::unwrap(object)
+  #   )
+  # ),
+  # tar_target(
+  #   olm_combined, 
+  #   command = c(olm_bulk_density_crop, olm_pH_crop, olm_clay_crop, olm_oc_crop, olm_sand_crop, olm_soil_order_crop, olm_texture_crop),
+  #   format = tar_format(
+  #     read = function(path) terra::rast(path),
+  #     write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
+  #     marshal = function(object) terra::wrap(object),
+  #     unmarshal = function(object) terra::unwrap(object)
+  #   )
+  # )
+  #-----#
   # tar_target(
   #   olm_bulk_density_rast,
   #   command = terra::rast(olm_bulk_density)
