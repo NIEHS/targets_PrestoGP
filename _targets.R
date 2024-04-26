@@ -6,6 +6,8 @@
 library(targets)
 library(tarchetypes)
 library(geotargets)
+library(future)
+library(future.batchtools)
 library(PrestoGP)
 library(tibble)
 library(sf)
@@ -26,15 +28,46 @@ library(yardstick)
 library(data.table)
 library(exactextractr)
 
+plan(
+  future.batchtools::batchtools_slurm,
+  template = "template_slurm.tmpl",
+  resources =
+    list(
+      memory = 8,
+      log.file = "slurm_run.log",
+      ncpus = 2, partition = "geo", ntasks = 2,
+      email = "songi2@nih.gov",
+      error.file = "slurm_error.log"
+    )
+)
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
                "geotargets",
+               "future", "future.batchtools",
                "rsample","stats","ggplot2","tarchetypes","parsnip","fastDummies",
                "scales","ggridges","spatialsample","broom","yardstick","data.table",
                "nhdplusTools","exactextractr"),
   format = "qs",
-  sf_use_s2(FALSE),
+  resources = tar_resources(
+    future = tar_resources_future(
+      plan =
+plan(
+  future.batchtools::batchtools_slurm,
+  template = "template_slurm.tmpl",
+  resources =
+    list(
+      memory = 8,
+      log.file = "slurm_run.log",
+      ncpus = 2, partition = "geo", ntasks = 2,
+      email = "songi2@nih.gov",
+      error.file = "slurm_error.log"
+    )
+)
+
+    )
+  )
+
   #
   # For distributed computing in tar_make(), supply a {crew} controller
   # as discussed at https://books.ropensci.org/targets/crew.html.
@@ -58,6 +91,7 @@ tar_option_set(
   # Set other options as needed.
 )
 
+Sys.setenv("PROJECT_DIR" = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides")
 # tar_make_clustermq() is an older (pre-{crew}) way to do distributed computing
 # in {targets}, and its configuration for your machine is below.
 # options(clustermq.scheduler = "multicore")
@@ -77,7 +111,8 @@ tar_source(c("code/03_Pesticide_Analysis/Target_Helpers.R",
 list( 
   tar_target(# This target is the WBD database
     name = wbd_data,
-    command = "input/wmd_national/WBD_National_GDB/WBD_National_GDB.gdb",
+    command = sprintf("%s/input/wmd_national/WBD_National_GDB/WBD_National_GDB.gdb",
+                      Sys.getenv("PROJECT_DIR")),
     format = "file"
     ),
   list( # Dynamic branch of the states for pesticide data from NWIS 
@@ -115,7 +150,7 @@ list(
     name = sf_pesticide,
     # use st_sf to create an sf object with the Albers Equal Area projection
     command = st_as_sf(pesticide_yearly_filtered, coords = c("Longitude","Latitude"), crs = 4326)
-  ),  
+  ),
   tar_target( # This target joins the point pesticide data with HUC data
     name = sf_pesticide_huc,
     command = join_pesticide_huc(sf_pesticide, wbd_data)
@@ -123,7 +158,7 @@ list(
   tar_target(
     olm_names,
     command = c("Bulk_Density","pH","Clay_Content","Organic_Carbon","Sand_Content","Soil_Order","USDA_Texture_Class"),
-    pattern = "vector"
+    iteration = "vector"
   ),
   # tar_files_input(
   #   name = olm_directory,
@@ -133,7 +168,7 @@ list(
     name = olm_layer_files, # provided that Sys.setenv("PROJECT_DIR" = "...location in ddn...")
     command = list.files(
       sprintf(
-         "%s/input/OpenLandMapData/%s", Sys.getenv("PROJECT_DIR"), olm_names
+        "%s/input/OpenLandMapData/%s", Sys.getenv("PROJECT_DIR"), olm_names
       ),
       pattern = "*.tif",
       full.names = TRUE
@@ -147,7 +182,7 @@ list(
     pattern = map(olm_layer_files),
     iteration = "list"
   )
-)
+
   # ,
   # tar_target(# These targets are the raw OLM files
   #   name = olm_bulk_density_crop,

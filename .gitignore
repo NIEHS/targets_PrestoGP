@@ -71,3 +71,5 @@ po/*~
 # papers for literature review
 papers/
 figs/
+
+_targets
