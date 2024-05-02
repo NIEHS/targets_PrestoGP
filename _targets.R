@@ -28,18 +28,12 @@ library(yardstick)
 library(data.table)
 library(exactextractr)
 
+sf_use_s2(FALSE)
 plan(
-  future.batchtools::batchtools_slurm,
-  template = "template_slurm.tmpl",
-  resources =
-    list(
-      memory = 8,
-      log.file = "slurm_run.log",
-      ncpus = 2, partition = "geo", ntasks = 2,
-      email = "songi2@nih.gov",
-      error.file = "slurm_error.log"
-    )
+  batchtools_slurm,
+  template = "template_slurm.tmpl"
 )
+
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
@@ -52,19 +46,18 @@ tar_option_set(
   resources = tar_resources(
     future = tar_resources_future(
       plan =
-plan(
-  future.batchtools::batchtools_slurm,
-  template = "template_slurm.tmpl",
-  resources =
-    list(
-      memory = 8,
-      log.file = "slurm_run.log",
-      ncpus = 2, partition = "geo", ntasks = 2,
-      email = "songi2@nih.gov",
-      error.file = "slurm_error.log"
-    )
-)
-
+        tweak(
+          future.batchtools::batchtools_slurm,
+          template = "template_slurm.tmpl",
+          resources =
+            list(
+              memory = 8,
+              log.file = "slurm_run.log",
+              ncpus = 10, partition = "geo", ntasks = 10,
+              email = "songi2@nih.gov",
+              error.file = "slurm_error.log"
+            )
+      )
     )
   )
 
@@ -91,7 +84,7 @@ plan(
   # Set other options as needed.
 )
 
-Sys.setenv("PROJECT_DIR" = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides")
+
 # tar_make_clustermq() is an older (pre-{crew}) way to do distributed computing
 # in {targets}, and its configuration for your machine is below.
 # options(clustermq.scheduler = "multicore")
@@ -111,8 +104,8 @@ tar_source(c("code/03_Pesticide_Analysis/Target_Helpers.R",
 list( 
   tar_target(# This target is the WBD database
     name = wbd_data,
-    command = sprintf("%s/input/wmd_national/WBD_National_GDB/WBD_National_GDB.gdb",
-                      Sys.getenv("PROJECT_DIR")),
+    command = sprintf("%s/input/WBD-National/WBD_National_GDB.gdb",
+                      "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides"),
     format = "file"
     ),
   list( # Dynamic branch of the states for pesticide data from NWIS 
