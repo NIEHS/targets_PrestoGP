@@ -5,6 +5,7 @@
 # Load packages required to define the pipeline:
 library(targets)
 library(tarchetypes)
+library(geotargets)
 library(PrestoGP)
 library(tibble)
 library(sf)
@@ -27,18 +28,20 @@ library(exactextractr)
 # Set target options:
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
-               "rsample","stats","ggplot2","tarchetypes","parsnip","fastDummies",
+               "rsample","stats","ggplot2","geotargets","tarchetypes","parsnip","fastDummies",
                "scales","ggridges","spatialsample","broom","yardstick","data.table",
                "nhdplusTools","exactextractr"),
   format = "qs",
-  sf_use_s2(FALSE),
+  sf_use_s2(FALSE)
+  # debug = "olm_huc12_9dae2790e8379df8",
+  # cue = tar_cue(mode = "never")
   #
   # For distributed computing in tar_make(), supply a {crew} controller
   # as discussed at https://books.ropensci.org/targets/crew.html.
   # Choose a controller that suits your needs. For example, the following
   # sets a controller with 2 workers which will run as local R processes:
   #
-  # controller = crew::crew_controller_local(workers = 6)
+  # controller = crew::crew_controller_local(workers = 8)
   #
   # 
     # controller = crew.cluster::crew_controller_slurm(
@@ -66,7 +69,8 @@ tar_option_set(
 # Run the R scripts in the R/ folder with your custom functions:
 tar_source(c("code/03_Pesticide_Analysis/Target_Helpers.R",
              "code/01_Create_Dataset/Target_Pesticide_Data.R",
-             "code/02_Geographic_Covariates/Calc_OLM.R")
+             "code/02_Geographic_Covariates/Calc_OLM.R",
+             "code/02_Geographic_Covariates/Calc_terraClimate.R")
 )
 
 # data_AZO_covariates_cleaned_03032024
@@ -118,133 +122,128 @@ list(
     command = join_pesticide_huc(sf_pesticide, wbd_data)
   ),
   tar_target(
-    olm_bulk_density_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Bulk_Density/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_bulk_density_crop,
-    command = olm_read_crop(olm_bulk_density_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
+    olm_names,
+    command = c("Bulk_Density","pH","Clay_Content","Organic_Carbon","Sand_Content","Soil_Order","USDA_Texture_Class"),
+    iteration = "vector"
   ),
   tar_target(
-    olm_pH_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/pH/",pattern = "*.tif",full.names = TRUE))
+    name = olm_layer_files, 
+    command = list.files(
+      sprintf(
+        "/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/%s", olm_names
+      ),
+      pattern = "*.tif",
+      full.names = TRUE
+    ),
+    pattern = map(olm_names),
+    iteration = "vector"
   ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_pH_crop,
-    command = olm_read_crop(olm_pH_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
+  tar_terra_rast(
+    name = olm_layer_rast,
+    command = terra::rast(olm_layer_files, win = c(-124.7844079, -66.9513812, 24.7433195, 49.3457868)),
+    pattern = map(olm_layer_files),
+    iteration = "list"
   ),
-  tar_target(
-    olm_clay_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Clay_Content/",pattern = "*.tif",full.names = TRUE))
+  tar_target(# Create a small 500m buffer around the pesticide data
+    name = sf_pesticide_buffer,
+    command = sf::st_buffer(sf_pesticide_huc, dist = 500)
   ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_clay_crop,
-    command = olm_read_crop(olm_clay_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_oc_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Organic_Carbon/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_oc_crop,
-    command = olm_read_crop(olm_oc_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_sand_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Sand_Content/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_sand_crop,
-    command = olm_read_crop(olm_sand_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_soil_order_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/Soil_Order/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_soil_order_crop,
-    command = olm_read_crop(olm_soil_order_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_texture_files,
-    unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/USDA_Texture_Class/",pattern = "*.tif",full.names = TRUE))
-  ),
-  tar_target(# These targets are the raw OLM files
-    name = olm_texture_crop,
-    command = olm_read_crop(olm_texture_files),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  ),
-  tar_target(
-    olm_combined, 
-    command = c(olm_bulk_density_crop, olm_pH_crop, olm_clay_crop, olm_oc_crop, olm_sand_crop, olm_soil_order_crop, olm_texture_crop),
-    format = tar_format(
-      read = function(path) terra::rast(path),
-      write = function(object, path) terra::writeRaster(x = object, filename = path, filetype = "GTiff", overwrite = TRUE),
-      marshal = function(object) terra::wrap(object),
-      unmarshal = function(object) terra::unwrap(object)
-    )
-  )
   # tar_target(
-  #   olm_bulk_density_rast,
-  #   command = terra::rast(olm_bulk_density)
-  # )
-  # tar_target(
-  #   olm_pH_files,
-  #   unlist(list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/pH",pattern = "*.tif",full.names = TRUE))
-  # ),
-  # tar_target(# These targets are the raw OLM files
-  #   name = olm_pH,
-  #   command = olm_read_crop(olm_pH_files),
-  #   pattern = map(olm_pH_files)
-  )
-  # tar_target( # This target separates the data into (1)outcome (2) covariates/features (3) ancillary info
-  #   name = sf_pesticide_partition,
-  #   command = partition_datasets(sf_pesticide)
+  #   random_points,
+  #   command = sf_pesticide_buffer %>% sample_n(100, replace = FALSE)
   # ),  
-  # tar_target( # This target runs skimr::skim to look at the summary stats 
-  #   name = explore_skim_outcomes, 
-  #   command = skim(sf_pesticide) 
+  tar_target(# Calculate OLM small buffer variables
+    name = olm_buffer,
+    command = calc_olm_point(sf_pesticide_buffer, olm_layer_rast),
+    pattern = map(olm_layer_rast)
+  ),
+  tar_target(# Calculate OLM HUC12 variables
+    name = olm_huc12,
+    command = calc_olm_huc(sf_pesticide_huc, olm_layer_rast, wbd_data, "huc12"),
+    pattern = map(olm_layer_rast)
+  ),
+  tar_target(# Calculate OLM HUC10 variables
+    name = olm_huc10,
+    command = calc_olm_huc(sf_pesticide_huc, olm_layer_rast, wbd_data, "huc10"),
+    pattern = map(olm_layer_rast)
+  ),
+  tar_target(# Calculate OLM HUC08 variables
+    name = olm_huc08,
+    command = calc_olm_huc(sf_pesticide_huc, olm_layer_rast, wbd_data, "huc8"),
+    pattern = map(olm_layer_rast)
+  ),  
+  tar_target(
+    terra_climate_names,
+    command = sort(c(
+      "aet", "def", "PDSI", "pet", "ppt", "q", "soil", "srad",
+      "swe", "tmax", "tmin", "vap", "vpd", "ws"
+    )),
+    iteration = "list"
+  ),
+  tar_target(
+    name = terra_climate_layer_files,
+    command = list.files(
+      sprintf(
+        "/Volumes/set/Projects/PrestoGP_Pesticides/input/terraClimate/NetCDF/%s", terra_climate_names
+      ),
+      pattern = "*.nc",
+      full.names = TRUE
+    ),
+    iteration = "list",
+    pattern = map(terra_climate_names)
+  ),
+  tar_terra_rast( # This target calculates the mean of the climate data and combines them all together by year
+    name = terra_climate_mean,
+    command = terra::rast(terra_climate_layer_files, win = c(-124.7844079, -66.9513812, 24.7433195, 49.3457868)),
+    pattern = map(terra_climate_layer_files),
+    iteration = "list"
+  ),
+  tar_terra_rast(# This target calculates the yearly mean of the climate data by applying over 
+    # each monthly value (i.e. the groups of 12)
+    name = terra_climate_yearly,
+    command = terra::tapp(terra_climate_mean, index = rep(1:23, each = 12), fun = mean, na.rm = TRUE),
+    pattern = map(terra_climate_mean),
+    iteration = "list"
+  ),
+  tar_target(
+    name = terra_climate_buffer,
+    command = calc_tc_point(sf_pesticide_buffer, terra_climate_yearly, terra_climate_names),
+    pattern = map(terra_climate_yearly, terra_climate_names), 
+    iteration = "list"
+  ),
+  tar_target(# Calculate terraClimate HUC08 variables
+    name = tc_huc08,
+    command = calc_tc_huc(sf_pesticide_huc, terra_climate_yearly, wbd_data, "huc8", terra_climate_names),
+    pattern = map(terra_climate_yearly, terra_climate_names),
+    iteration = "list"
+  ),  
+  tar_target(# Calculate terraClimate HUC10 variables
+    name = tc_huc10,
+    command = calc_tc_huc(sf_pesticide_huc, terra_climate_yearly, wbd_data, "huc10", terra_climate_names),
+    pattern = map(terra_climate_yearly, terra_climate_names),
+    iteration = "list"
+  ),  
+  tar_target(# Calculate terraClimate HUC12 variables
+    name = tc_huc12,
+    command = calc_tc_huc(sf_pesticide_huc, terra_climate_yearly, wbd_data, "huc12", terra_climate_names),
+    pattern = map(terra_climate_yearly, terra_climate_names),
+    iteration = "list"
+  ),
+  tar_target(
+    name = twi_path,
+    command = list.files("/Volumes/SET/Projects/PrestoGP_Pesticides/input/TWI/",full.names = T, pattern = "*.tif"),
+    format = "file"
+  ),
+  tar_terra_rast( # Geotarget for TWI raster, static spatial only
+    name = twi_layer_rast,
+    command = terra::rast(twi_path),
+    iteration = "list"
+  )  
+)
+
+  # tar_target( # This target runs skimr::skim to look at the summary stats
+  #   name = explore_skim_outcomes,
+  #   command = skim(sf_pesticide)
   # ),
   # tar_target( # This target runs skimr::skim to look at the summary stats 
   #   name = explore_skim_covariates, 

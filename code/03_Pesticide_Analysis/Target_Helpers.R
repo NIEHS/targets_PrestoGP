@@ -1,16 +1,26 @@
 # TARGETS help functions for PrestoGP Pesticide Pipeline Analysis 
 
-
+list_raster <- function(base_path, sub_path, recursive = TRUE) {
+  # Combine base_path and all subpaths
+  full_path <- file.path(base_path, sub_path)
+  
+  # List all the rasters in the directory
+  rasters <- list.files(full_path, pattern = ".tif$", full.names = TRUE, recursive = recursive)
+  
+  return(rasters)
+}
 
 
 join_pesticide_huc <- function(points, wbd_huc){
+  
+  sf_use_s2(FALSE)
   
   HUC12 <- sf::st_read(wbd_huc, layer = "WBDHU12")
   
   # Convert both the AZO points and HUC to Albers Equal Area projected coordinate system
 #   AZO.t <- sf::st_transform(points, "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0
 # +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
-  AZO.t <- sf::st_transform(points, crs = st_crs(HUC12))  
+  AZO.t <- sf::st_transform(points, crs = st_crs(HUC12))
   
 
   
