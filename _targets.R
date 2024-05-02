@@ -231,7 +231,7 @@ list(
   ),
   tar_target(
     name = twi_path,
-    command = list.files("/Volumes/SET/Projects/PrestoGP_Pesticides/input/TWI/",full.names = T, pattern = "*.tif"),
+    command = list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/TWI/",full.names = T, pattern = "*.tif"),
     format = "file"
   ),
   tar_terra_rast( # Geotarget for TWI raster, static spatial only
