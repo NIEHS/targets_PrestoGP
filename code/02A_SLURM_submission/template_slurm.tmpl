@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# <%
+# # relative paths are not handled well by Slurm
+# log_file = fs::path_expand(log_file)
+# -%>
+# <%
+# error_file = fs::path_expand(error_file)
+# -%>
+
+#SBATCH --job-name={{ job_name }}
+#SBATCH --output={{ log_file | /dev/null }}
+#SBATCH --error={{ error_file | /dev/null }}
+#SBATCH --mem-per-cpu={{ memory | 4 }}g
+#SBATCH --mail-type=END,FAIL
+# <%-SBATCH --array=1-{{ n_jobs }}->
+#SBATCH --cpus-per-task={{ cores | 1 }}
+#SBATCH --partition={{ partition }}
+#SBATCH --mail-user={{ email }}
+#<%= if (!is.null(partition)) sprintf(paste0("#SBATCH --partition='", partition, "'")) %>
+#<%= if (!is.null(email)) sprintf(paste0("#SBATCH --mail-user='", email, "'")) %>
+
+ulimit -v $(( 1024 * 1024 * {{ memory | 4 }} ))
+CMQ_AUTH={{ auth }} R --no-save --no-restore -e 'clustermq:::worker("{{ master }}")'

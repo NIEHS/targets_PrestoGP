@@ -1,6 +1,10 @@
 # Created by use_targets().
 # Main targets file for the project.
 # Created by Kyle P Messier
+options(
+  clustermq.scheduler = "local",
+  clustermq.template = "code/02A_SLURM_submission/template_slurm.tmpl"
+)
 
 # Load packages required to define the pipeline:
 library(targets)
@@ -25,14 +29,118 @@ library(broom)
 library(yardstick)
 library(data.table)
 library(exactextractr)
+library(crew)
+library(clustermq)
+library(crew.cluster)
+
+
+
+sf::sf_use_s2(FALSE)
+
 # Set target options:
+
+crew_default <-
+  crew::crew_controller_local(
+    name = "controller_default",
+    workers = 12L
+  )
+
+# mq_default <-
+  # targets::tar_resources(
+  #   clustermq =
+  #   targets::tar_resources_clustermq(
+  #     template = 
+  #     list(
+  #       memory = 8,
+  #       email = "songi2@nih.gov",
+  #       log_file = "output/clustermq_log.log",
+  #       error_file = "output/clustermq_error.error",
+  #       partition = "geo",
+  #       cores = 1
+  #     )
+  #   )
+  # )
+mq_twi <- 
+  targets::tar_resources(
+    clustermq =
+    targets::tar_resources_clustermq(
+      template = 
+      list(
+        memory = 8,
+        email = "songi2@nih.gov",
+        log_file = "output/clustermq_log.log",
+        error_file = "output/clustermq_error.error",
+        partition = "geo",
+        cores = 10
+      )
+    )
+  )
+mq_nass <-
+  targets::tar_resources(
+    clustermq =
+    targets::tar_resources_clustermq(
+      template = 
+      list(
+        memory = 8,
+        email = "songi2@nih.gov",
+        log_file = "output/clustermq_log.log",
+        error_file = "output/clustermq_error.error",
+        partition = "geo",
+        cores = 15L
+      )
+    )
+  )
+
+# crew_default <-
+#   crew.cluster::crew_controller_slurm(
+#     name = "controller_default",
+#     workers = 12L,
+#     seconds_idle = 10,
+#     launch_max = 5L,
+#     slurm_partition = "geo",
+#     slurm_log_output = "output/crew_log.log",
+#     slurm_log_error = "output/crew_error.error",
+#     slurm_memory_gigabytes_per_cpu = 8,
+#     slurm_cpus_per_task = 1
+#   )
+
+controller_nass <- crew.cluster::crew_controller_slurm(
+          name = "controller_nass",
+          workers = 1,
+          seconds_idle = 15,
+          seconds_timeout = 86400,
+          seconds_launch= 7200,
+          launch_max = 3L,
+          slurm_partition = "geo",
+          slurm_memory_gigabytes_per_cpu = 8,
+          slurm_cpus_per_task = 15
+      )
+controller_twi <- crew.cluster::crew_controller_slurm(
+          name = "controller_twi",
+          workers = 1L,
+          seconds_timeout = 7200,
+          seconds_launch= 7200,
+          launch_max = 3L,
+          slurm_partition = "geo",
+          slurm_memory_gigabytes_per_cpu = 8,
+          slurm_cpus_per_task = 10
+      )
+
 tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
                "rsample","stats","ggplot2","geotargets","tarchetypes","parsnip","fastDummies",
                "scales","ggridges","spatialsample","broom","yardstick","data.table",
-               "nhdplusTools","exactextractr"),
+               "nhdplusTools","exactextractr", "dataRetrieval", "beepr", "lubridate", "dplyr"),
   format = "qs",
-  sf_use_s2(FALSE)
+  controller = crew_controller_group(crew_default, controller_nass, controller_twi),
+  resources =# mq_default,
+  tar_resources(
+    crew = tar_resources_crew(
+      controller = "controller_default"
+    )
+  ),
+  garbage_collection = TRUE,
+  library = "~/r-libs"
   # debug = "olm_huc12_9dae2790e8379df8",
   # cue = tar_cue(mode = "never")
   #
@@ -78,7 +186,7 @@ tar_source(c("code/03_Pesticide_Analysis/Target_Helpers.R",
 list( 
   tar_target(# This target is the WBD database
     name = wbd_data,
-    command = "input/wmd_national/WBD_National_GDB/WBD_National_GDB.gdb",
+    command = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/WBD-National/WBD_National_GDB.gdb",
     format = "file"
     ),
   list( # Dynamic branch of the states for pesticide data from NWIS 
@@ -130,7 +238,7 @@ list(
     name = olm_layer_files, 
     command = list.files(
       sprintf(
-        "/Volumes/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/%s", olm_names
+        "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/%s", olm_names
       ),
       pattern = "*.tif",
       full.names = TRUE
@@ -184,7 +292,7 @@ list(
     name = terra_climate_layer_files,
     command = list.files(
       sprintf(
-        "/Volumes/set/Projects/PrestoGP_Pesticides/input/terraClimate/NetCDF/%s", terra_climate_names
+        "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/terraClimate/NetCDF/%s", terra_climate_names
       ),
       pattern = "*.nc",
       full.names = TRUE
@@ -231,14 +339,39 @@ list(
   ),
   tar_target(
     name = twi_path,
-    command = list.files("/Volumes/set/Projects/PrestoGP_Pesticides/input/TWI/",full.names = T, pattern = "*.tif"),
+    command = list.files("/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/TWI/",full.names = T, pattern = "*.tif"),
     format = "file"
   ),
-  tar_terra_rast( # Geotarget for TWI raster, static spatial only
-    name = twi_layer_rast,
-    command = terra::rast(twi_path),
-    iteration = "list"
-  )  
+  # tar_terra_rast( # Geotarget for TWI raster, static spatial only
+  #   name = twi_layer_rast,
+  #   command = terra::rast(twi_path),
+  #   iteration = "list"
+  # ),
+  tar_target(
+    name = huc_levels,
+    command = c(8, 10, 12),
+    iteration = "vector"
+  ),
+  tar_target(
+    name = huc_nass,
+    command = calc_nass(huc_level = huc_levels, n_cores = 15),
+    # since the study period is 2008-2022
+    pattern = map(huc_levels),
+    iteration = "list",
+    resources = mq_nass
+  ),
+  # tar_target(
+  #   name = twi_file,
+  #   command = "../../../../input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
+  #   format = "file"
+  # ),
+  tar_target(
+    name = huc_twi,
+    command = calc_twi(twi_file = twi_path, wbd_path = wbd_data, huc_level = huc_levels, n_cores = 10),
+    resources = mq_twi,
+    iteration = "list",
+    pattern = map(huc_levels)
+  )
 )
 
   # tar_target( # This target runs skimr::skim to look at the summary stats

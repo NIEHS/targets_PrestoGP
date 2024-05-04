@@ -71,3 +71,6 @@ po/*~
 # papers for literature review
 papers/
 figs/
+
+**/*.error
+**/*.log
