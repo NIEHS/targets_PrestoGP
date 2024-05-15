@@ -484,8 +484,7 @@ fit_MV_Vecchia <- function(splits) {
 calc_nass <- function(
   nass_path = "input/USDA_NASS",
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
-  huc_level = 12,
-  n_cores = 1
+  huc_level = 12
 ) {
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the NASS data
@@ -507,7 +506,6 @@ calc_nass <- function(
     dplyr::select(dplyr::all_of(field_name))
   huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 4)
 
-  future::plan(future::multisession, workers = n_cores)
 
   # approach 1: Map par_hierarchy
   # extracted <-
@@ -536,7 +534,7 @@ calc_nass <- function(
       func = "frac",
       max_cells = 3e+07
     )
-  future::plan(future::sequential)
+    
   return(extracted)
 }
 
@@ -565,8 +563,7 @@ calc_nass <- function(
 calc_twi <- function(
   twi_file = "input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
-  huc_level = 12,
-  n_cores = 1
+  huc_level = 12
 ) {
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the WBD data
@@ -586,7 +583,6 @@ calc_twi <- function(
     dplyr::select(dplyr::all_of(field_name))
   huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 4)
 
-  future::plan(future::multisession, workers = n_cores)
 
   # approach 1: Map par_hierarchy
   extracted <-
@@ -600,7 +596,7 @@ calc_twi <- function(
       func = "mean",
       max_cells = 3e+07
     )
-  future::plan(future::sequential)
+
   return(extracted)
 }
 
