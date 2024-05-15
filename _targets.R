@@ -19,14 +19,11 @@ library(tidyverse)
 library(skimr)
 library(rsample)
 library(stats)
-library(ggplot2)
 library(parsnip)
 library(fastDummies)
 library(scales)
 library(ggridges)
-library(spatialsample)
 library(broom)
-library(yardstick)
 library(data.table)
 library(exactextractr)
 library(crew)
@@ -36,6 +33,7 @@ library(crew.cluster)
 
 
 sf::sf_use_s2(FALSE)
+
 
 # Set target options:
 
@@ -141,6 +139,7 @@ tar_option_set(
   ),
   garbage_collection = TRUE,
   library = "~/r-libs"
+
   # debug = "olm_huc12_9dae2790e8379df8",
   # cue = tar_cue(mode = "never")
   #
@@ -152,16 +151,15 @@ tar_option_set(
   # controller = crew::crew_controller_local(workers = 8)
   #
   # 
-    # controller = crew.cluster::crew_controller_slurm(
-    #   workers = 12,
-    #   # Many clusters install R as an environment module, and you can load it
-    #   # with the script_lines argument. To select a specific verison of R,
-    #   # you may need to include a version string, e.g. "module load R/4.3.0".
-    #   # Check with your system administrator if you are unsure.
-    #   script_lines = "module load R",
-    #   slurm_partition = "geo"
-    # )
-    # 
+  # add the slurm username to the crew controller
+    controller = crew.cluster::crew_controller_slurm(
+      name = "pipeline_kpm",      
+      workers = 12,
+      slurm_log_output="/slurm_messages/pipeline_kpm.out",
+      slurm_log_error="/slurm_messages/pipeline_kpm.err",
+     # script_lines = "module load R",
+      slurm_partition = "triton"
+    )
   #
   # Set other options as needed.
 )
@@ -342,6 +340,7 @@ list(
     command = list.files("/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/TWI/",full.names = T, pattern = "*.tif"),
     format = "file"
   ),
+
   # tar_terra_rast( # Geotarget for TWI raster, static spatial only
   #   name = twi_layer_rast,
   #   command = terra::rast(twi_path),

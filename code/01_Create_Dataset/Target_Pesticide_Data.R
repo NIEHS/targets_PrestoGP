@@ -16,7 +16,6 @@
 state_fun_AZO <- function(state.list) {
   library(dataRetrieval)
   library(dplyr)
-  library(beepr)
   library(lubridate)
   library(tidyverse)
   library(data.table)
