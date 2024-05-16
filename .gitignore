@@ -77,4 +77,5 @@ figs/
 
 **/*.error
 **/*.log
+**/*.out
 
