@@ -1,10 +1,10 @@
 # Created by use_targets().
 # Main targets file for the project.
 # Created by Kyle P Messier
-options(
-  clustermq.scheduler = "local",
-  clustermq.template = "code/02A_SLURM_submission/template_slurm.tmpl"
-)
+# options(
+#   clustermq.scheduler = "local",
+#   clustermq.template = "code/02A_SLURM_submission/template_slurm.tmpl"
+# )
 
 # Load packages required to define the pipeline:
 library(targets)
@@ -29,7 +29,7 @@ library(exactextractr)
 library(crew)
 library(clustermq)
 library(crew.cluster)
-
+library(chopin)
 
 
 sf::sf_use_s2(FALSE)
@@ -88,8 +88,8 @@ crew_default <-
 #     slurm_cpus_per_task = 1
 #   )
 
-controller_nass <- crew.cluster::crew_controller_slurm(
-          name = "controller_nass",
+controller_geo1 <- crew.cluster::crew_controller_slurm(
+          name = "controller_geo1",
           workers = 1,
           seconds_idle = 15,
           seconds_timeout = 86400,
@@ -99,8 +99,8 @@ controller_nass <- crew.cluster::crew_controller_slurm(
           slurm_memory_gigabytes_per_cpu = 8,
           slurm_cpus_per_task = 15
       )
-controller_twi <- crew.cluster::crew_controller_slurm(
-          name = "controller_twi",
+controller_geo2 <- crew.cluster::crew_controller_slurm(
+          name = "controller_geo2",
           workers = 1L,
           seconds_timeout = 7200,
           seconds_launch= 7200,
@@ -114,9 +114,9 @@ tar_option_set(
   packages = c("PrestoGP","tibble","sf","terra","qs","tidyverse","skimr",
                "rsample","stats","ggplot2","geotargets","tarchetypes","parsnip","fastDummies",
                "scales","ggridges","spatialsample","broom","yardstick","data.table",
-               "nhdplusTools","exactextractr", "dataRetrieval", "beepr", "lubridate", "dplyr"),
+               "exactextractr", "dataRetrieval", "lubridate", "dplyr","chopin"),
   format = "qs",
-  controller = crew_controller_group(crew_default, controller_nass, controller_twi),
+  controller = crew_controller_group(crew_default, controller_geo1, controller_geo2),
   resources =  tar_resources(
     crew = tar_resources_crew(
       controller = "controller_default"
@@ -246,12 +246,18 @@ list(
   tar_target(# Calculate OLM small buffer variables
     name = olm_buffer,
     command = calc_olm_point(sf_pesticide_buffer, olm_layer_rast),
-    pattern = map(olm_layer_rast)
+    pattern = map(olm_layer_rast),
+    resources = tar_resources(
+    crew = tar_resources_crew(controller = "controller_geo1")
+    )
   ),
   tar_target(# Calculate OLM HUC12 variables
     name = olm_huc12,
     command = calc_olm_huc(sf_pesticide_huc, olm_layer_rast, wbd_data, "huc12"),
-    pattern = map(olm_layer_rast)
+    pattern = map(olm_layer_rast),
+    resources = tar_resources(
+    crew = tar_resources_crew(controller = "controller_geo1")
+    )
   ),
   tar_target(# Calculate OLM HUC10 variables
     name = olm_huc10,
@@ -338,11 +344,17 @@ list(
   ),
   tar_target(
     name = huc_nass,
-    command = calc_nass(huc_level = huc_levels),
+    command = calc_nass(
+      base_path = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/",
+      nass_path = "input/USDA_NASS",
+      wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
+    huc_level = huc_levels),
     # since the study period is 2008-2022
     pattern = map(huc_levels),
     iteration = "list",
-    resources = mq_nass
+    resources = tar_resources(
+    crew = tar_resources_crew(controller = "controller_geo1")
+    )
   ),
   # tar_target(
   #   name = twi_file,
@@ -351,8 +363,10 @@ list(
   # ),
   tar_target(
     name = huc_twi,
-    command = calc_twi(twi_file = twi_path, wbd_path = wbd_data, huc_level = huc_levels, n_cores = 10),
-    resources = mq_twi,
+    command = calc_twi(twi_file = twi_path, wbd_path = wbd_data, huc_level = huc_levels),
+    resources = tar_resources(
+    crew = tar_resources_crew(controller = "controller_geo2")
+    ),
     iteration = "list",
     pattern = map(huc_levels)
   )

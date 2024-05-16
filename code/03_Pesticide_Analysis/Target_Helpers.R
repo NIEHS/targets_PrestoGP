@@ -482,15 +482,16 @@ fit_MV_Vecchia <- function(splits) {
 #'           out_path = "output",
 #'           n_cores = 1)
 calc_nass <- function(
+  base_path,
   nass_path = "input/USDA_NASS",
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
   huc_level = 12
 ) {
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the NASS data
-  list_nass <- list_raster(nass_path, recursive = TRUE, full.names = TRUE)
+  list_nass <- list_raster(base_path, nass_path, recursive = TRUE)
   # read in the WBD data
-  wbdpath <- file.path(wbd_path)
+  wbdpath <- file.path(paste0(base_path,wbd_path))
   # file based strategy
   ext_mainland <- sf::st_as_text(
     sf::st_as_sfc(sf::st_bbox(c(xmin=-126, xmax=-66, ymin=22, ymax=52)))
