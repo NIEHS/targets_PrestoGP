@@ -43,51 +43,37 @@ crew_default <-
     workers = 12L
   )
 
-# mq_default <-
-  # targets::tar_resources(
-  #   clustermq =
-  #   targets::tar_resources_clustermq(
-  #     template = 
-  #     list(
-  #       memory = 8,
-  #       email = "songi2@nih.gov",
-  #       log_file = "output/clustermq_log.log",
-  #       error_file = "output/clustermq_error.error",
-  #       partition = "geo",
-  #       cores = 1
-  #     )
-  #   )
-  # )
-mq_twi <- 
-  targets::tar_resources(
-    clustermq =
-    targets::tar_resources_clustermq(
-      template = 
-      list(
-        memory = 8,
-        email = "songi2@nih.gov",
-        log_file = "output/clustermq_log.log",
-        error_file = "output/clustermq_error.error",
-        partition = "geo",
-        cores = 10
-      )
-    )
-  )
-mq_nass <-
-  targets::tar_resources(
-    clustermq =
-    targets::tar_resources_clustermq(
-      template = 
-      list(
-        memory = 8,
-        email = "songi2@nih.gov",
-        log_file = "output/clustermq_log.log",
-        error_file = "output/clustermq_error.error",
-        partition = "geo",
-        cores = 15L
-      )
-    )
-  )
+
+# mq_twi <- 
+#   targets::tar_resources(
+#     clustermq =
+#     targets::tar_resources_clustermq(
+#       template = 
+#       list(
+#         memory = 8,
+#         email = "messierkp@nih.gov",
+#         log_file = "output/clustermq_log.log",
+#         error_file = "output/clustermq_error.error",
+#         partition = "geo",
+#         cores = 10
+#       )
+#     )
+#   )
+# mq_nass <-
+#   targets::tar_resources(
+#     clustermq =
+#     targets::tar_resources_clustermq(
+#       template = 
+#       list(
+#         memory = 8,
+#         email = "messierkp@nih.gov",
+#         log_file = "output/clustermq_log.log",
+#         error_file = "output/clustermq_error.error",
+#         partition = "geo",
+#         cores = 15L
+#       )
+#     )
+#   )
 
 # crew_default <-
 #   crew.cluster::crew_controller_slurm(
@@ -131,14 +117,13 @@ tar_option_set(
                "nhdplusTools","exactextractr", "dataRetrieval", "beepr", "lubridate", "dplyr"),
   format = "qs",
   controller = crew_controller_group(crew_default, controller_nass, controller_twi),
-  resources =# mq_default,
-  tar_resources(
+  resources =  tar_resources(
     crew = tar_resources_crew(
       controller = "controller_default"
     )
   ),
-  garbage_collection = TRUE,
-  library = "~/r-libs"
+  garbage_collection = TRUE
+#  library = "~/r-libs"
 
   # debug = "olm_huc12_9dae2790e8379df8",
   # cue = tar_cue(mode = "never")
@@ -152,14 +137,14 @@ tar_option_set(
   #
   # 
   # add the slurm username to the crew controller
-    controller = crew.cluster::crew_controller_slurm(
-      name = "pipeline_kpm",      
-      workers = 12,
-      slurm_log_output="/slurm_messages/pipeline_kpm.out",
-      slurm_log_error="/slurm_messages/pipeline_kpm.err",
+  #  controller = crew.cluster::crew_controller_slurm(
+  #    name = "pipeline_kpm",      
+  #    workers = 12,
+  #    slurm_log_output="/slurm_messages/pipeline_kpm.out",
+  #    slurm_log_error="/slurm_messages/pipeline_kpm.err",
      # script_lines = "module load R",
-      slurm_partition = "triton"
-    )
+  #    slurm_partition = "triton"
+  #  )
   #
   # Set other options as needed.
 )
@@ -353,7 +338,7 @@ list(
   ),
   tar_target(
     name = huc_nass,
-    command = calc_nass(huc_level = huc_levels, n_cores = 15),
+    command = calc_nass(huc_level = huc_levels),
     # since the study period is 2008-2022
     pattern = map(huc_levels),
     iteration = "list",

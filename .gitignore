@@ -3,6 +3,9 @@
 # watershed boundary data folder
 input/
 
+# csv files
+*.csv
+
 # output rds
 output/*.rds
 
@@ -74,3 +77,4 @@ figs/
 
 **/*.error
 **/*.log
+
