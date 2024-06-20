@@ -34,6 +34,13 @@ library(chopin)
 
 sf::sf_use_s2(FALSE)
 
+# by export LD_LIBRARY_PATH=.... command.
+.libPaths(
+  c(
+    "/ddn/gs1/biotools/R/lib64/R/custompkg",
+    .libPaths()
+  )
+)
 
 # Set target options:
 
@@ -42,6 +49,8 @@ crew_default <-
     name = "controller_default",
     workers = 12L
   )
+
+
 
 
 # mq_twi <- 
@@ -88,26 +97,31 @@ crew_default <-
 #     slurm_cpus_per_task = 1
 #   )
 
-controller_geo1 <- crew.cluster::crew_controller_slurm(
-          name = "controller_geo1",
-          workers = 1,
-          seconds_idle = 15,
+controller_geo_large <- crew.cluster::crew_controller_slurm(
+          name = "controller_geo_large",
+          workers = 4L,
+          seconds_idle = 120,
           seconds_timeout = 86400,
           seconds_launch= 7200,
-          launch_max = 3L,
+          reset_globals = FALSE,
+          launch_max = 4L,
           slurm_partition = "geo",
-          slurm_memory_gigabytes_per_cpu = 8,
-          slurm_cpus_per_task = 15
+          slurm_log_output = "slurm_messages/crew_log_%A.out",
+          slurm_log_error = "slurm_messages/crew_log_%A.err",
+          slurm_memory_gigabytes_per_cpu = 12,
+          slurm_cpus_per_task = 4
       )
-controller_geo2 <- crew.cluster::crew_controller_slurm(
-          name = "controller_geo2",
+controller_geo_small <- crew.cluster::crew_controller_slurm(
+          name = "controller_geo_small",
           workers = 1L,
           seconds_timeout = 7200,
           seconds_launch= 7200,
           launch_max = 3L,
           slurm_partition = "geo",
           slurm_memory_gigabytes_per_cpu = 8,
-          slurm_cpus_per_task = 10
+          slurm_log_output = "slurm_messages/crew_log_%A.out",
+          slurm_log_error = "slurm_messages/crew_log_%A.err",          
+          slurm_cpus_per_task = 2
       )
 
 tar_option_set(
@@ -116,7 +130,7 @@ tar_option_set(
                "scales","ggridges","spatialsample","broom","yardstick","data.table",
                "exactextractr", "dataRetrieval", "lubridate", "dplyr","chopin"),
   format = "qs",
-  controller = crew_controller_group(crew_default, controller_geo1, controller_geo2),
+  controller = crew_controller_group(crew_default, controller_geo_large, controller_geo_small),
   resources =  tar_resources(
     crew = tar_resources_crew(
       controller = "controller_default"
@@ -246,18 +260,12 @@ list(
   tar_target(# Calculate OLM small buffer variables
     name = olm_buffer,
     command = calc_olm_point(sf_pesticide_buffer, olm_layer_rast),
-    pattern = map(olm_layer_rast),
-    resources = tar_resources(
-    crew = tar_resources_crew(controller = "controller_geo1")
-    )
+    pattern = map(olm_layer_rast)
   ),
   tar_target(# Calculate OLM HUC12 variables
     name = olm_huc12,
     command = calc_olm_huc(sf_pesticide_huc, olm_layer_rast, wbd_data, "huc12"),
-    pattern = map(olm_layer_rast),
-    resources = tar_resources(
-    crew = tar_resources_crew(controller = "controller_geo1")
-    )
+    pattern = map(olm_layer_rast)
   ),
   tar_target(# Calculate OLM HUC10 variables
     name = olm_huc10,
@@ -308,32 +316,58 @@ list(
     pattern = map(terra_climate_yearly, terra_climate_names), 
     iteration = "list"
   ),
+    tar_target(
+    name = tc_all_huc,
+    command = calc_at_poly(nass_path = terra_climate_yearly, 
+    huc_level = huc_levels,
+    wbd_path = wbd_data,
+    reduce_func = "mean"),
+    resources = tar_resources(
+    crew = tar_resources_crew(controller = "controller_geo_large")),
+    # since the study period is 2008-2022
+    pattern = map(terra_climate_yearly),
+    iteration = "list")
+    ,
   tar_target(# Calculate terraClimate HUC08 variables
     name = tc_huc08,
     command = calc_tc_huc(sf_pesticide_huc, terra_climate_yearly, wbd_data, "huc8", terra_climate_names),
     pattern = map(terra_climate_yearly, terra_climate_names),
-    iteration = "list"
+    iteration = "list",
+        resources = tar_resources(
+    crew = tar_resources_crew(controller = "controller_geo2")
+    )
   ),  
   tar_target(# Calculate terraClimate HUC10 variables
     name = tc_huc10,
     command = calc_tc_huc(sf_pesticide_huc, terra_climate_yearly, wbd_data, "huc10", terra_climate_names),
     pattern = map(terra_climate_yearly, terra_climate_names),
-    iteration = "list"
+    iteration = "list",
+        resources = tar_resources(
+    crew = tar_resources_crew(controller = "controller_geo2")
+    )
   ),  
   tar_target(# Calculate terraClimate HUC12 variables
     name = tc_huc12,
     command = calc_tc_huc(sf_pesticide_huc, terra_climate_yearly, wbd_data, "huc12", terra_climate_names),
     pattern = map(terra_climate_yearly, terra_climate_names),
-    iteration = "list"
+    iteration = "list",
+        resources = tar_resources(
+    crew = tar_resources_crew(controller = "controller_geo2")
+    )
   ),
   tar_target(
     name = twi_path,
     command = list.files("/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/TWI/",full.names = T, pattern = "*.tif"),
     format = "file"
   ),
-
+  tar_target(
+    name = nass,
+    command = list.files("/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/USDA_NASS",full.names = T, pattern = "\\.tif$"),
+    iteration = "list",
+    description = "NASS data list"
+  ),
   # tar_terra_rast( # Geotarget for TWI raster, static spatial only
-  #   name = twi_layer_rast,
+  #   name = twi_layer_rast,s
   #   command = terra::rast(twi_path),
   #   iteration = "list"
   # ),
@@ -342,20 +376,17 @@ list(
     command = c(8, 10, 12),
     iteration = "vector"
   ),
-  tar_target(
-    name = huc_nass,
-    command = calc_nass(
-      base_path = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/",
-      nass_path = "input/USDA_NASS",
-      wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
-    huc_level = huc_levels),
-    # since the study period is 2008-2022
-    pattern = map(huc_levels),
-    iteration = "list",
-    resources = tar_resources(
-    crew = tar_resources_crew(controller = "controller_geo1")
-    )
-  ),
+  # tar_target(
+  #   name = huc_nass,
+  #   command = calc_at_poly(nass_path = nass, 
+  #   huc_level = huc_levels,
+  #   wbd_path = wbd_data),
+  #   resources = tar_resources(
+  #   crew = tar_resources_crew(controller = "controller_geo1"),
+  #   # since the study period is 2008-2022
+  #   pattern = cross(nass, huc_levels),
+  #   iteration = "list")
+  # ),
   # tar_target(
   #   name = twi_file,
   #   command = "../../../../input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
@@ -365,7 +396,7 @@ list(
     name = huc_twi,
     command = calc_twi(twi_file = twi_path, wbd_path = wbd_data, huc_level = huc_levels),
     resources = tar_resources(
-    crew = tar_resources_crew(controller = "controller_geo2")
+    crew = tar_resources_crew(controller = "controller_geo_large"),
     ),
     iteration = "list",
     pattern = map(huc_levels)

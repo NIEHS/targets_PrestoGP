@@ -470,9 +470,8 @@ fit_MV_Vecchia <- function(splits) {
 #' @param nass_path The path to the NASS data directory.
 #' @param wbd_path The path to the WBD (Watershed Boundary Dataset) data directory.
 #' @param huc_level A numeric vector specifying the HUC levels to calculate data for.
+#' @param reduce_func The function to use for reducing the data. One of "frac", "sum", or "mean".
 #' One of 8, 10, or 12.
-#' @param n_cores The number of CPU cores to use for parallel processing.
-#'
 #' @returns A list of extracted NASS data for each HUC level.
 #'
 #' @examples
@@ -481,17 +480,14 @@ fit_MV_Vecchia <- function(splits) {
 #'           huc_level = c(8, 10, 12),
 #'           out_path = "output",
 #'           n_cores = 1)
-calc_nass <- function(
-  base_path,
-  nass_path = "input/USDA_NASS",
-  wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
-  huc_level = 12
+calc_at_poly <- function(
+  nass_path,
+  huc_level,
+  wbd_path, 
+  reduce_func = "frac"
 ) {
-  huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the NASS data
-  list_nass <- list_raster(base_path, nass_path, recursive = TRUE)
   # read in the WBD data
-  wbdpath <- file.path(paste0(base_path,wbd_path))
   # file based strategy
   ext_mainland <- sf::st_as_text(
     sf::st_as_sfc(sf::st_bbox(c(xmin=-126, xmax=-66, ymin=22, ymax=52)))
@@ -501,41 +497,22 @@ calc_nass <- function(
   field_name <- sprintf("huc%s", huc_level)
 
   huc <- sf::st_read(
-    wbdpath, layer = layer_name, wkt_filter = ext_mainland
+    wbd_path, layer = layer_name, wkt_filter = ext_mainland
   )
   huc <- sf::st_transform(huc, "EPSG:5070") |>
     dplyr::select(dplyr::all_of(field_name))
   huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 4)
 
 
-  # approach 1: Map par_hierarchy
-  # extracted <-
-  #   Map(
-  #     function(x) {
-  #       chopin::par_hierarchy(
-  #         regions = huc,
-  #         split_level = "huc_split",
-  #         fun_dist = chopin::extract_at_poly,
-  #         polys = huc,
-  #         surf = x,
-  #         id = field_name,
-  #         func = "frac",
-  #         max_cells = 3e+07
-  #       )
-  #     },
-  #     list_nass
-  #   )
-  # approach 2: file based
-  extracted <-
-    chopin::par_multirasters(
-      filenames = list_nass,
-      fun_dist = chopin::extract_at_poly,
-      polys = huc,
-      id = field_name,
-      func = "frac",
-      max_cells = 3e+07
-    )
-    
+  extracted <- chopin::extract_at_poly(
+    polys = huc,
+    surf = nass_path,
+    id = field_name,
+    func = reduce_func,
+    max_cells = 3e+07
+  )
+
+     
   return(extracted)
 }
 
@@ -594,7 +571,7 @@ calc_twi <- function(
       polys = huc,
       surf = twi_file,
       id = field_name,
-      func = "mean",
+      func = func,
       max_cells = 3e+07
     )
 
