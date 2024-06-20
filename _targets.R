@@ -5,7 +5,7 @@
 #   clustermq.scheduler = "local",
 #   clustermq.template = "code/02A_SLURM_submission/template_slurm.tmpl"
 # )
-
+.libPaths(c("/ddn/gs1/biotools/R/lib64/R/custompkg", "/ddn/gs1/home/songi2/r-libs", .libPaths()))
 # Load packages required to define the pipeline:
 library(targets)
 library(tarchetypes)
@@ -36,6 +36,11 @@ sf::sf_use_s2(FALSE)
 
 
 # Set target options:
+sbatch_add_lines <-
+  c("#SBATCH --mail-user=isong@nih.gov",
+    "#SBATCH --mail-type=END,FAIL",
+    "export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH"
+  )
 
 crew_default <-
   crew.cluster::crew_controller_slurm(
@@ -46,7 +51,7 @@ crew_default <-
     slurm_partition = "geo",
     slurm_log_output = "output/crew_log_slurm_default.log",
     slurm_log_error = "output/crew_error_slurm_default.error",
-    script_lines = "#SBATCH --mail-user=isong@nih.gov\n#SBATCH --mail-type=END,FAIL",
+    script_lines = sbatch_add_lines,
     slurm_memory_gigabytes_per_cpu = 4,
     slurm_cpus_per_task = 1,
     workers = 12L
@@ -107,7 +112,7 @@ controller_geo1 <- crew.cluster::crew_controller_slurm(
   slurm_partition = "geo",
   slurm_log_output = "output/crew_log_slurm1.log",
   slurm_log_error = "output/crew_error_slurm1.error",
-  script_lines = "#SBATCH --mail-user=isong@nih.gov",
+  script_lines = sbatch_add_lines,
   slurm_memory_gigabytes_per_cpu = 8,
   slurm_cpus_per_task = 15
 )
@@ -120,7 +125,7 @@ controller_geo2 <- crew.cluster::crew_controller_slurm(
   slurm_partition = "geo",
   slurm_log_output = "output/crew_log_slurm2.log",
   slurm_log_error = "output/crew_error_slurm2.error",
-  script_lines = "#SBATCH --mail-user=isong@nih.gov",
+  script_lines = sbatch_add_lines,
   slurm_memory_gigabytes_per_cpu = 8,
   slurm_cpus_per_task = 10
 )
@@ -141,8 +146,11 @@ tar_option_set(
   ),
   garbage_collection = TRUE,
   error = "stop",
-  library = "/ddn/gs1/home/songi2/r-libs"
-
+  library =
+    c("/ddn/gs1/biotools/R/lib64/R/custompkg",
+      "/ddn/gs1/home/songi2/r-libs",
+      .libPaths()
+    ),
   # debug = "olm_huc12_9dae2790e8379df8",
   # cue = tar_cue(mode = "never")
   #

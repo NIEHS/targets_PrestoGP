@@ -491,10 +491,10 @@ calc_nass <- function(
   # read in the NASS data
   list_nass <- list_raster(base_path, nass_path, recursive = TRUE)
   # read in the WBD data
-  wbdpath <- file.path(paste0(base_path,wbd_path))
+  wbdpath <- file.path(base_path, wbd_path)
   # file based strategy
   ext_mainland <- sf::st_as_text(
-    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, xmax=-66, ymin=22, ymax=52)))
+    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
   )
   sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
@@ -535,7 +535,7 @@ calc_nass <- function(
       func = "frac",
       max_cells = 3e+07
     )
-    
+
   return(extracted)
 }
 
@@ -571,7 +571,7 @@ calc_twi <- function(
   wbdpath <- file.path(wbd_path)
   # file based strategy
   ext_mainland <- sf::st_as_text(
-    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, xmax=-66, ymin=22, ymax=52)))
+    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
   )
   sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
