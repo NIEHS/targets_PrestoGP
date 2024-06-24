@@ -5,13 +5,13 @@
 #   clustermq.scheduler = "local",
 #   clustermq.template = "code/02A_SLURM_submission/template_slurm.tmpl"
 # )
-Sys.setenv(
-  "LD_LIBRARY_PATH" =
-    paste0(
-      "/ddn/gs1/biotools/R/lib64/R/customlib:",
-      Sys.getenv("LD_LIBRARY_PATH")
-    )
-)
+# Sys.setenv(
+#   "LD_LIBRARY_PATH" =
+#     paste0(
+#       "/ddn/gs1/biotools/R/lib64/R/customlib:",
+#       Sys.getenv("LD_LIBRARY_PATH")
+#     )
+# )
 
 libpaths_in <-
   c(
@@ -20,7 +20,7 @@ libpaths_in <-
     .libPaths()
   )
 
-.libPaths(libpaths_in)
+# .libPaths(libpaths_in)
 # Load packages required to define the pipeline:
 library(targets)
 library(tarchetypes)
@@ -58,8 +58,21 @@ tar_config_set(
 sbatch_add_lines <-
   c("#SBATCH --mail-user=isong@nih.gov",
     "#SBATCH --mail-type=END,FAIL",
-    "export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH"
+    "source $HOME/.profile"
+    #"export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH"
   )
+
+# tar_script({
+#   singularity_bin <- [/path/to/singularity]
+#   base_dir <- [path/to/base/dir] 
+#   nodename <- Sys.info()["nodename"]
+#   singularity_exec <- glue::glue("cd {here::here()} \
+# {singularity_bin} exec \\
+# -B {base_dir},/scratch \\
+# --env R_LIBS_SITE={base_dir}/rlibs/bioc-3.17 \\
+# {base_dir}/vscode-rbioc_3.17.sif \\")
+# })
+
 
 crew_default <-
   crew.cluster::crew_controller_slurm(
