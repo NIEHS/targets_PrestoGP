@@ -581,7 +581,7 @@ calc_twi <- function(
   )
   huc <- sf::st_transform(huc, "EPSG:5070") |>
     dplyr::select(dplyr::all_of(field_name))
-  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 4)
+  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 6)
 
   # approach 1: Map par_hierarchy
   future::plan(future::sequential)
@@ -594,11 +594,8 @@ calc_twi <- function(
       surf = twi_file,
       id = field_name,
       func = "mean",
-      max_cells = 3e07
+      max_cells = 3e+07
     )
 
   return(extracted)
 }
-
-
-
