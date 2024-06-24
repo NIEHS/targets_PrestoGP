@@ -466,30 +466,28 @@ fit_MV_Vecchia <- function(splits) {
 #' Calculate NASS data for specified HUC levels
 #'
 #' This function calculates NASS (National Agricultural Statistics Service) data for specified HUC (Hydrologic Unit Code) levels.
-#'
-#' @param nass_path The path to the NASS data directory.
+#' @param base_path The base path to the data directory.
+#' @param nass_file The file path to the yearly NASS
 #' @param wbd_path The path to the WBD (Watershed Boundary Dataset) data directory.
 #' @param huc_level A numeric vector specifying the HUC levels to calculate data for.
-#' One of 8, 10, or 12.
-#' @param n_cores The number of CPU cores to use for parallel processing.
+#' One of 8, 10, or 12
 #'
 #' @returns A list of extracted NASS data for each HUC level.
 #'
 #' @examples
-#' calc_nass(nass_path = "input/USDA_NASS",
-#'           wbd_path = "input/WBD",
-#'           huc_level = c(8, 10, 12),
-#'           out_path = "output",
-#'           n_cores = 1)
+#' calc_nass(base_path = "input"",
+#'           wbd_path = "WBD",
+#'           nass_file = "NASS/cdl_2019.tif"
+#'           huc_level = 8)
 calc_nass <- function(
   base_path,
-  nass_path = "input/USDA_NASS",
+  nass_file,
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
   huc_level = 12
 ) {
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the NASS data
-  list_nass <- list_raster(base_path, nass_path, recursive = TRUE)
+  #list_nass <- list_raster(base_path, nass_path, recursive = TRUE)
   # read in the WBD data
   wbdpath <- file.path(base_path, wbd_path)
   # file based strategy
@@ -526,10 +524,11 @@ calc_nass <- function(
   #     list_nass
   #   )
   # approach 2: file based
+  # extracted <-
+  #   chopin::par_multirasters(
   extracted <-
-    chopin::par_multirasters(
-      filenames = list_nass,
-      fun_dist = chopin::extract_at_poly,
+    chopin::extract_at_poly(
+      surf = nass_file,
       polys = huc,
       id = field_name,
       func = "frac",
@@ -584,18 +583,18 @@ calc_twi <- function(
     dplyr::select(dplyr::all_of(field_name))
   huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 4)
 
-
   # approach 1: Map par_hierarchy
+  future::plan(future::sequential)
   extracted <-
     chopin::par_hierarchy(
       regions = huc,
-      split_level = "huc_split",
+      regions_id = "huc_split",
       fun_dist = chopin::extract_at_poly,
       polys = huc,
       surf = twi_file,
       id = field_name,
       func = "mean",
-      max_cells = 3e+07
+      max_cells = 3e07
     )
 
   return(extracted)

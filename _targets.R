@@ -5,7 +5,22 @@
 #   clustermq.scheduler = "local",
 #   clustermq.template = "code/02A_SLURM_submission/template_slurm.tmpl"
 # )
-.libPaths(c("/ddn/gs1/biotools/R/lib64/R/custompkg", "/ddn/gs1/home/songi2/r-libs", .libPaths()))
+Sys.setenv(
+  "LD_LIBRARY_PATH" =
+    paste0(
+      "/ddn/gs1/biotools/R/lib64/R/customlib:",
+      Sys.getenv("LD_LIBRARY_PATH")
+    )
+)
+
+libpaths_in <-
+  c(
+    "/ddn/gs1/biotools/R/lib64/R/custompkg",
+    "/ddn/gs1/home/songi2/r-libs",
+    .libPaths()
+  )
+
+.libPaths(libpaths_in)
 # Load packages required to define the pipeline:
 library(targets)
 library(tarchetypes)
@@ -34,6 +49,10 @@ library(chopin)
 
 sf::sf_use_s2(FALSE)
 
+
+tar_config_set(
+  store = "/ddn/gs1/group/set/pipeline/Pesticides"
+)
 
 # Set target options:
 sbatch_add_lines <-
@@ -104,7 +123,7 @@ crew_default <-
 
 controller_geo1 <- crew.cluster::crew_controller_slurm(
   name = "controller_geo1",
-  workers = 1,
+  workers = 4,
   # seconds_idle = 15,
   # seconds_timeout = 86400,
   # seconds_launch= 7200,
@@ -118,16 +137,16 @@ controller_geo1 <- crew.cluster::crew_controller_slurm(
 )
 controller_geo2 <- crew.cluster::crew_controller_slurm(
   name = "controller_geo2",
-  workers = 1L,
+  workers = 3L,
   # seconds_timeout = 7200,
   # seconds_launch= 7200,
-  launch_max = 10L,
+  launch_max = 5L,
   slurm_partition = "geo",
   slurm_log_output = "output/crew_log_slurm2.log",
   slurm_log_error = "output/crew_error_slurm2.error",
   script_lines = sbatch_add_lines,
-  slurm_memory_gigabytes_per_cpu = 8,
-  slurm_cpus_per_task = 10
+  slurm_memory_gigabytes_per_cpu = 64,
+  slurm_cpus_per_task = 1
 )
 
 tar_option_set(
@@ -146,11 +165,7 @@ tar_option_set(
   ),
   garbage_collection = TRUE,
   error = "stop",
-  library =
-    c("/ddn/gs1/biotools/R/lib64/R/custompkg",
-      "/ddn/gs1/home/songi2/r-libs",
-      .libPaths()
-    ),
+  library = libpaths_in,
   # debug = "olm_huc12_9dae2790e8379df8",
   # cue = tar_cue(mode = "never")
   #
@@ -376,18 +391,22 @@ list(
     )
   ),
   tar_target(
+    name = nass_files,
+    command = list.files("/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/USDA_NASS", "*.tif$", full.names = TRUE)
+  ),
+  tar_target(
     name = huc_nass,
     command = calc_nass(
       base_path = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/",
-      nass_path = "input/USDA_NASS",
+      nass_file = nass_files,
       wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
       huc_level = huc_levels
     ),
     # since the study period is 2008-2022
-    pattern = map(huc_levels),
+    pattern = cross(nass_files, huc_levels),
     iteration = "list",
     resources = tar_resources(
-      crew = tar_resources_crew(controller = "controller_geo1")
+      crew = tar_resources_crew(controller = "controller_default")
     )
   ),
   # tar_target(

@@ -79,3 +79,5 @@ figs/
 **/*.log
 **/*.out
 
+**/*.Rout
+_targets
