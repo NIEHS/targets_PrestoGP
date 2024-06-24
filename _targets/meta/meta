@@ -1,21 +1,23 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-.Random.seed|object|0c5bc2838dc04178|||||||||||||||
+.Random.seed|object|fc356847f4f118af|||||||||||||||
 =======|||||||||||||||||
 a|object|dd6fdff44a2cf4e2|||||||||||||||
 AZO.geometry|object|65f8ba2ac1681741|||||||||||||||
 AZO.HUC.join|object|869be4704e4c3d0e|||||||||||||||
 AZO.t|object|f43561e0fac576a5|||||||||||||||
 calc_at_poly|function|707b1b80657e6b7d|||||||||||||||
-calc_nass|function|67d4e1f774bab869|||||||||||||||
+calc_nass|function|be9d5989cd1c79b3|||||||||||||||
 calc_olm|function|70631b18f4c9034a|||||||||||||||
 calc_olm_huc|function|6b3d6059dd5f1ca1|||||||||||||||
 calc_olm_point|function|febfb46f0de2187e|||||||||||||||
 calc_tc_huc|function|84eeee54b963e449|||||||||||||||
 calc_tc_point|function|2b3febd928ef6b04|||||||||||||||
-calc_twi|function|71cbb2d664179f15|||||||||||||||
+calc_twi|function|cc6b0a88c9ee9a37|||||||||||||||
 class.df|object|7c39da581a66f478|||||||||||||||
 class.possible.names|object|721ba574a8e8a6c0|||||||||||||||
 combine_state_data|function|c1067e509b53a212|||||||||||||||
+controller_geo_large|object|c3a4dcc79e9a9430|||||||||||||||
+controller_geo_small|object|d40b5198ca7097ba|||||||||||||||
 controller_geo1|object|b23d93436c8dabde|||||||||||||||
 controller_geo2|object|71615daf6bca7140|||||||||||||||
 coords_mat|stem|29a93bd67ca78c5f|503df07fba4d9a96|337c5f07b878144a|-1325898640||t19810.6691524591s|31da326e08ce3bbc|480689|qs|local|vector|||0.002||
@@ -85,6 +87,7 @@ huc_nass_27126125d470376b|branch|ae31889f98addff7|2df3eedc9d96c785|3061f10c7e47b
 huc_nass_46a838bf88997aa9|branch|a1310feedc76a0ec|2df3eedc9d96c785|3061f10c7e47ba39|2128979938||t19864.1133746713s|06d75a7991fa94ed|2127054|qs|local|list|huc_nass||1407.398||
 huc_nass_47544897c56d6a6b|branch|f8645e5ea41470aa|2df3eedc9d96c785|3061f10c7e47ba39|1637728907||t19864.10997353s|f80af5e382d2b641|395673|qs|local|list|huc_nass||1114.167||
 huc_nass_4bad09c29b29b387|branch|6965d6f8b3d9c960|2df3eedc9d96c785|3061f10c7e47ba39|-1822300333||t19864.1910429205s|ec543e53cab960b4|2492976|qs|local|list|huc_nass||1425.612||
+huc_nass_642c7dfd9ec32e6a|branch||fba7581e101c6642|b793a5b7e061fbce|744382653||t19897.5278951308s||0|qs|local|list|huc_nass||2.366|no nonmissing arguments to max returning Inf|could not find packages sf, terra, spatialsample, exactextractr, chopin in library paths
 huc_nass_661bc336985799cb|branch|9b0bd9eb28a9de20|2df3eedc9d96c785|3061f10c7e47ba39|1865868194||t19864.1819609485s|1a3f63c60b8addd1|9598652|qs|local|list|huc_nass||1747.645||
 huc_nass_6ded1aa8f83e2fa9|branch|05c812a1f115e08b|2df3eedc9d96c785|3061f10c7e47ba39|-221571550||t19864.1348353202s|6ac6ba5d01f0264f|2061641|qs|local|list|huc_nass||1408.552||
 huc_nass_71c44b4e5142ce64|branch|30ef01a2b59b04c8|2df3eedc9d96c785|3061f10c7e47ba39|-442578764||t19864.1900302128s|8518ddd0b059a5e0|10252543|qs|local|list|huc_nass||1829.583||
@@ -104,20 +107,22 @@ huc_nass_b5b15365799c3b61|branch|a68d324b432815e3|2df3eedc9d96c785|3061f10c7e47b
 huc_nass_b5b80cb0e2385328|branch|a97a1386135f05f8|2df3eedc9d96c785|3061f10c7e47ba39|1842940603||t19864.1905624611s|881fa1992215e9fe|457424|qs|local|list|huc_nass||1137.279||
 huc_nass_b6b5529adb7ef2f6|branch|2a12ac073679726b|2df3eedc9d96c785|3061f10c7e47ba39|236018810||t19864.1773939801s|e97450ca55a4b8c1|2368905|qs|local|list|huc_nass||1451.096||
 huc_nass_b7156a0b519ab9ed|branch|3d15fd581e42113c|2df3eedc9d96c785|3061f10c7e47ba39|1375095024||t19864.110446906s|56837f470424899d|393927|qs|local|list|huc_nass||1154.915||
+huc_nass_b81522b340944b81|branch||fba7581e101c6642|b793a5b7e061fbce|861552244||t19897.5216340745s||0|qs|local|list|huc_nass||5.06|no nonmissing arguments to max returning Inf|could not find packages sf, terra, spatialsample, exactextractr, chopin in library paths
 huc_nass_c1618ba80b33809d|branch|3697c84cf166d7a3|2df3eedc9d96c785|3061f10c7e47ba39|37863057||t19864.1332884913s|2dce9f1a68b2360d|8357803|qs|local|list|huc_nass||1743.541||
 huc_nass_c6fe185cd340e079|branch|785f41c5ade071b0|2df3eedc9d96c785|3061f10c7e47ba39|-2053184579||t19864.1185692706s|3f360633465c95a7|8566554|qs|local|list|huc_nass||1854.262||
 huc_nass_c9be1b46a8423c46|branch|b1f89eaf59f26bc5|2df3eedc9d96c785|3061f10c7e47ba39|-1840806427||t19864.1457855051s|c0840d7bce0897e2|8577388|qs|local|list|huc_nass||1714.841||
 huc_nass_cd8a688a29330125|branch|c3aa84dc922ab473|2df3eedc9d96c785|3061f10c7e47ba39|1764394380||t19864.1258435662s|e127e075fef08362|387028|qs|local|list|huc_nass||1077.111||
 huc_nass_ce73b04e4dd91854|branch|e3da5f20f5a5920c|2df3eedc9d96c785|3061f10c7e47ba39|268022382||t19864.1349131191s|0195a4e5e785795f|401220|qs|local|list|huc_nass||1066.425||
 huc_nass_d07f92399954336a|branch|79e44c2e9d4e2b3b|2df3eedc9d96c785|3061f10c7e47ba39|-1940019847||t19864.2025869329s|ded5d73ce37fbcbe|385512|qs|local|list|huc_nass||1084.338||
+huc_nass_d194e4be091ba82d|branch||845e622f30a4fd86|b793a5b7e061fbce|156946032||t19894.8797717957s||0|qs|local|list|huc_nass||13.376||unused argument func  mean
 huc_nass_d39bb5c694c1128f|branch|a573cd90c2033fba|2df3eedc9d96c785|3061f10c7e47ba39|1044255834||t19864.1957895127s|062b0340b952b9a9|10187304|qs|local|list|huc_nass||1783.425||
 huc_nass_ef92c9863097baec|branch|2bef640340c66e32|2df3eedc9d96c785|3061f10c7e47ba39|-1893567162||t19864.1259045296s|9b708c933ddc2ce8|2073326|qs|local|list|huc_nass||1334.861|GDAL Message 1 organizePolygons received a polygon with more than 100 parts.  The processing may be really slow.  You can skip the processing by setting METHODSKIP.|
 huc_nass_fcadd7decad51d7d|branch|86d4d26c3d4a02e6|2df3eedc9d96c785|3061f10c7e47ba39|-1934861311||t19864.1813902863s|f6d54a2e189a2107|451314|qs|local|list|huc_nass||1063.569||
 huc_polygon|object|874d980d1b323c22|||||||||||||||
 huc_twi|pattern|0943edb838ab92e2|49b600d72456f9b2||-901676288||||532093|qs|local|list||huc_twi_d194e4be091ba82d*huc_twi_b81522b340944b81*huc_twi_642c7dfd9ec32e6a|5264.768||
 huc_twi_642c7dfd9ec32e6a|branch|2b708d2863c57060|49b600d72456f9b2|fe0ad858ea05e6bc|-1030822265||t19859.8918113788s|069dbdd425cf48d4|532093|qs|local|list|huc_twi||5264.768||
-huc_twi_b81522b340944b81|branch|5ad25d2a22eebd36|49b600d72456f9b2|fe0ad858ea05e6bc|861151276||t19859.7228799772s|9c52f3fda81171e8|97039|qs|local|list|huc_twi||4132.992||
-huc_twi_d194e4be091ba82d|branch|9c018fb20eea40be|49b600d72456f9b2|fe0ad858ea05e6bc|-463863188||t19859.5923051394s|2983bd93ffa3f5bf|13449|qs|local|list|huc_twi||1249.197||
+huc_twi_b81522b340944b81|branch|5ad25d2a22eebd36|fea9b7cdbd5e2b2e|a1cc9e36e164b806|861151276||t19859.7228799772s||97039|qs|local|list|huc_twi||2.83|no nonmissing arguments to max returning Inf|could not find packages sf, terra, spatialsample, nhdplusTools, exactextractr in library paths
+huc_twi_d194e4be091ba82d|branch|9c018fb20eea40be|fea9b7cdbd5e2b2e|a1cc9e36e164b806|-463863188||t19859.5923051394s||13449|qs|local|list|huc_twi||2.516|no nonmissing arguments to max returning Inf|could not find packages sf, terra, spatialsample, exactextractr, chopin in library paths
 huc_unique|object|f006999f3e4bdc26|||||||||||||||
 huc_val|object|a1942872ebc41bd4|||||||||||||||
 HUC.rast.vals|object|2e23dba7aca32052|||||||||||||||
@@ -436,6 +441,7 @@ random_points|object|4c1b6d3f2929ba1a|||||||||||||||
 random_sample|object|881e270e046d20fe|||||||||||||||
 read_data|function|39b9c0a82a427963|||||||||||||||
 readQS|stem|79cc4c669995e4d0|fbd44d08ee3b0291|96daafcfa9477cdb|272066984||t19810.668683658s|b35be61480b17d7e|92451759|qs|local|vector|||8.138||
+sbatch_add_lines|object|3503c89a0ef3a053|||||||||||||||
 set_local_data_path|function|bd98579ff809e889|||||||||||||||
 set_path|stem|22982f128e9919a8|e52d2ca109a11c95|dedd4ccda1aa143b|-782108320||t19807.6060019523s|1701aa42bd45be76|89|qs|local|vector|||0.001||
 sf_covariates_pivot|stem|3fdeffa41263978d|f8393f57856d9d0d|27dfc9d6d369190f|2081176835||t19828.8179705647s|c3041aa2fafc555e|1292682|qs|local|vector|||0.302||
@@ -559,6 +565,7 @@ state_pesticide_ff683099d7e46378|branch|cd50638e606c105a|a2b79f596c718a92|957102
 sub_sample_data|stem|cb4dafe8e72dc057|e6889750cd2bc8b1|72365e51e29ffb76|-1343935607||t19828.8715966331s|2150ddb218ea6913|11271814|qs|local|vector|||0.199||
 sub_sp_kfold|stem|98a05c7bf5177ecc|ad4d2011f9458490|18a4543fecd86687|931115772||t19828.8840616909s|360d18428238e673|33827832|qs|local|vector|||0.148||
 sub_time_kfold|stem|fdbd8d62d925251c|8eec82477744024d|18a4543fecd86687|1303279051||t19828.8840530324s|8bb70abf7f094445|22551259|qs|local|vector|||0.023||
+tc_all_huc_0e594f25ddde8cea|branch||f42f1e76675ea5ee|c73c220931083f9d|927349379||t19894.7883533282s||0|qs|local|list|tc_all_huc||3.498|no nonmissing arguments to max returning Inf|could not find packages sf, terra, skimr, rsample, geotargets, parsnip, scales, spatialsample, yardstick, exactextractr, dataRetrieval, chopin in library paths ddngs1biotoolsRlib64Rcustompkg, ddngs1biotoolsRlib64Rlibrary
 tc_huc08|pattern|e6223f4abe5e6112|16cd9fadfb4ff04e||1541666218||||1126723|qs|local|list||tc_huc08_b413aa13fe6b5e58*tc_huc08_37bcf875e81cc573*tc_huc08_42d0111b4dc53579*tc_huc08_63e137b08b4f6a7d*tc_huc08_06c5267193131991*tc_huc08_f759ce56e4129db2*tc_huc08_b9d04d5705394ee0*tc_huc08_63668ac87f2ab5fe*tc_huc08_b1cb97d6bea7da8b*tc_huc08_e34129a6f0e30a95*tc_huc08_fd645c2204a3708e*tc_huc08_67da6b98658a7099*tc_huc08_051c3980d4f32431*tc_huc08_376cbee812b38677|536.797||
 tc_huc08_051c3980d4f32431|branch|841373c3c5c6c6aa|16cd9fadfb4ff04e|63c98237b841fee4|-137405868||t19859.1751408746s|2dfcd18017d578b3|78986|qs|local|list|tc_huc08||37.964|Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named vpd_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column|
 tc_huc08_06c5267193131991|branch|99c96b1ecfc1221f|16cd9fadfb4ff04e|84e032fdecbcd728|-1959484252||t19859.1750330392s|db37670a294b47bd|80387|qs|local|list|tc_huc08||38.878|Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column 2 named ppt_huc08.. Polygons transformed to raster CRS EPSGNA. Coercing list RHS to double to match the type of the target column column|
@@ -1552,31 +1559,3 @@ WBD|object|b5522eabe782e178|||||||||||||||
 wbd_data|stem|415e05adcdbc1310|a3ad5bfb559ff48a|2c530c1562a7fbd1|-971968112|/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/WBD-National/WBD_National_GDB.gdb|t19432.5661879483s|739e0715fb533191|8192|file|local|vector|||0.271||
 wbd_huc|object|fafd986ed8717373|||||||||||||||
 wbd_unzip|stem||ba884de09738181f|6557a7f85b28d2df|949254395||t19832.8584534035s||0|qs|local|vector|||0.004||invalid zip name argument
-plot_pesticide_ridges|function|e0a07e1420a1f26c
-list_raster|function|69f71f8692547c86
-calc_olm_huc|function|6b3d6059dd5f1ca1
-.Random.seed|object|1ee7e336d386f1d9
-covariate_prep|function|0f1a6c036146864c
-partition_datasets|function|416fa1adab9fb2d9
-lasso_spatial_kfold_fit|function|62531baace274dd1
-prepare_pesticide_for_fit|function|838d4d4682b4e8da
-fit_lasso|function|d10081359fff0d29
-calc_twi|function|71cbb2d664179f15
-calc_tc_huc|function|84eeee54b963e449
-get_yearly_averages|function|b9519de0f052e7e4
-calc_at_poly|function|707b1b80657e6b7d
-get_censored_data|function|4f938f386fb2322f
-join_pesticide_huc|function|4be540df5547e3c1
-plot_outcome_map|function|9a434ae681464f13
-calc_tc_point|function|2b3febd928ef6b04
-state_fun_AZO|function|c0f9558ed1288ade
-plot_exploratory_covariates|function|4e49a7a9e2b33981
-crew_default|object|3aecaa47f335e277
-fit_MV_Vecchia|function|c547661a10bd3903
-combine_state_data|function|c1067e509b53a212
-plot_cv_map|function|4bbdbfa0ccc2cf8f
-get_daily_averages|function|eaf91700944630f7
-controller_geo_large|object|87020f2ce3f88e44
-pivot_covariates|function|cb340a2e8df606a6
-controller_geo_small|object|42f921c04709c5f9
-calc_olm_point|function|febfb46f0de2187e

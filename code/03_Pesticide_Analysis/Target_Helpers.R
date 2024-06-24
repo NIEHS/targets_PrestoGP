@@ -480,39 +480,61 @@ fit_MV_Vecchia <- function(splits) {
 #'           huc_level = c(8, 10, 12),
 #'           out_path = "output",
 #'           n_cores = 1)
-calc_at_poly <- function(
-  nass_path,
-  huc_level,
-  wbd_path, 
-  reduce_func = "frac"
+calc_nass <- function(
+  base_path,
+  nass_path = "input/USDA_NASS",
+  wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
+  huc_level = 12
 ) {
+  huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the NASS data
+  list_nass <- list_raster(base_path, nass_path, recursive = TRUE)
   # read in the WBD data
+  wbdpath <- file.path(base_path, wbd_path)
   # file based strategy
   ext_mainland <- sf::st_as_text(
-    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, xmax=-66, ymin=22, ymax=52)))
+    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
   )
   sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
   field_name <- sprintf("huc%s", huc_level)
 
   huc <- sf::st_read(
-    wbd_path, layer = layer_name, wkt_filter = ext_mainland
+    wbdpath, layer = layer_name, wkt_filter = ext_mainland
   )
   huc <- sf::st_transform(huc, "EPSG:5070") |>
     dplyr::select(dplyr::all_of(field_name))
   huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 4)
 
 
-  extracted <- chopin::extract_at_poly(
-    polys = huc,
-    surf = nass_path,
-    id = field_name,
-    func = reduce_func,
-    max_cells = 3e+07
-  )
+  # approach 1: Map par_hierarchy
+  extracted <-
+    Map(
+      function(x) {
+        chopin::par_hierarchy(
+          regions = huc,
+          split_level = "huc_split",
+          fun_dist = chopin::extract_at_poly,
+          polys = huc,
+          surf = x,
+          id = field_name,
+          func = "frac",
+          max_cells = 3e+07
+        )
+      },
+      list_nass
+    )
+  # approach 2: file based
+  # extracted <-
+  #   chopin::par_multirasters(
+  #     filenames = list_nass,
+  #     fun_dist = chopin::extract_at_poly,
+  #     polys = huc,
+  #     id = field_name,
+  #     func = "frac",
+  #     max_cells = 3e+07
+  #   )
 
-     
   return(extracted)
 }
 
@@ -539,13 +561,14 @@ calc_at_poly <- function(
 #' 
 #' 
 calc_twi <- function(
+  base_path,
   twi_file = "input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
   huc_level = 12
 ) {
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the WBD data
-  wbdpath <- file.path(wbd_path)
+    wbdpath <- file.path(base_path, wbd_path)
   # file based strategy
   ext_mainland <- sf::st_as_text(
     sf::st_as_sfc(sf::st_bbox(c(xmin=-126, xmax=-66, ymin=22, ymax=52)))
@@ -571,7 +594,7 @@ calc_twi <- function(
       polys = huc,
       surf = twi_file,
       id = field_name,
-      func = func,
+      func = "mean",
       max_cells = 3e+07
     )
 
