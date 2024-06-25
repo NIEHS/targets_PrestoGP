@@ -1,5 +1,7 @@
-calc_TWI_huc <- function(data.AZO, raster, wbd_data, hucunit){
+calc_TWI_huc <- function(data.AZO, raster_file, wbd_data, hucunit){
 
+
+raster <- terra::rast(raster_file)
 
   layername <- paste0("WBD", toupper(gsub("c", "", hucunit)))
 
@@ -33,9 +35,10 @@ calc_TWI_huc <- function(data.AZO, raster, wbd_data, hucunit){
     
     AZO.index <- data.AZO$Year - 2000 + 1
     
+    l <- length(huc_unique)
 
     for (i in 1:length(huc_unique)) {
-      
+      print(paste0("Processing HUC ", i, " of ", l))
       # get index - for rows of output - where data match the given HUC08
       idx.row <- data.AZO[[hucunit]] == huc_unique[i]
       

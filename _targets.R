@@ -56,10 +56,10 @@ tar_config_set(
 
 # Set target options:
 sbatch_add_lines <-
-  c("#SBATCH --mail-user=isong@nih.gov",
+  c(sprintf("#SBATCH --mail-user=%s@nih.gov", Sys.info()["user"]),
     "#SBATCH --mail-type=END,FAIL",
-    "source $HOME/.profile"
-    #"export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH"
+    "export R_LIBS_USER=/ddn/gs1/biotools/R/lib64/R/custompkg:$R_LIBS_USER",
+    "export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH"
   )
 
 # tar_script({
@@ -145,8 +145,8 @@ controller_geo1 <- crew.cluster::crew_controller_slurm(
   slurm_log_output = "output/crew_log_slurm1.log",
   slurm_log_error = "output/crew_error_slurm1.error",
   script_lines = sbatch_add_lines,
-  slurm_memory_gigabytes_per_cpu = 8,
-  slurm_cpus_per_task = 15
+  slurm_memory_gigabytes_per_cpu = 24,
+  slurm_cpus_per_task = 1
 )
 controller_geo2 <- crew.cluster::crew_controller_slurm(
   name = "controller_geo2",
@@ -155,11 +155,11 @@ controller_geo2 <- crew.cluster::crew_controller_slurm(
   # seconds_launch= 7200,
   launch_max = 5L,
   slurm_partition = "geo",
-  slurm_log_output = "output/crew_log_slurm2.log",
-  slurm_log_error = "output/crew_error_slurm2.error",
+  slurm_log_output = "output/crew_log_kpm_2.log",
+  slurm_log_error = "output/crew_error_kpm_2.error",
   script_lines = sbatch_add_lines,
   slurm_memory_gigabytes_per_cpu = 64,
-  slurm_cpus_per_task = 1
+  slurm_cpus_per_task = 4
 )
 
 tar_option_set(
@@ -216,7 +216,8 @@ tar_source(c(
   "code/03_Pesticide_Analysis/Target_Helpers.R",
   "code/01_Create_Dataset/Target_Pesticide_Data.R",
   "code/02_Geographic_Covariates/Calc_OLM.R",
-  "code/02_Geographic_Covariates/Calc_terraClimate.R"
+  "code/02_Geographic_Covariates/Calc_terraClimate.R",
+  "code/02_Geographic_Covariates/Calc_TWI.R"
 ))
 
 # data_AZO_covariates_cleaned_03032024
@@ -427,9 +428,17 @@ list(
   #   command = "../../../../input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
   #   format = "file"
   # ),
+    tar_terra_rast( # This target calculates the mean of the climate data and combines them all together by year
+    name = twi_rast,
+    command = terra::rast(twi_path),
+        resources = tar_resources(
+      crew = tar_resources_crew(controller = "controller_geo2")
+    ),
+    iteration = "list"
+  ),
   tar_target(
-    name = huc_twi,
-    command = calc_twi(twi_file = twi_path, wbd_path = wbd_data, huc_level = huc_levels),
+    name = twi_huc,
+    command = calc_TWI(sf_pesticide_huc, raster_file = twi_path, wbd_data = wbd_data, huc_unit = huc_levels),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     ),
