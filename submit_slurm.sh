@@ -11,11 +11,16 @@
 #SBATCH --partition=geo
 
 
+# change PROJECT_DIR according to your system environment
+# $HOME is user home
+PROJECT_DIR=$HOME/projects/targets_PrestoGP
+
 export PATH=$PATH:/ddn/gs1/tools/cuda11.8/bin
 export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH:/ddn/gs1/tools/cuda11.8/lib64
-# The second part $HOME/libs should be changed accordingly
-export R_LIBS_USER=/ddn/gs1/biotools/R/lib64/R/custompkg:$HOME/r-libs:$R_LIBS_USER
+# here the second directory is explicitly set to a specific user directory.
+# Please make sure that you have access to the directory.
+# You may want to change the path into your user library path.
+export R_LIBS_USER=/ddn/gs1/biotools/R/lib64/R/custompkg:/ddn/gs1/home/songi2/r-libs:$R_LIBS_USER
 
-# Submit the pipeline as a background process with ./run.sh
 # module load R # Uncomment if R is an environment module.
-Rscript /ddn/gs1/home/songi2/projects/targets_PrestoGP/run.R
+Rscript $PROJECT_DIR/run.R

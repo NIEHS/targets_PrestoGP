@@ -20,7 +20,6 @@ libpaths_in <-
     .libPaths()
   )
 
-# .libPaths(libpaths_in)
 # Load packages required to define the pipeline:
 library(targets)
 library(tarchetypes)
@@ -79,56 +78,12 @@ crew_default <-
   )
 
 
-# mq_twi <-
-#   targets::tar_resources(
-#     clustermq =
-#     targets::tar_resources_clustermq(
-#       template =
-#       list(
-#         memory = 8,
-#         email = "messierkp@nih.gov",
-#         log_file = "output/clustermq_log.log",
-#         error_file = "output/clustermq_error.error",
-#         partition = "geo",
-#         cores = 10
-#       )
-#     )
-#   )
-# mq_nass <-
-#   targets::tar_resources(
-#     clustermq =
-#     targets::tar_resources_clustermq(
-#       template =
-#       list(
-#         memory = 8,
-#         email = "messierkp@nih.gov",
-#         log_file = "output/clustermq_log.log",
-#         error_file = "output/clustermq_error.error",
-#         partition = "geo",
-#         cores = 15L
-#       )
-#     )
-#   )
-
-# crew_default <-
-#   crew.cluster::crew_controller_slurm(
-#     name = "controller_default",
-#     workers = 12L,
-#     seconds_idle = 10,
-#     launch_max = 5L,
-#     slurm_partition = "geo",
-#     slurm_log_output = "output/crew_log.log",
-#     slurm_log_error = "output/crew_error.error",
-#     slurm_memory_gigabytes_per_cpu = 8,
-#     slurm_cpus_per_task = 1
-#   )
-
 controller_geo1 <- crew.cluster::crew_controller_slurm(
   name = "controller_geo1",
   workers = 4,
   # seconds_idle = 15,
-  # seconds_timeout = 86400,
-  # seconds_launch= 7200,
+  seconds_timeout = 86400,
+  seconds_launch= 7200,
   launch_max = 10L,
   slurm_partition = "geo",
   slurm_log_output = "output/crew_log_slurm1.log",
@@ -140,8 +95,8 @@ controller_geo1 <- crew.cluster::crew_controller_slurm(
 controller_geo2 <- crew.cluster::crew_controller_slurm(
   name = "controller_geo2",
   workers = 3L,
-  # seconds_timeout = 7200,
-  # seconds_launch= 7200,
+  seconds_timeout = 7200,
+  seconds_launch= 7200,
   launch_max = 5L,
   slurm_partition = "geo",
   slurm_log_output = "output/crew_log_slurm2.log",
@@ -167,38 +122,9 @@ tar_option_set(
   ),
   garbage_collection = TRUE,
   error = "stop",
-  library = libpaths_in,
-  # debug = "olm_huc12_9dae2790e8379df8",
-  # cue = tar_cue(mode = "never")
-  #
-  # For distributed computing in tar_make(), supply a {crew} controller
-  # as discussed at https://books.ropensci.org/targets/crew.html.
-  # Choose a controller that suits your needs. For example, the following
-  # sets a controller with 2 workers which will run as local R processes:
-  #
-  # controller = crew::crew_controller_local(workers = 8)
-  #
-  #
-  # add the slurm username to the crew controller
-  #  controller = crew.cluster::crew_controller_slurm(
-  #    name = "pipeline_kpm",
-  #    workers = 12,
-  #    slurm_log_output="/slurm_messages/pipeline_kpm.out",
-  #    slurm_log_error="/slurm_messages/pipeline_kpm.err",
-  # script_lines = "module load R",
-  #    slurm_partition = "triton"
-  #  )
-  #
-  # Set other options as needed.
+  library = libpaths_in
 )
 
-# tar_make_clustermq() is an older (pre-{crew}) way to do distributed computing
-# in {targets}, and its configuration for your machine is below.
-# options(clustermq.scheduler = "multicore")
-
-# tar_make_future() is an older (pre-{crew}) way to do distributed computing
-# in {targets}, and its configuration for your machine is below.
-# future::plan(future.callr::callr)
 
 # Run the R scripts in the R/ folder with your custom functions:
 tar_source(c(
