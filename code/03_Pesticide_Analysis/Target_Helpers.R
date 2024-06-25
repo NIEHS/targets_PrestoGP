@@ -34,7 +34,9 @@ join_pesticide_huc <- function(points, wbd_huc){
   AZO.HUC.join$huc06 <- str_sub(AZO.HUC.join$huc12, 1, 6)
   AZO.HUC.join$huc04 <- str_sub(AZO.HUC.join$huc12, 1, 4)
   AZO.HUC.join$huc02 <- str_sub(AZO.HUC.join$huc12, 1, 2)
-  
+
+  AZO.HUC.join <- AZO.HUC.join %>% dplyr::filter(!sf::st_is_empty(geometry))
+
   return(AZO.HUC.join)
   
 }
@@ -104,40 +106,39 @@ covariate_prep <- function(data, threshold = 1e-5){
   covariates_num <- dplyr::select_if(data_covariates, is.numeric)
 
   # Get the factor type covariates and drop aquifer_ROCK_NAME
-  covariates_factor <- dplyr::select_if(data_covariates, is.factor) |> 
-    select(-"aquifer_ROCK_NAME")
+  covariates_factor <- dplyr::select_if(data_covariates, is.factor) |>
+    dplyr::select(-"aquifer_ROCK_NAME")
 
   covariates_factor$aquifer_AQ_NAME <- fct_explicit_na(covariates_factor$aquifer_AQ_NAME, "unknown")
-  
-  
+
 
   # Calculate unique values for each numeric covariate
   n_unique <- covariates_num |> 
     dplyr::summarise_all(n_distinct) |> 
     dplyr::mutate_all(~ . / nrow(covariates_num) * 100) |>
     as.numeric() |>
-    t() 
+    t()
 
   # Filter the numeric covariates by the threshold
   covariates_num_filter <- covariates_num |>
-    select(which(n_unique > threshold)) 
+    dplyr::select(which(n_unique > threshold)) 
 
   
   
   # Create dummy variables for the factor covariates
-  covariates_factor_dummy <- dummy_cols(covariates_factor, 
+  covariates_factor_dummy <- fastDummies::dummy_cols(covariates_factor, 
                                         c("geology_unit_type", 
                                           "aquifer_AQ_NAME"), 
                                         remove_selected_columns = TRUE, 
                                         ignore_na = FALSE) |>
-                                        st_as_sf() 
+                                        sf::st_as_sf() 
 
   
   # Combine the numeric and factor covariates
   data_processed <- outcome |> 
     cbind(covariates_num_filter) |>
     cbind(covariates_factor_dummy) |>
-    select(-"geometry.1",-"geometry.2",-"id.1") 
+    dplyr::select(-"geometry.1",-"geometry.2",-"id.1") 
 
   
   return(list(data_processed, data[[2]]))
