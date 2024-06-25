@@ -56,22 +56,11 @@ tar_config_set(
 
 # Set target options:
 sbatch_add_lines <-
-  c("#SBATCH --mail-user=isong@nih.gov",
+  c(sprintf("#SBATCH --mail-user=%s@nih.gov", Sys.info()["user"]),
     "#SBATCH --mail-type=END,FAIL",
-    "source $HOME/.profile"
-    #"export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH"
+    "export R_LIBS_USER=/ddn/gs1/biotools/R/lib64/R/custompkg:$R_LIBS_USER",
+    "export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH"
   )
-
-# tar_script({
-#   singularity_bin <- [/path/to/singularity]
-#   base_dir <- [path/to/base/dir] 
-#   nodename <- Sys.info()["nodename"]
-#   singularity_exec <- glue::glue("cd {here::here()} \
-# {singularity_bin} exec \\
-# -B {base_dir},/scratch \\
-# --env R_LIBS_SITE={base_dir}/rlibs/bioc-3.17 \\
-# {base_dir}/vscode-rbioc_3.17.sif \\")
-# })
 
 
 crew_default <-
@@ -145,8 +134,8 @@ controller_geo1 <- crew.cluster::crew_controller_slurm(
   slurm_log_output = "output/crew_log_slurm1.log",
   slurm_log_error = "output/crew_error_slurm1.error",
   script_lines = sbatch_add_lines,
-  slurm_memory_gigabytes_per_cpu = 8,
-  slurm_cpus_per_task = 15
+  slurm_memory_gigabytes_per_cpu = 24,
+  slurm_cpus_per_task = 1
 )
 controller_geo2 <- crew.cluster::crew_controller_slurm(
   name = "controller_geo2",
