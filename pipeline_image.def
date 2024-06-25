@@ -15,6 +15,7 @@ From: rocker/geospatial:latest
    Rscript -e "install.packages(c('tidyverse'))"
    Rscript -e "pak::pak('qs')"
    Rscript -e "pak::pak('njtierney/geotargets')"
+   Rscript -e "install.packages('sparseinv', repos = 'https://cloud.r-project.org')"
    Rscript -e "pak::pak('NIEHS/PrestoGP')"
    Rscript -e "pak::pak('NIEHS/beethoven')"
    Rscript -e "pak::pak('NIEHS/amadeus')"
@@ -22,9 +23,7 @@ From: rocker/geospatial:latest
 
 %environment
    export LC_ALL=C
-   export DDN_SET=/ddn/gs1/group/SET/
-   export DDN_IS=/ddn/gs1/home/songi2/
-
+   
 %files
 
 %runscript

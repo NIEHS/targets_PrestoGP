@@ -2,6 +2,22 @@
 
 ### General Steps
 
+0. Prepare Apptainer image
+  - Replace the export directory path in the command below. This directory should be set correctly in `run_apptainer.sh` as well.
+
+```shell
+. ./build_apptainer_image.sh /ddn/gs1/group/set/pipeline
+```
+
+  - The command above will build an Apptainer image named pipeline_image.sif with all required packages installed
+  - To run the pipeline with the built image, run in SSH to NIEHS HPC
+    - All paths are adjusted to point the internal paths in the Apptainer image
+    - Progress is recorded in SLURM log file named `pesticides_pipeline_appt.log` in the working directory.
+
+```shell
+sbatch run_apptainer.sh
+```
+
 1. Merge Calculated Covariates
 2. Exploratory Analysis of Covariates
   - Maps of Covariates

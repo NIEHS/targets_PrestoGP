@@ -584,7 +584,7 @@ calc_twi <- function(
   huc <- terra::project(huc, "EPSG:5072")
   #  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 6)
   huc4 <- terra::vect(wbdpath, layer = "WBDHU4", extent = common_ext)
-  huc4 <- terra::project(huc, "EPSG:5072")
+  huc4 <- terra::project(huc4, "EPSG:5072")
 
   # approach 1: Map par_hierarchy
   future::plan(future::sequential)
