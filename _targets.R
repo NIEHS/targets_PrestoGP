@@ -60,7 +60,8 @@ controller_geo2 <- crew::crew_controller_local(
 tar_option_set(
   packages = c(
     "PrestoGP", "tibble", "sf", "terra", "qs", "tidyverse", "skimr",
-    "rsample", "stats", "ggplot2", "geotargets", "tarchetypes", "parsnip", "fastDummies",
+    "rsample", "stats", "ggplot2", "geotargets", "tarchetypes",
+    "parsnip", "fastDummies", "stringr",
     "scales", "ggridges", "spatialsample", "broom", "yardstick", "data.table",
     "exactextractr", "dataRetrieval", "lubridate", "dplyr", "chopin"
   ),

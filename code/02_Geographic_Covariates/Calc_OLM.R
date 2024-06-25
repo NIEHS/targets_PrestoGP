@@ -1,4 +1,5 @@
 calc_olm_huc <- function(data.AZO, olm_raster, wbd_data, hucunit){
+  sf::sf_use_s2(FALSE)
 
   # olm_raster <- olm_raster[[1]]
   
@@ -6,7 +7,7 @@ calc_olm_huc <- function(data.AZO, olm_raster, wbd_data, hucunit){
 
   # # NHD WBD Layer names
   WBD <- sf::st_read(wbd_data, layer = layername) %>%
-    st_transform("EPSG:4326")
+    sf::st_transform("EPSG:4326")
 
   # Update hucunit variable - Pad zeros for single digit hucs to be 2 digits (i.e. huc8 -> huc08)
   if (nchar(hucunit) == 4) {
@@ -47,15 +48,15 @@ calc_olm_huc <- function(data.AZO, olm_raster, wbd_data, hucunit){
       "Texture_60cm", "Texture_100cm", "Texture_200cm"
     ))
 
-    olm_values <- data.table(hucunit = data.AZO[[hucunit]]) |>
-      setnames(hucunit)
+    olm_values <- data.table::data.table(hucunit = data.AZO[[hucunit]]) |>
+      data.table::setnames(hucunit)
 
     class.df <- class.df[order(class.df$Var1), ]
     class.possible.names <- paste0("frac_", class.df$Var1, ".", class.df$Var2)
 
     olm_values[, paste0(hucunit, ".", class.possible.names) := 0]
 
-    for (i in 1:length(huc_unique)) {
+    for (i in seq_len(length(huc_unique))) {
 
       # get index - for rows of output - where data match the given HUC08
       idx.row <- data.AZO[[hucunit]] == huc_unique[i]
@@ -64,7 +65,10 @@ calc_olm_huc <- function(data.AZO, olm_raster, wbd_data, hucunit){
       huc_polygon <- WBD[WBD[[hucunit]] == huc_unique[i],]
 
       # calculate the fraction of raster value classes in the HUC
-      huc_val <- exact_extract(olm_raster, st_geometry(huc_polygon), fun = "frac", stack_apply = TRUE)
+      huc_val <-
+        exactextractr::exact_extract(
+          olm_raster, sf::st_geometry(huc_polygon), fun = "frac", stack_apply = TRUE
+        )
       # get indexs - for columns of outout - where classes match the output
       idx.col <- which(class.possible.names %in% colnames(huc_val)) + 1
 
@@ -74,7 +78,7 @@ calc_olm_huc <- function(data.AZO, olm_raster, wbd_data, hucunit){
 
     # Classes column names updates
     olm_values <- olm_values %>%
-      rename_with(function(x) str_replace_all(x, "[.]", "_")) 
+      dplyr::rename_with(function(x) stringr::str_replace_all(x, "[.]", "_"))
     # Rename the number with the class name - ugly but it works
     olm_values <- dplyr::rename_with(olm_values, ~ gsub("frac_1_", paste0("frac_", texture_classes$classes[1], "_"), .x, fixed = TRUE)) %>%
       dplyr::rename_with(~ gsub("frac_2_", paste0("frac_", texture_classes$classes[2], "_"), .x, fixed = TRUE)) %>%
@@ -88,51 +92,51 @@ calc_olm_huc <- function(data.AZO, olm_raster, wbd_data, hucunit){
       dplyr::rename_with(~ gsub("frac_10_", paste0("frac_", texture_classes$classes[10], "_"), .x, fixed = TRUE)) %>%
       dplyr::rename_with(~ gsub("frac_11_", paste0("frac_", texture_classes$classes[11], "_"), .x, fixed = TRUE)) %>%
       dplyr::rename_with(~ gsub("frac_12_", paste0("frac_", texture_classes$classes[12], "_"), .x, fixed = TRUE))
-    
-    
-  } else { 
-    ### continuous value rasters
-    
-    # Make the data tables
-    olm_values <- data.table(hucunit = data.AZO[[hucunit]]) |>
-      setnames(hucunit)
-    
-    olm_values[, paste0(hucunit, "_", names(olm_raster)) := NA_real_]
-    
 
-    for (i in 1:length(huc_unique)) {
-      
+  } else {
+    ### continuous value rasters
+
+    # Make the data tables
+    olm_values <- data.table::data.table(hucunit = data.AZO[[hucunit]]) |>
+      data.table::setnames(hucunit)
+    olm_values[, paste0(hucunit, "_", names(olm_raster)) := NA_real_]
+
+    for (i in seq_len(length(huc_unique))) {
+
       # get index - for rows of output - where data match the given HUC08
       idx.row <- data.AZO[[hucunit]] == huc_unique[i]
-      
+
       # get the given HUC geometry from the WBD data
       huc_polygon <- WBD[WBD[[hucunit]] == huc_unique[i],]
-      
+
       # calculate the mean raster values in the HUC
-      huc_val <- exact_extract(olm_raster, st_geometry(huc_polygon), fun = "mean", stack_apply = TRUE)
-      
+      huc_val <- exactextractr::exact_extract(
+        olm_raster, sf::st_geometry(huc_polygon),
+        fun = "mean", stack_apply = TRUE
+      )
+
       # Assign the extracted values to the appropriate location in the output
       olm_values[idx.row, 2:ncol(olm_values)] <- huc_val
- 
+
     }
-    
-    
+
     olm_values <- olm_values %>%
-      rename_with(function(x) str_replace_all(x, "[.]", "_")) %>%
-      rename_with(function(x) str_replace_all(x, "_{2}", "_")) %>%
-      rename_with(function(x) str_replace_all(x, "sol_order_usda_soiltax_", "")) %>%
-      rename_with(function(x) str_replace_all(x, "_1950_2017_v0_1", ""))
+      dplyr::rename_with(function(x) stringr::str_replace_all(x, "[.]", "_")) %>%
+      dplyr::rename_with(function(x) stringr::str_replace_all(x, "_{2}", "_")) %>%
+      dplyr::rename_with(function(x) stringr::str_replace_all(x, "sol_order_usda_soiltax_", "")) %>%
+      dplyr::rename_with(function(x) stringr::str_replace_all(x, "_1950_2017_v0_1", ""))
     
   }
-  
+
   olm_values <- olm_values %>%
-    select(-hucunit)
-  
+    dplyr::select(-hucunit)
+
   return(olm_values)
-  
+
 }
 
 calc_olm_huc_new <- function(data.AZO, olm_raster, wbd_data, hucunit){
+  sf::sf_use_s2(FALSE)
 
   layername <- paste0("WBD", toupper(gsub("c", "", hucunit)))
 
@@ -311,22 +315,18 @@ calc_olm_point <- function(data.AZO, olm_raster) {
       dplyr::rename_with(~ gsub("frac_10_", paste0("frac_", texture_classes$classes[10], "_"), .x, fixed = TRUE)) %>%
       dplyr::rename_with(~ gsub("frac_11_", paste0("frac_", texture_classes$classes[11], "_"), .x, fixed = TRUE)) %>%
       dplyr::rename_with(~ gsub("frac_12_", paste0("frac_", texture_classes$classes[12], "_"), .x, fixed = TRUE))
-    
-    
-    
+
   } else {
     olm_values <- exact_extract(olm_raster, AZO.geometry, fun = "mean", stack_apply = TRUE)
-    
     olm_values <- olm_values %>%
       rename_with(function(x) str_replace_all(x, "[.]", "_")) %>%
       rename_with(function(x) str_replace_all(x, "_{2}", "_")) %>%
       rename_with(function(x) str_replace_all(x, "sol_order_usda_soiltax_", "")) %>%
       rename_with(function(x) str_replace_all(x, "_1950_2017_v0_1", ""))
-    
   }
 
   return(olm_values)
-  
+
 }
 
 

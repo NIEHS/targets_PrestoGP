@@ -13,7 +13,7 @@ list_raster <- function(base_path, sub_path, recursive = TRUE) {
 
 join_pesticide_huc <- function(points, wbd_huc){
   
-  sf_use_s2(FALSE)
+  sf::sf_use_s2(FALSE)
   
   HUC12 <- sf::st_read(wbd_huc, layer = "WBDHU12")
   
@@ -485,6 +485,8 @@ calc_nass <- function(
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
   huc_level = 12
 ) {
+  sf::sf_use_s2(FALSE)
+
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the NASS data
   #list_nass <- list_raster(base_path, nass_path, recursive = TRUE)
@@ -566,6 +568,8 @@ calc_twi <- function(
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
   huc_level = 12
 ) {
+  sf::sf_use_s2(FALSE)
+
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the WBD data
   wbdpath <- file.path(wbd_path)

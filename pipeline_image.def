@@ -12,7 +12,7 @@ From: rocker/geospatial:latest
    Rscript -e "install.packages(c('exactextractr', 'targets', 'tarchetypes', 'crew', 'crew.cluster', 'nanonext'))"
    Rscript -e "install.packages(c('tidytable', 'furrr', 'purrr', 'tidyr', 'dtplyr', 'data.table', 'collapse', 'stringr', 'stringi'))"
    Rscript -e "install.packages(c('nngeo', 'remotes', 'pak', 'stars', 'furrr', 'broom', 'ggridges', 'rsample', 'skimr', 'fastDummies', 'scales', 'parsnip', 'skimr'))"
-   Rscript -e "install.packages(c('tidyverse'))"
+   Rscript -e "install.packages(c('tidyverse', 'spatialsample'))"
    Rscript -e "pak::pak('qs')"
    Rscript -e "pak::pak('njtierney/geotargets')"
    Rscript -e "install.packages('sparseinv', repos = 'https://cloud.r-project.org')"
