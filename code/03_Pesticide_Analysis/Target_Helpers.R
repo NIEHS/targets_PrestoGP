@@ -550,7 +550,8 @@ calc_nass <- function(
 #' @param n_cores The number of CPU cores to use for parallel processing.
 #'  
 #' @returns A list of extracted TWI data for each HUC level.
-#'  
+#' @note This function leverages HUC4 to distribute workloads.
+#' It means that wbd_path __should__ be a GDB, where WBDHU* layers are stored.
 #'  
 #' @examples
 #' calc_twi(twi_path = "input/TWI",
@@ -575,25 +576,28 @@ calc_twi <- function(
   sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
   field_name <- sprintf("huc%s", huc_level)
+  common_ext <- c(-126, -66, 22, 52)
 
-  huc <- sf::st_read(
-    wbdpath, layer = layer_name, wkt_filter = ext_mainland
+  huc <- terra::vect(
+    wbdpath, layer = layer_name, extent = common_ext
   )
-  huc <- sf::st_transform(huc, "EPSG:5070") |>
-    dplyr::select(dplyr::all_of(field_name))
-  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 6)
+  huc <- terra::project(huc, "EPSG:5072")
+  #  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 6)
+  huc4 <- terra::vect(wbdpath, layer = "WBDHU4", extent = common_ext)
+  huc4 <- terra::project(huc, "EPSG:5072")
 
   # approach 1: Map par_hierarchy
   future::plan(future::sequential)
   extracted <-
     chopin::par_hierarchy(
-      regions = huc,
-      regions_id = "huc_split",
+      regions = huc4,
+      regions_id = "huc4",
       fun_dist = chopin::extract_at_poly,
       polys = huc,
       surf = twi_file,
       id = field_name,
       func = "mean",
+      # extent = c(-126, -66, 22, 52),
       max_cells = 3e+07
     )
 

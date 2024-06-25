@@ -1,26 +1,7 @@
 # Created by use_targets().
 # Main targets file for the project.
 # Created by Kyle P Messier
-# options(
-#   clustermq.scheduler = "local",
-#   clustermq.template = "code/02A_SLURM_submission/template_slurm.tmpl"
-# )
-Sys.setenv(
-  "LD_LIBRARY_PATH" =
-    paste0(
-      "/ddn/gs1/biotools/R/lib64/R/customlib:",
-      Sys.getenv("LD_LIBRARY_PATH")
-    )
-)
 
-libpaths_in <-
-  c(
-    "/ddn/gs1/biotools/R/lib64/R/custompkg",
-    "/ddn/gs1/home/songi2/r-libs",
-    .libPaths()
-  )
-
-.libPaths(libpaths_in)
 # Load packages required to define the pipeline:
 library(targets)
 library(tarchetypes)
@@ -51,102 +32,29 @@ sf::sf_use_s2(FALSE)
 
 
 tar_config_set(
-  store = "/ddn/gs1/group/set/pipeline/Pesticides"
+  store = "/opt/_targets"
 )
 
-# Set target options:
-sbatch_add_lines <-
-  c("#SBATCH --mail-user=isong@nih.gov",
-    "#SBATCH --mail-type=END,FAIL",
-    "export LD_LIBRARY_PATH=/ddn/gs1/biotools/R/lib64/R/customlib:$LD_LIBRARY_PATH"
-  )
 
 crew_default <-
-  crew.cluster::crew_controller_slurm(
+  crew_controller_local(
     name = "controller_default",
     tls = crew::crew_tls(mode = "automatic"),
     launch_max = 10L,
-    host = Sys.info()["nodename"],
-    slurm_partition = "geo",
-    slurm_log_output = "output/crew_log_slurm_default.log",
-    slurm_log_error = "output/crew_error_slurm_default.error",
-    script_lines = sbatch_add_lines,
-    slurm_memory_gigabytes_per_cpu = 4,
-    slurm_cpus_per_task = 1,
     workers = 12L
   )
 
 
-# mq_twi <-
-#   targets::tar_resources(
-#     clustermq =
-#     targets::tar_resources_clustermq(
-#       template =
-#       list(
-#         memory = 8,
-#         email = "messierkp@nih.gov",
-#         log_file = "output/clustermq_log.log",
-#         error_file = "output/clustermq_error.error",
-#         partition = "geo",
-#         cores = 10
-#       )
-#     )
-#   )
-# mq_nass <-
-#   targets::tar_resources(
-#     clustermq =
-#     targets::tar_resources_clustermq(
-#       template =
-#       list(
-#         memory = 8,
-#         email = "messierkp@nih.gov",
-#         log_file = "output/clustermq_log.log",
-#         error_file = "output/clustermq_error.error",
-#         partition = "geo",
-#         cores = 15L
-#       )
-#     )
-#   )
 
-# crew_default <-
-#   crew.cluster::crew_controller_slurm(
-#     name = "controller_default",
-#     workers = 12L,
-#     seconds_idle = 10,
-#     launch_max = 5L,
-#     slurm_partition = "geo",
-#     slurm_log_output = "output/crew_log.log",
-#     slurm_log_error = "output/crew_error.error",
-#     slurm_memory_gigabytes_per_cpu = 8,
-#     slurm_cpus_per_task = 1
-#   )
-
-controller_geo1 <- crew.cluster::crew_controller_slurm(
+controller_geo1 <- crew::crew_controller_local(
   name = "controller_geo1",
   workers = 4,
-  # seconds_idle = 15,
-  # seconds_timeout = 86400,
-  # seconds_launch= 7200,
-  launch_max = 10L,
-  slurm_partition = "geo",
-  slurm_log_output = "output/crew_log_slurm1.log",
-  slurm_log_error = "output/crew_error_slurm1.error",
-  script_lines = sbatch_add_lines,
-  slurm_memory_gigabytes_per_cpu = 8,
-  slurm_cpus_per_task = 15
+  launch_max = 10L
 )
-controller_geo2 <- crew.cluster::crew_controller_slurm(
+controller_geo2 <- crew::crew_controller_local(
   name = "controller_geo2",
   workers = 3L,
-  # seconds_timeout = 7200,
-  # seconds_launch= 7200,
-  launch_max = 5L,
-  slurm_partition = "geo",
-  slurm_log_output = "output/crew_log_slurm2.log",
-  slurm_log_error = "output/crew_error_slurm2.error",
-  script_lines = sbatch_add_lines,
-  slurm_memory_gigabytes_per_cpu = 64,
-  slurm_cpus_per_task = 1
+  launch_max = 5L
 )
 
 tar_option_set(
@@ -164,54 +72,25 @@ tar_option_set(
     )
   ),
   garbage_collection = TRUE,
-  error = "stop",
-  library = libpaths_in,
-  # debug = "olm_huc12_9dae2790e8379df8",
-  # cue = tar_cue(mode = "never")
-  #
-  # For distributed computing in tar_make(), supply a {crew} controller
-  # as discussed at https://books.ropensci.org/targets/crew.html.
-  # Choose a controller that suits your needs. For example, the following
-  # sets a controller with 2 workers which will run as local R processes:
-  #
-  # controller = crew::crew_controller_local(workers = 8)
-  #
-  #
-  # add the slurm username to the crew controller
-  #  controller = crew.cluster::crew_controller_slurm(
-  #    name = "pipeline_kpm",
-  #    workers = 12,
-  #    slurm_log_output="/slurm_messages/pipeline_kpm.out",
-  #    slurm_log_error="/slurm_messages/pipeline_kpm.err",
-  # script_lines = "module load R",
-  #    slurm_partition = "triton"
-  #  )
-  #
-  # Set other options as needed.
+  error = "stop"
 )
 
-# tar_make_clustermq() is an older (pre-{crew}) way to do distributed computing
-# in {targets}, and its configuration for your machine is below.
-# options(clustermq.scheduler = "multicore")
-
-# tar_make_future() is an older (pre-{crew}) way to do distributed computing
-# in {targets}, and its configuration for your machine is below.
-# future::plan(future.callr::callr)
 
 # Run the R scripts in the R/ folder with your custom functions:
-tar_source(c(
+tar_source(
+  sprintf("/mnt/%s", c(
   "code/03_Pesticide_Analysis/Target_Helpers.R",
   "code/01_Create_Dataset/Target_Pesticide_Data.R",
   "code/02_Geographic_Covariates/Calc_OLM.R",
   "code/02_Geographic_Covariates/Calc_terraClimate.R"
-))
+)))
 
 # data_AZO_covariates_cleaned_03032024
 #  The TARGET LIST
 list(
   tar_target( # This target is the WBD database
     name = wbd_data,
-    command = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/WBD-National/WBD_National_GDB.gdb",
+    command = "/pipeline/input/WBD-National/WBD_National_GDB.gdb",
     format = "file"
   ),
   list( # Dynamic branch of the states for pesticide data from NWIS
@@ -263,7 +142,7 @@ list(
     name = olm_layer_files,
     command = list.files(
       sprintf(
-        "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/OpenLandMapData/%s", olm_names
+        "/pipeline/input/OpenLandMapData/%s", olm_names
       ),
       pattern = "*.tif",
       full.names = TRUE
@@ -323,7 +202,7 @@ list(
     name = terra_climate_layer_files,
     command = list.files(
       sprintf(
-        "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/terraClimate/NetCDF/%s", terra_climate_names
+        "/pipeline/input/terraClimate/NetCDF/%s", terra_climate_names
       ),
       pattern = "*.nc",
       full.names = TRUE
@@ -370,7 +249,7 @@ list(
   ),
   tar_target(
     name = twi_path,
-    command = list.files("/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/TWI/", full.names = T, pattern = "*.tif"),
+    command = list.files("/pipeline/input/TWI/", full.names = T, pattern = "*.tif"),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     )
@@ -392,12 +271,12 @@ list(
   ),
   tar_target(
     name = nass_files,
-    command = list.files("/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/USDA_NASS", "*.tif$", full.names = TRUE)
+    command = list.files("/pipeline/input/USDA_NASS", "*.tif$", full.names = TRUE)
   ),
   tar_target(
     name = huc_nass,
     command = calc_nass(
-      base_path = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/",
+      base_path = "/pipeline/",
       nass_file = nass_files,
       wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
       huc_level = huc_levels
@@ -409,11 +288,6 @@ list(
       crew = tar_resources_crew(controller = "controller_default")
     )
   ),
-  # tar_target(
-  #   name = twi_file,
-  #   command = "../../../../input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
-  #   format = "file"
-  # ),
   tar_target(
     name = huc_twi,
     command = calc_twi(twi_file = twi_path, wbd_path = wbd_data, huc_level = huc_levels),
