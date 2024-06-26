@@ -29,6 +29,7 @@ library(chopin)
 
 
 sf::sf_use_s2(FALSE)
+terra::terraOptions(memfrac = 0.1)
 
 
 tar_config_set(

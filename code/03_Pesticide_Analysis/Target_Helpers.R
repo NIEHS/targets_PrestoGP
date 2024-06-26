@@ -567,10 +567,12 @@ calc_nass <- function(
 calc_twi <- function(
   twi_file = "input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
-  huc_level = 12
+  huc_level = 12,
+  chunksize = 100
 ) {
   sf::sf_use_s2(FALSE)
-
+  # https://github.com/rspatial/terra/issues/888#issuecomment-1386602439
+  terra::terraOptions(memfrac = 0.1)
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the WBD data
   wbdpath <- file.path(wbd_path)
@@ -600,35 +602,54 @@ calc_twi <- function(
   #       # hucsub <- sf::st_transform(hucsub, "EPSG:5072")
   #       # hucsubbox <- sf::st_bbox(hucsub)
   #       hucsubbox <- terra::ext(hucsub)
-  #       twiras <- terra::rast(twi_file, win = hucsubbox)
-
-  #       terra::extract(
-  #         twiras, hucsub,
-  #         fun = mean, exact = TRUE,
-  #         bind = TRUE
+  #       twiras <- terra::rast(twi_file)
+  #       # approach 1-1
+  # #       terra::extract(
+  # #         twiras, hucsub,
+  # #         fun = mean, exact = TRUE,
+  # #         bind = TRUE
+  # #       )
+  #       # approach 1-2
+  #       exactextractr::exact_extract(
+  #         twiras,
+  #         hucsub,
+  #         fun = "mean",
+  #         force_df = TRUE,
+  #         progress = FALSE,
+  #         append_cols = field_name,
+  #         max_cells_in_memory = 1e8
   #       )
-  #       # exactextractr::exact_extract(
-  #       #   twiras,
-  #       #   hucsub,
-  #       #   fun = "mean",
-  #       #   force_df = TRUE,
-  #       #   progress = FALSE,
-  #       #   append_cols = field_name,
-  #       #   max_cells_in_memory = 1e7
-  #       # )
   #     },
   #     splitvec
   #   )
+
+  # case 2
+  # twiras <- terra::rast(twi_file)
+  # huclist <- vector("list", nrow(hucsf))
+  # for (i in seq_len(nrow(hucsf))) {
+  #   hucsfi <- hucsf[i, ]
+  #   huclist[[i]] <- terra::extract(
+  #     twiras, hucsfi,
+  #     fun = mean, exact = TRUE,
+  #     bind = TRUE
+  #   )
+  # }
+  # case 3
   twiras <- terra::rast(twi_file)
-  huclist <- vector("list", nrow(hucsf))
-  for (i in seq_len(nrow(hucsf))) {
-    huclist[[i]] <- terra::extract(
-      twiras, hucsf[i, ],
-      fun = mean, exact = TRUE,
-      bind = TRUE
+  # huclist <- vector("list", nrow(hucsf))
+  hucsf <- terra::project(hucsf, terra::crs(twiras))
+  huclist <- seq_len(nrow(hucsf))
+  huclist <- split(huclist, ceiling(seq_along(huclist) / chunksize))
+  # for (i in seq_len(nrow(hucsf))) {
+  for (i in seq_len(length(huclist))) {
+    hucsfi <- terra::makeValid(hucsf[huclist[[i]], ])
+    huclist[[i]] <- exactextractr::exact_extract(
+      twiras, sf::st_as_sf(hucsfi),
+      fun = "mean",
+      append_cols = field_name,
+      progress = FALSE
     )
   }
-
   extracted <- data.table::rbindlist(huclist, fill = TRUE, use.names = TRUE)
   extracted <- as.data.frame(extracted)
   return(extracted)
