@@ -83,7 +83,8 @@ tar_source(
   "code/03_Pesticide_Analysis/Target_Helpers.R",
   "code/01_Create_Dataset/Target_Pesticide_Data.R",
   "code/02_Geographic_Covariates/Calc_OLM.R",
-  "code/02_Geographic_Covariates/Calc_terraClimate.R"
+  "code/02_Geographic_Covariates/Calc_terraClimate.R",
+  "code/02_Geographic_Covariates/Calc_TWI.R"
 )))
 
 # data_AZO_covariates_cleaned_03032024
@@ -291,7 +292,7 @@ list(
   ),
   tar_target(
     name = huc_twi,
-    command = calc_twi(twi_file = twi_path, wbd_path = wbd_data, huc_level = huc_levels),
+    command = calc_TWI_huc(data.AZO = sf_pesticide_huc, raster_path =  twi_path, wbd_data = wbd_data, huc_level = huc_levels),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     ),
@@ -414,6 +415,22 @@ list(
 #   pattern = map(get_sub_sp_kfolds),
 #   iteration = "list"
 # )
+
+# PRISM Data
+# We have downloaded the 30-year normals for the PRISM data
+
+# EPA EnviroAtlas data to add
+# https://www.epa.gov/enviroatlas/data-download-step-2?token=bDeOAOosrqLOGojIi5gLwGwHA-atUJ5GZQ2o4ZhZNBQ
+# by File Name 
+# 1. Ag_On_Slopes
+# 2. AgW_Demand (Agricultural Water Demand)
+# 3. AgW_Supply (Agricultural Water Supply)
+# 4. BNF4 (Biological NItrogen Fixation)
+# 5. cbnf4 (Cultivated biological nitrogen fixation (kg N/ha/yr))
+# 6. Estimated_floodplain_CONUS (Estimated Floodplain)
+# 7. GroundwaterAndWaterBudgets (All 4 metrics)
+# 8. N_P_H2O_Loss (Nitrogen and Phosphorus Losses to Water)
+# 9.  RiparianCanopy (Riparian Canopy)
 
 # Created by use_targets().
 # 3. Run PrestoGP model on local machine for small test case
