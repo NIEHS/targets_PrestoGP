@@ -642,7 +642,7 @@ calc_twi <- function(
   huclist <- split(huclist, ceiling(seq_along(huclist) / chunksize))
   # for (i in seq_len(nrow(hucsf))) {
   for (i in seq_len(length(huclist))) {
-    hucsfi <- terra::makeValid(hucsf[huclist[[i]], ])
+    hucsfi <- terra::buffer(hucsf[huclist[[i]], ], 0)
     huclist[[i]] <- exactextractr::exact_extract(
       twiras, sf::st_as_sf(hucsfi),
       fun = "mean",

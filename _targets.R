@@ -251,7 +251,7 @@ list(
   ),
   tar_target(
     name = twi_path,
-    command = list.files("/pipeline/input/TWI/", full.names = T, pattern = "^TWI*.*.tif"),
+    command = list.files("/pipeline/input/TWI/", full.names = T, pattern = "^CONUS*.*.tif"),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     )
@@ -292,7 +292,10 @@ list(
   ),
   tar_target(
     name = huc_twi,
-    command = calc_twi(twi_file = twi_path, wbd_path = wbd_data, huc_level = huc_levels),
+    command =
+      calc_twi(
+        twi_file = twi_path,
+        wbd_path = "/pipeline/input/WBD-National/WBD_National_GDB_reexport.gpkg", huc_level = huc_levels),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     ),

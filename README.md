@@ -9,7 +9,7 @@
 . ./build_apptainer_image.sh /ddn/gs1/group/set/pipeline
 ```
 
-  - The command above will build an Apptainer image named pipeline_image.sif with all required packages installed
+  - The command above will build an Apptainer image named pipeline_image.Singularity Image File (sif) named `pipeline_image.sif` in the specified path is built. You could run a container using the SIF file where all required packages to run the pipeline are installed. If there is no file named `pipeline_image.sif` in the directory, the script builds a SIF file automatically. Otherwise, it will prompt a warning message whether to overwrite the existing SIF file, then you could proceed by typing N.
   - To run the pipeline with the built image, run in SSH to NIEHS HPC
     - All paths are adjusted to point the internal paths in the Apptainer image
     - Progress is recorded in SLURM log file named `pesticides_pipeline_appt.log` in the working directory.
