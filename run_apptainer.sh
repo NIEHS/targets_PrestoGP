@@ -3,7 +3,7 @@
 #SBATCH --job-name=pesticides_pipeline_appt
 #SBATCH --output=pesticides_pipeline_appt.log
 #SBATCH --error=pesticides_pipeline_appt.error
-#SBATCH --mail-user=songi2@nih.gov
+#SBATCH --mail-user=messierkp@nih.gov
 #SBATCH --mail-type=END,FAIL
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
@@ -25,8 +25,8 @@
 # NOTE: the paths were modified for ISong testing
 apptainer exec \
   --mount type=bind,src=/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input,dst=/pipeline/input \
-  --mount type=bind,src=/ddn/gs1/group/set/pipeline/Pesticides_container_is,dst=/opt/_targets \
-  --mount type=bind,src=/ddn/gs1/home/songi2/projects/targets_PrestoGP,dst=/mnt \
+  --mount type=bind,src=/ddn/gs1/group/set/pipeline/Pesticides_container,dst=/opt/_targets \
+  --mount type=bind,src=/ddn/gs1/home/messierkp/group_prj_local/targets_PrestoGP,dst=/mnt \
   --no-mount bind-paths \
   --writable-tmpfs \
   /ddn/gs1/group/set/pipeline/pipeline_image_is.sif \
