@@ -550,7 +550,7 @@ calc_nass <- function(
 #' @param wbd_path The path to the WBD (Watershed Boundary Dataset) data directory.
 #' @param huc_level A numeric vector specifying the HUC levels to calculate data for.
 #' One of 8, 10, or 12.
-#' @param n_cores The number of CPU cores to use for parallel processing.
+# @param n_cores The number of CPU cores to use for parallel processing.
 #'  
 #' @returns A list of extracted TWI data for each HUC level.
 #' @note This function leverages HUC4 to distribute workloads.
@@ -575,36 +575,61 @@ calc_twi <- function(
   # read in the WBD data
   wbdpath <- file.path(wbd_path)
   # file based strategy
-  ext_mainland <- sf::st_as_text(
-    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
-  )
-  sf::sf_use_s2(FALSE)
+  # ext_mainland <- sf::st_as_text(
+  #   sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
+  # )
+  # sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
   field_name <- sprintf("huc%s", huc_level)
-  common_ext <- c(-126, -66, 22, 52)
+  common_ext <- c(-126, -64, 22, 52)
 
   huc <- terra::vect(
     wbdpath, layer = layer_name, extent = common_ext
   )
-  huc <- terra::project(huc, "EPSG:5072")
-  #  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 6)
-  huc4 <- terra::vect(wbdpath, layer = "WBDHU4", extent = common_ext)
-  huc4 <- terra::project(huc4, "EPSG:5072")
+  # huc <- terra::project(huc, "EPSG:5072")
+  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 6)
+  splitvec <- unique(huc$huc_split)
+  hucfns <- unlist(huc[[field_name]])
+  # hucsf <- sf::st_as_sf(huc)[, field_name]
+  hucsf <- huc[, field_name]
+  # huclist <-
+  #   Map(
+  #     function(x) {
+  #       hucsub <- hucsf[grepl(paste0("^", x), hucfns), ]
+  #       hucsub <- terra::project(hucsub, "EPSG:5072")
+  #       # hucsub <- sf::st_transform(hucsub, "EPSG:5072")
+  #       # hucsubbox <- sf::st_bbox(hucsub)
+  #       hucsubbox <- terra::ext(hucsub)
+  #       twiras <- terra::rast(twi_file, win = hucsubbox)
 
-  # approach 1: Map par_hierarchy
-  future::plan(future::sequential)
-  extracted <-
-    chopin::par_hierarchy(
-      regions = huc4,
-      regions_id = "huc4",
-      fun_dist = chopin::extract_at_poly,
-      polys = huc,
-      surf = twi_file,
-      id = field_name,
-      func = "mean",
-      # extent = c(-126, -66, 22, 52),
-      max_cells = 3e+07
+  #       terra::extract(
+  #         twiras, hucsub,
+  #         fun = mean, exact = TRUE,
+  #         bind = TRUE
+  #       )
+  #       # exactextractr::exact_extract(
+  #       #   twiras,
+  #       #   hucsub,
+  #       #   fun = "mean",
+  #       #   force_df = TRUE,
+  #       #   progress = FALSE,
+  #       #   append_cols = field_name,
+  #       #   max_cells_in_memory = 1e7
+  #       # )
+  #     },
+  #     splitvec
+  #   )
+  twiras <- terra::rast(twi_file)
+  huclist <- vector("list", nrow(hucsf))
+  for (i in seq_len(nrow(hucsf))) {
+    huclist[[i]] <- terra::extract(
+      twiras, hucsf[i, ],
+      fun = mean, exact = TRUE,
+      bind = TRUE
     )
+  }
 
+  extracted <- data.table::rbindlist(huclist, fill = TRUE, use.names = TRUE)
+  extracted <- as.data.frame(extracted)
   return(extracted)
 }

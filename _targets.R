@@ -73,7 +73,7 @@ tar_option_set(
     )
   ),
   garbage_collection = TRUE,
-  error = "stop"
+  error = "abridge"
 )
 
 
@@ -250,7 +250,7 @@ list(
   ),
   tar_target(
     name = twi_path,
-    command = list.files("/pipeline/input/TWI/", full.names = T, pattern = "*.tif"),
+    command = list.files("/pipeline/input/TWI/", full.names = T, pattern = "^TWI*.*.tif"),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     )
