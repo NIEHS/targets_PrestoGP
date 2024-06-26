@@ -29,6 +29,7 @@ library(chopin)
 
 
 sf::sf_use_s2(FALSE)
+terra::terraOptions(memfrac = 0.1)
 
 
 tar_config_set(
@@ -251,7 +252,7 @@ list(
   ),
   tar_target(
     name = twi_path,
-    command = list.files("/pipeline/input/TWI/", full.names = T, pattern = "^TWI*.*.tif"),
+    command = list.files("/pipeline/input/TWI/", full.names = T, pattern = "^CONUS*.*.tif"),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     )
@@ -292,7 +293,10 @@ list(
   ),
   tar_target(
     name = huc_twi,
-    command = calc_TWI_huc(data.AZO = sf_pesticide_huc, raster_path =  twi_path, wbd_data = wbd_data, huc_level = huc_levels),
+    command =
+      calc_twi(
+        twi_file = twi_path,
+        wbd_path = "/pipeline/input/WBD-National/WBD_National_GDB_reexport.gpkg", huc_level = huc_levels),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     ),
