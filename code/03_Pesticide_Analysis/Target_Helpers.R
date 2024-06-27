@@ -583,74 +583,32 @@ calc_twi <- function(
   # sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
   field_name <- sprintf("huc%s", huc_level)
-  common_ext <- c(-126, -64, 22, 52)
+  #common_ext <- c(-126, -64, 22, 52)
 
-  huc <- terra::vect(
-    wbdpath, layer = layer_name, extent = common_ext
-  )
-  # huc <- terra::project(huc, "EPSG:5072")
-  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 6)
-  splitvec <- unique(huc$huc_split)
-  hucfns <- unlist(huc[[field_name]])
-  # hucsf <- sf::st_as_sf(huc)[, field_name]
+print("reading in WBD data")
+
+
+    huc <- sf::st_read(wbdpath, layer = layer_name) |>
+    sf::st_transform("EPSG:5072")
+
+  
+ 
   hucsf <- huc[, field_name]
-  # huclist <-
-  #   Map(
-  #     function(x) {
-  #       hucsub <- hucsf[grepl(paste0("^", x), hucfns), ]
-  #       hucsub <- terra::project(hucsub, "EPSG:5072")
-  #       # hucsub <- sf::st_transform(hucsub, "EPSG:5072")
-  #       # hucsubbox <- sf::st_bbox(hucsub)
-  #       hucsubbox <- terra::ext(hucsub)
-  #       twiras <- terra::rast(twi_file)
-  #       # approach 1-1
-  # #       terra::extract(
-  # #         twiras, hucsub,
-  # #         fun = mean, exact = TRUE,
-  # #         bind = TRUE
-  # #       )
-  #       # approach 1-2
-  #       exactextractr::exact_extract(
-  #         twiras,
-  #         hucsub,
-  #         fun = "mean",
-  #         force_df = TRUE,
-  #         progress = FALSE,
-  #         append_cols = field_name,
-  #         max_cells_in_memory = 1e8
-  #       )
-  #     },
-  #     splitvec
-  #   )
-
-  # case 2
-  # twiras <- terra::rast(twi_file)
-  # huclist <- vector("list", nrow(hucsf))
-  # for (i in seq_len(nrow(hucsf))) {
-  #   hucsfi <- hucsf[i, ]
-  #   huclist[[i]] <- terra::extract(
-  #     twiras, hucsfi,
-  #     fun = mean, exact = TRUE,
-  #     bind = TRUE
-  #   )
-  # }
-  # case 3
+  
+print("reading in TWI data")
   twiras <- terra::rast(twi_file)
-  # huclist <- vector("list", nrow(hucsf))
-  hucsf <- terra::project(hucsf, terra::crs(twiras))
-  huclist <- seq_len(nrow(hucsf))
-  huclist <- split(huclist, ceiling(seq_along(huclist) / chunksize))
-  # for (i in seq_len(nrow(hucsf))) {
-  for (i in seq_len(length(huclist))) {
-    hucsfi <- terra::buffer(hucsf[huclist[[i]], ], 0)
-    huclist[[i]] <- exactextractr::exact_extract(
-      twiras, sf::st_as_sf(hucsfi),
+print("projecting TWI data")
+  huclist <- data.frame('field_name' = rep(NA_real_,nrow(hucsf)), "mean" = rep(NA_real_,nrow(hucsf))) 
+  colnames(huclist)[1] <- field_name 
+    for (i in seq_len(nrow(hucsf))) {
+ # for (i in 1:10) {
+    huclist[i,] <- exactextractr::exact_extract(
+      twiras, hucsf[i,],
       fun = "mean",
       append_cols = field_name,
       progress = FALSE
     )
   }
-  extracted <- data.table::rbindlist(huclist, fill = TRUE, use.names = TRUE)
-  extracted <- as.data.frame(extracted)
-  return(extracted)
+
+  return(huclist)
 }
