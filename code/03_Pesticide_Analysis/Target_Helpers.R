@@ -543,27 +543,20 @@ calc_nass <- function(
 
 
 #' Calculate TWI data for specified HUC levels
-#'  
-#' This function calculates TWI (Topographic Wetness Index) data for specified HUC (Hydrologic Unit Code) levels.
-#'  
+#'
+#' This function calculates TWI (Topographic Wetness Index) data
+#'   for specified HUC (Hydrologic Unit Code) levels.
+#'
 #' @param twi_file The path to the TWI TIFF data.
-#' @param wbd_path The path to the WBD (Watershed Boundary Dataset) data directory.
-#' @param huc_level A numeric vector specifying the HUC levels to calculate data for.
+#' @param wbd_path The path to the WBD (Watershed Boundary Dataset) data
+#'   directory.
+#' @param huc_level A numeric vector specifying the HUC levels to calculate
+#'   data for.
 #' One of 8, 10, or 12.
-# @param n_cores The number of CPU cores to use for parallel processing.
-#'  
+#' @param chunksize The number of rows to process at a time.
+#'   Default is 100.
+#'
 #' @returns A list of extracted TWI data for each HUC level.
-#' @note This function leverages HUC4 to distribute workloads.
-#' It means that wbd_path __should__ be a GDB, where WBDHU* layers are stored.
-#'  
-#' @examples
-#' calc_twi(twi_path = "input/TWI",
-#'         wbd_path = "input/WBD",
-#'        huc_level = c(8, 10, 12),
-#'       out_path = "output",
-#'     n_cores = 1)
-#' 
-#' 
 calc_twi <- function(
   twi_file = "input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
@@ -577,10 +570,6 @@ calc_twi <- function(
   # read in the WBD data
   wbdpath <- file.path(wbd_path)
   # file based strategy
-  # ext_mainland <- sf::st_as_text(
-  #   sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
-  # )
-  # sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
   field_name <- sprintf("huc%s", huc_level)
   common_ext <- c(-126, -64, 22, 52)
@@ -588,12 +577,28 @@ calc_twi <- function(
   huc <- terra::vect(
     wbdpath, layer = layer_name, extent = common_ext
   )
-  # huc <- terra::project(huc, "EPSG:5072")
   huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 6)
-  splitvec <- unique(huc$huc_split)
-  hucfns <- unlist(huc[[field_name]])
-  # hucsf <- sf::st_as_sf(huc)[, field_name]
-  hucsf <- huc[, field_name]
+
+  twiras <- terra::rast(twi_file)
+
+  # sf version
+  # ext_mainland <- sf::st_as_text(
+  #   sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
+  # )
+  # huc <- sf::st_read(wbdpath, layer = layer_name, wkt_filter = ext_mainland)
+  # huc <- sf::st_transform(huc, terra::crs(twiras))
+  # huc <- sf::st_buffer(huc, 0)
+  # hucsf <- huc[, field_name]
+  # for (i in seq_len(length(huclist))) {
+  #   hucsfi <- hucsf[huclist[[i]], ]
+  #   huclist[[i]] <- exactextractr::exact_extract(
+  #     twiras, hucsfi,
+  #     fun = "mean",
+  #     append_cols = field_name,
+  #     progress = FALSE
+  #   )
+  # }
+
   # huclist <-
   #   Map(
   #     function(x) {
@@ -635,7 +640,6 @@ calc_twi <- function(
   #   )
   # }
   # case 3
-  twiras <- terra::rast(twi_file)
   # huclist <- vector("list", nrow(hucsf))
   hucsf <- terra::project(hucsf, terra::crs(twiras))
   huclist <- seq_len(nrow(hucsf))
