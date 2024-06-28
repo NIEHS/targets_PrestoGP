@@ -281,7 +281,7 @@ list(
     command = calc_nass(
       base_path = "/pipeline/",
       nass_file = nass_files,
-      wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
+      wbd_path = "/input/WBD-National/WBD_National_GDB_reexport.gpkg",
       huc_level = huc_levels
     ),
     # since the study period is 2008-2022
@@ -290,18 +290,6 @@ list(
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_default")
     )
-  ),
-  tar_target(
-    name = huc_twi,
-    command =
-      calc_twi(
-        twi_file = twi_path,
-        wbd_path = "/pipeline/input/WBD-National/WBD_National_GDB_reexport.gpkg", huc_level = huc_levels),
-    resources = tar_resources(
-      crew = tar_resources_crew(controller = "controller_geo2")
-    ),
-    iteration = "list",
-    pattern = map(huc_levels)
   )
 )
 
