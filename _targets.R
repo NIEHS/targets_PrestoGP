@@ -93,7 +93,7 @@ tar_source(
 list(
   tar_target( # This target is the WBD database
     name = wbd_data,
-    command = "/pipeline/input/WBD-National/WBD_National_GDB.gdb",
+    command = "/pipeline/input/WBD-National/WBD_National_GDB_reexport.gpkg",
     format = "file"
   ),
   list( # Dynamic branch of the states for pesticide data from NWIS
