@@ -33,7 +33,7 @@ terra::terraOptions(memfrac = 0.1)
 
 
 tar_config_set(
-  store = "/opt/_targets"
+  store = "/ddn/gs1/group/set/pipeline/Pesticides_container"
 )
 
 
@@ -80,7 +80,7 @@ tar_option_set(
 
 # Run the R scripts in the R/ folder with your custom functions:
 tar_source(
-  sprintf("/mnt/%s", c(
+  sprintf("./%s", c(
   "code/03_Pesticide_Analysis/Target_Helpers.R",
   "code/01_Create_Dataset/Target_Pesticide_Data.R",
   "code/02_Geographic_Covariates/Calc_OLM.R",
