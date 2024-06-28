@@ -73,6 +73,8 @@ tar_option_set(
       controller = "controller_default"
     )
   ),
+  storage = "worker",
+  memory = "transient",
   garbage_collection = TRUE,
   error = "abridge"
 )

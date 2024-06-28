@@ -641,14 +641,16 @@ calc_twi <- function(
   # }
   # case 3
   # huclist <- vector("list", nrow(hucsf))
-  hucsf <- terra::project(hucsf, terra::crs(twiras))
+  hucsf <- terra::project(huc, terra::crs(twiras))
   huclist <- seq_len(nrow(hucsf))
   huclist <- split(huclist, ceiling(seq_along(huclist) / chunksize))
   # for (i in seq_len(nrow(hucsf))) {
   for (i in seq_len(length(huclist))) {
-    hucsfi <- terra::buffer(hucsf[huclist[[i]], ], 0)
+    # hucsfi <- terra::buffer(hucsf[huclist[[i]], ], 0)
+    hucsfi <- terra::makeValid(hucsf[huclist[[i]], ])
+    hucsfi <- sf::st_as_sf(hucsfi)
     huclist[[i]] <- exactextractr::exact_extract(
-      twiras, sf::st_as_sf(hucsfi),
+      twiras, hucsfi,
       fun = "mean",
       append_cols = field_name,
       progress = FALSE

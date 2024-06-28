@@ -29,7 +29,7 @@ apptainer exec \
   --mount type=bind,src=/ddn/gs1/home/songi2/projects/targets_PrestoGP,dst=/mnt \
   --no-mount bind-paths \
   --writable-tmpfs \
-  /ddn/gs1/group/set/pipeline/pipeline_image_gdal39.sif \
+  /ddn/gs1/group/set/pipeline/pipeline_image_is.sif \
   Rscript /mnt/run.R
 
 # The "apptainer exec" command is used to execute a command within a container. It provides options to mount directories and specify the command to run.
