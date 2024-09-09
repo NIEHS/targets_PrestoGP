@@ -1,4 +1,4 @@
-pkgs <- c("sf", "stars", "terra", "dplyr", "tidytable", "tigris", "future", "future.apply", "scomps")
+pkgs <- c("sf", "stars", "terra", "dplyr", "tidytable", "tigris", "future", "future.apply", "chopin")
 invisible(sapply(pkgs, library, character.only = TRUE, quietly = TRUE))
 
 Sys.getenv("TIGRIS_CACHE_DIR")
@@ -7,7 +7,7 @@ Sys.getenv("TIGRIS_CACHE_DIR")
 
 ## data path determination
 ## compute_mode 1 (wine mount), compute_mode 2 (hpc compute node), 3 (container internal)
-COMPUTE_MODE <- 1
+COMPUTE_MODE <- 2
 path_base <-
   ifelse(COMPUTE_MODE == 1,
     "/Volumes/SET/Projects/PrestoGP_Pesticides/input/",
