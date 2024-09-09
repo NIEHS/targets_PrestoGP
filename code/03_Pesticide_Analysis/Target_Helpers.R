@@ -13,7 +13,7 @@ list_raster <- function(base_path, sub_path, recursive = TRUE) {
 
 join_pesticide_huc <- function(points, wbd_huc){
   
-  sf_use_s2(FALSE)
+  sf::sf_use_s2(FALSE)
   
   HUC12 <- sf::st_read(wbd_huc, layer = "WBDHU12")
   
@@ -34,7 +34,9 @@ join_pesticide_huc <- function(points, wbd_huc){
   AZO.HUC.join$huc06 <- str_sub(AZO.HUC.join$huc12, 1, 6)
   AZO.HUC.join$huc04 <- str_sub(AZO.HUC.join$huc12, 1, 4)
   AZO.HUC.join$huc02 <- str_sub(AZO.HUC.join$huc12, 1, 2)
-  
+
+  AZO.HUC.join <- AZO.HUC.join %>% dplyr::filter(!sf::st_is_empty(geometry))
+
   return(AZO.HUC.join)
   
 }
@@ -104,40 +106,39 @@ covariate_prep <- function(data, threshold = 1e-5){
   covariates_num <- dplyr::select_if(data_covariates, is.numeric)
 
   # Get the factor type covariates and drop aquifer_ROCK_NAME
-  covariates_factor <- dplyr::select_if(data_covariates, is.factor) |> 
-    select(-"aquifer_ROCK_NAME")
+  covariates_factor <- dplyr::select_if(data_covariates, is.factor) |>
+    dplyr::select(-"aquifer_ROCK_NAME")
 
   covariates_factor$aquifer_AQ_NAME <- fct_explicit_na(covariates_factor$aquifer_AQ_NAME, "unknown")
-  
-  
+
 
   # Calculate unique values for each numeric covariate
   n_unique <- covariates_num |> 
     dplyr::summarise_all(n_distinct) |> 
     dplyr::mutate_all(~ . / nrow(covariates_num) * 100) |>
     as.numeric() |>
-    t() 
+    t()
 
   # Filter the numeric covariates by the threshold
   covariates_num_filter <- covariates_num |>
-    select(which(n_unique > threshold)) 
+    dplyr::select(which(n_unique > threshold)) 
 
   
   
   # Create dummy variables for the factor covariates
-  covariates_factor_dummy <- dummy_cols(covariates_factor, 
+  covariates_factor_dummy <- fastDummies::dummy_cols(covariates_factor, 
                                         c("geology_unit_type", 
                                           "aquifer_AQ_NAME"), 
                                         remove_selected_columns = TRUE, 
                                         ignore_na = FALSE) |>
-                                        st_as_sf() 
+                                        sf::st_as_sf() 
 
   
   # Combine the numeric and factor covariates
   data_processed <- outcome |> 
     cbind(covariates_num_filter) |>
     cbind(covariates_factor_dummy) |>
-    select(-"geometry.1",-"geometry.2",-"id.1") 
+    dplyr::select(-"geometry.1",-"geometry.2",-"id.1") 
 
   
   return(list(data_processed, data[[2]]))
@@ -466,34 +467,35 @@ fit_MV_Vecchia <- function(splits) {
 #' Calculate NASS data for specified HUC levels
 #'
 #' This function calculates NASS (National Agricultural Statistics Service) data for specified HUC (Hydrologic Unit Code) levels.
-#'
-#' @param nass_path The path to the NASS data directory.
+#' @param base_path The base path to the data directory.
+#' @param nass_file The file path to the yearly NASS
 #' @param wbd_path The path to the WBD (Watershed Boundary Dataset) data directory.
 #' @param huc_level A numeric vector specifying the HUC levels to calculate data for.
-#' One of 8, 10, or 12.
-#' @param n_cores The number of CPU cores to use for parallel processing.
+#' One of 8, 10, or 12
 #'
 #' @returns A list of extracted NASS data for each HUC level.
 #'
 #' @examples
-#' calc_nass(nass_path = "input/USDA_NASS",
-#'           wbd_path = "input/WBD",
-#'           huc_level = c(8, 10, 12),
-#'           out_path = "output",
-#'           n_cores = 1)
+#' calc_nass(base_path = "input"",
+#'           wbd_path = "WBD",
+#'           nass_file = "NASS/cdl_2019.tif"
+#'           huc_level = 8)
 calc_nass <- function(
-  nass_path = "input/USDA_NASS",
+  base_path,
+  nass_file,
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
   huc_level = 12
 ) {
+  sf::sf_use_s2(FALSE)
+
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the NASS data
-  list_nass <- list_raster(nass_path, recursive = TRUE, full.names = TRUE)
+  #list_nass <- list_raster(base_path, nass_path, recursive = TRUE)
   # read in the WBD data
-  wbdpath <- file.path(wbd_path)
+  wbdpath <- file.path(base_path, wbd_path)
   # file based strategy
   ext_mainland <- sf::st_as_text(
-    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, xmax=-66, ymin=22, ymax=52)))
+    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
   )
   sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
@@ -525,16 +527,17 @@ calc_nass <- function(
   #     list_nass
   #   )
   # approach 2: file based
+  # extracted <-
+  #   chopin::par_multirasters(
   extracted <-
-    chopin::par_multirasters(
-      filenames = list_nass,
-      fun_dist = chopin::extract_at_poly,
+    chopin::extract_at_poly(
+      surf = nass_file,
       polys = huc,
       id = field_name,
       func = "frac",
       max_cells = 3e+07
     )
-    
+
   return(extracted)
 }
 
@@ -547,10 +550,11 @@ calc_nass <- function(
 #' @param wbd_path The path to the WBD (Watershed Boundary Dataset) data directory.
 #' @param huc_level A numeric vector specifying the HUC levels to calculate data for.
 #' One of 8, 10, or 12.
-#' @param n_cores The number of CPU cores to use for parallel processing.
+# @param n_cores The number of CPU cores to use for parallel processing.
 #'  
 #' @returns A list of extracted TWI data for each HUC level.
-#'  
+#' @note This function leverages HUC4 to distribute workloads.
+#' It means that wbd_path __should__ be a GDB, where WBDHU* layers are stored.
 #'  
 #' @examples
 #' calc_twi(twi_path = "input/TWI",
@@ -563,42 +567,48 @@ calc_nass <- function(
 calc_twi <- function(
   twi_file = "input/TWI/CONUS_TWI_epsg5072_30m_unmasked.tif",
   wbd_path = "input/WBD-National/WBD_National_GDB.gdb",
-  huc_level = 12
+  huc_level = 12,
+  chunksize = 100
 ) {
+  sf::sf_use_s2(FALSE)
+  # https://github.com/rspatial/terra/issues/888#issuecomment-1386602439
+  terra::terraOptions(memfrac = 0.1)
   huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
   # read in the WBD data
   wbdpath <- file.path(wbd_path)
   # file based strategy
-  ext_mainland <- sf::st_as_text(
-    sf::st_as_sfc(sf::st_bbox(c(xmin=-126, xmax=-66, ymin=22, ymax=52)))
-  )
-  sf::sf_use_s2(FALSE)
+  # ext_mainland <- sf::st_as_text(
+  #   sf::st_as_sfc(sf::st_bbox(c(xmin=-126, ymin=22, xmax=-66, ymax=52)))
+  # )
+  # sf::sf_use_s2(FALSE)
   layer_name <- sprintf("WBDHU%s", huc_level)
   field_name <- sprintf("huc%s", huc_level)
+  #common_ext <- c(-126, -64, 22, 52)
 
-  huc <- sf::st_read(
-    wbdpath, layer = layer_name, wkt_filter = ext_mainland
-  )
-  huc <- sf::st_transform(huc, "EPSG:5070") |>
-    dplyr::select(dplyr::all_of(field_name))
-  huc$huc_split <- substr(unlist(huc[[field_name]]), 1, 4)
+print("reading in WBD data")
 
 
-  # approach 1: Map par_hierarchy
-  extracted <-
-    chopin::par_hierarchy(
-      regions = huc,
-      split_level = "huc_split",
-      fun_dist = chopin::extract_at_poly,
-      polys = huc,
-      surf = twi_file,
-      id = field_name,
-      func = "mean",
-      max_cells = 3e+07
+    huc <- sf::st_read(wbdpath, layer = layer_name) |>
+    sf::st_transform("EPSG:5072")
+
+  
+ 
+  hucsf <- huc[, field_name]
+  
+print("reading in TWI data")
+  twiras <- terra::rast(twi_file)
+print("projecting TWI data")
+  huclist <- data.frame('field_name' = rep(NA_real_,nrow(hucsf)), "mean" = rep(NA_real_,nrow(hucsf))) 
+  colnames(huclist)[1] <- field_name 
+    for (i in seq_len(nrow(hucsf))) {
+ # for (i in 1:10) {
+    huclist[i,] <- exactextractr::exact_extract(
+      twiras, hucsf[i,],
+      fun = "mean",
+      append_cols = field_name,
+      progress = FALSE
     )
+  }
 
-  return(extracted)
+  return(huclist)
 }
-
-
-

@@ -18,7 +18,6 @@
 #SBATCH --partition={{ partition }}
 #SBATCH --mail-user={{ email }}
 #<%= if (!is.null(partition)) sprintf(paste0("#SBATCH --partition='", partition, "'")) %>
-#<%= if (!is.null(email)) sprintf(paste0("#SBATCH --mail-user='", email, "'")) %>
 
 ulimit -v $(( 1024 * 1024 * {{ memory | 4 }} ))
 CMQ_AUTH={{ auth }} R --no-save --no-restore -e 'clustermq:::worker("{{ master }}")'

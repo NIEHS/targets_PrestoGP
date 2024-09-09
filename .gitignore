@@ -77,4 +77,7 @@ figs/
 
 **/*.error
 **/*.log
+**/*.out
 
+**/*.Rout
+_targets
