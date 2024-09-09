@@ -4,9 +4,9 @@ list_raster|function|69f71f8692547c86|||||||||||||||
 calc_olm_huc|function|6b3d6059dd5f1ca1|||||||||||||||
 .Random.seed|object|b650bd9fe10d5a25|||||||||||||||
 mq_default|object|23741235a7688606|||||||||||||||
-controller_nass|object|8c8d2edc494ebee6|||||||||||||||
+controller_geo1|object|8c8d2edc494ebee6|||||||||||||||
 covariate_prep|function|0f1a6c036146864c|||||||||||||||
-controller_twi|object|1f0ae7cd9191f6b3|||||||||||||||
+controller_geo2|object|1f0ae7cd9191f6b3|||||||||||||||
 partition_datasets|function|416fa1adab9fb2d9|||||||||||||||
 lasso_spatial_kfold_fit|function|62531baace274dd1|||||||||||||||
 prepare_pesticide_for_fit|function|838d4d4682b4e8da|||||||||||||||
@@ -35,9 +35,9 @@ list_raster|function|69f71f8692547c86
 calc_olm_huc|function|6b3d6059dd5f1ca1
 .Random.seed|object|bce69935c5739861
 mq_default|object|23741235a7688606
-controller_nass|object|ddb31f705e26185e
+controller_geo1|object|ddb31f705e26185e
 covariate_prep|function|0f1a6c036146864c
-controller_twi|object|ebcc9fa195715d31
+controller_geo2|object|ebcc9fa195715d31
 partition_datasets|function|416fa1adab9fb2d9
 lasso_spatial_kfold_fit|function|62531baace274dd1
 prepare_pesticide_for_fit|function|838d4d4682b4e8da

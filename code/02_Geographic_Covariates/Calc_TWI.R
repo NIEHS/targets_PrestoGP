@@ -1,17 +1,21 @@
-calc_TWI_huc <- function(data.AZO, raster, wbd_data, hucunit){
+calc_TWI_huc <- function(data.AZO, raster_path, wbd_data, huc_level){
 
+  sf::sf_use_s2(FALSE)
 
-  layername <- paste0("WBD", toupper(gsub("c", "", hucunit)))
+  raster <- terra::rast(raster_path)
+
+  huc_level <- match.arg(as.character(huc_level), c("8", "10", "12"))
+  # read in the WBD data
+  wbdpath <- file.path(wbd_data)
+
+  layer_name <- sprintf("WBDHU%s", huc_level)
+  hucunit <- sprintf("huc%s", huc_level)
+  
 
   # # NHD WBD Layer names
-  WBD <- sf::st_read(wbd_data, layer = layername) %>%
+  WBD <- sf::st_read(wbdpath, layer = layer_name) %>%
     st_transform("EPSG:4326")
 
-  # Update hucunit variable - Pad zeros for single digit hucs to be 2 digits (i.e. huc8 -> huc08)
-  if (nchar(hucunit) == 4) {
-    colnames(WBD)[colnames(WBD) == hucunit] <- paste0("huc0", str_sub(hucunit,4))
-    hucunit <- paste0("huc0", str_sub(hucunit,4))
-  } 
   
   # Get the unique HUCs
   huc_unique <- unique(data.AZO[[hucunit]])
