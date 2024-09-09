@@ -13,7 +13,7 @@
 
 
 
-state_fun_AZO <- function(state.list) {
+get_pesticide_data <- function(state.list, pesticide_list) {
   library(dataRetrieval)
   library(dplyr)
   library(lubridate)

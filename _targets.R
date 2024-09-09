@@ -62,7 +62,7 @@ tar_option_set(
   packages = c(
     "PrestoGP", "tibble", "sf", "terra", "qs", "tidyverse", "skimr",
     "rsample", "stats", "ggplot2", "geotargets", "tarchetypes",
-    "parsnip", "fastDummies", "stringr",
+    "parsnip", "fastDummies", "stringr","chopin",
     "scales", "ggridges", "spatialsample", "broom", "yardstick", "data.table",
     "exactextractr", "dataRetrieval", "lubridate", "dplyr", "chopin"
   ),
@@ -81,11 +81,12 @@ tar_option_set(
 # Run the R scripts in the R/ folder with your custom functions:
 tar_source(
   sprintf("./%s", c(
-  "code/03_Pesticide_Analysis/Target_Helpers.R",
   "code/01_Create_Dataset/Target_Pesticide_Data.R",
+  "code/01_Create_Dataset/check_characteristics.R",
   "code/02_Geographic_Covariates/Calc_OLM.R",
   "code/02_Geographic_Covariates/Calc_terraClimate.R",
-  "code/02_Geographic_Covariates/Calc_TWI.R"
+  "code/02_Geographic_Covariates/Calc_TWI.R",
+  "code/03_Pesticide_Analysis/Target_Helpers.R"  
 )))
 
 # data_AZO_covariates_cleaned_03032024
@@ -101,9 +102,34 @@ list(
       state_list,
       state.abb[c(-2, -11)], # Remove Alaska and Hawaii
     ),
+  tar_target(
+    wqp_params_yml,
+    '_parameter_names.yaml',
+    format = "file"
+  ),
+  
+  # Load yml file containing common parameter groups and WQP characteristic names
+  tar_target(
+    wqp_params,
+    yaml::read_yaml(wqp_params_yml) 
+  ),
+  
+  # Format a table that indicates how various WQP characteristic names map onto 
+  # more commonly-used parameter names
+  tar_target(
+    char_names_crosswalk,
+    crosswalk_characteristics(wqp_params)
+  ),
+  
+  # Get a vector of WQP characteristic names to match parameter groups of interest
+  tar_target(
+    pest_char_names,
+    filter_characteristics(char_names_crosswalk)
+  ),
+    
     tar_target( # This target creates the state-level Pesticide data from NWIS
       name = state_pesticide,
-      command = state_fun_AZO(state_list),
+      command = get_pesticide_data(state_list, pest_char_names),
       pattern = map(state_list)
     )
   ),

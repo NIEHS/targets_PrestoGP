@@ -1,0 +1,84 @@
+# characteristicNames: https://www.waterqualitydata.us/Codes/Characteristicname?mimeType=xml
+# Name, NWIS Code, CASN
+# CHLOROTRIAZINES
+# Atrazine, 39632
+# Desethylatrazine, 04040, 6190-65-4
+# Desisopropylatrazine, 04038, 1007-28-9
+# Diaminochloroatrazine (2-Chloro-4,6-diamino-s-triazine),04039 , 3397-62-4 [ZERO]
+# Propazine,38535, 139-40-2. [ZERO ]
+# Simazine, 04035, 122-34-9
+
+atrazine:
+- "Atrazine"
+- "Atrazine-d5"
+- "Atrazine-d5 (ethyl-d5)"
+
+Desethylatrazine:
+- "Desethylatrazine (iso-propyl-D7)"
+
+2-Chloro-4-isopropylamino-6-amino-s-triazine:
+- "2-Chloro-4-isopropylamino-6-amino-s-triazine"
+
+Propazine:
+- "Propazine"
+
+Simazine:
+- "Simazine"
+- "Hydroxysimazine"
+- "Simazine-d10"
+
+Glyphosate: 
+  - "Glyphosate"  
+  - "Glyphosate-C13N15"
+
+Permithrin:
+  - "Permethrin"
+  - "Permethrin-d6"
+  - "1rs Cis-Permethrin"
+  - "Beta Cypermethrin"
+  - "Biopermethrin"
+  - "(-)-cis-Permethrin"
+  - "(+)-cis-Permethrin"
+  - "cis-Permethrin-13C6"
+  - "(-)-trans-Permethrin"
+  - "Transpermethrin"
+
+Carbaryl: 
+  - "Carbaryl"
+  - "Carbaryl-d7"
+  - "Carbaryl C13"
+
+Chlorpyrifos:
+  - "Chlorpyrifos"
+  - "Chlorpyrifos-d10"
+  - "Chlorpyrifos-methyl"
+  - "Chlorpyrifos O.A."
+
+Fludioxonil:
+  - "Fludioxonil"
+
+Pyrimethanil:
+  - "Pyrimethanil"
+
+Pyraclostrobin:
+  - "Pyraclostrobin"
+
+Boscalid: 
+  - "Boscalid"
+  - "Boscalid metabolite M510F01"  
+
+Cyfluthrin: 
+  - " Cyfluthrin"  
+
+Tefluthrin:
+  - "Tefluthrin"
+  - "Tefluthrin acid benzyl ester"
+  - "Tefluthrin acid pentafluorobenzyl ester"
+
+aldicarb:
+  - "aldicarb"
+  - "aldicarb sulfone"
+  - "aldicarb sulfoxide"
+
+dimethoate:
+  - "dimethoate"
