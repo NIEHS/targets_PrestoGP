@@ -25,6 +25,7 @@ library(exactextractr)
 library(crew)
 library(crew.cluster)
 library(chopin)
+library(dataRetrieval)
 
 
 sf::sf_use_s2(FALSE)
@@ -72,8 +73,8 @@ tar_option_set(
       controller = "controller_default"
     )
   ),
-  garbage_collection = TRUE,
-  error = "abridge"
+  garbage_collection = TRUE
+  #error = "abridge"
 )
 
 
@@ -93,14 +94,14 @@ tar_source(
 list(
   tar_target( # This target is the WBD database
     name = wbd_data,
-    command = "/pipeline/input/WBD-National/WBD_National_GDB.gdb",
+    command = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/WBD-National/WBD_National_GDB.gdb",
     format = "file"
   ),
-  list( # Dynamic branch of the states for pesticide data from NWIS
-    tar_target(
-      state_list,
-      state.abb[c(-2, -11)], # Remove Alaska and Hawaii
-    ),
+
+  tar_target(
+    state_list,
+    state.abb[c(-2, -11)], # Remove Alaska and Hawaii
+  ),
   tar_target(
     wqp_params_yml,
     'param_names.yml',
@@ -130,8 +131,8 @@ list(
       name = state_pesticide,
       command = get_pesticide_data(state_list, pest_char_names),
       pattern = map(state_list)
-    )
-  ),
+    ),
+    
   tar_target( # This target combines the state-level data into one dataset
     name = state_pesticide_combined,
     command = combine_state_data(state_pesticide)

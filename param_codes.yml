@@ -1,0 +1,109 @@
+# characteristicNames: https://www.waterqualitydata.us/Codes/Characteristicname?mimeType=xml
+# water filtered and unfiltered, dueterated and isotope-labelled versions included
+
+atrazine:
+- "39630"
+- "39632"
+- "50290"
+- "65065"
+- "65150"
+- "99775"
+
+Desethylatrazine:
+- "75979"
+- "62674"
+- "68547"
+- "04039"
+
+2-Chloro-4-isopropylamino-6-amino-s-triazine:
+- "75980"
+- "04038"
+- "68550"
+
+Propazine:
+- "39024"
+- "38535"
+- "68678"
+
+Simazine:
+- "39055"
+- "39025"
+- "04035"
+- "65105"
+- "65152"
+
+Glyphosate:
+  - "39941"
+  - "62722"  
+  - "68415"
+  - "68416"
+
+Permethrin:
+  - "82418"
+  - "82687"
+  - "68165"
+  - "82420"
+
+Cypermethrin:
+  - "61586"
+  - "68147"
+  - "68100"
+  - "68164"
+  - "68166"
+  - "68531"
+  - "68554"
+  - "68705"
+  - "68715"
+
+Carbaryl: 
+  - "39750"
+  - "49310"
+  - "82618"
+  - "82680"
+  - "65069"
+
+Chlorpyrifos:
+  - "38932"
+  - "38933"
+  - "65072"
+  - "65154"
+  - "67776"
+  - "81403"
+
+Fludioxonil:
+  - "67640"
+
+Pyrimethanil:
+  - "67717"
+
+Pyraclostrobin:
+  - "65250"
+  - "66646"
+
+
+Cyfluthrin: 
+  - "61585" 
+  - "65074" 
+  - "67777"
+  - "68143"
+  - "68539"
+
+Tefluthrin:
+  - "61606"
+  - "67731"
+  - "67796"
+
+aldicarb:
+  - "39053"
+  - "49312"
+  - "49313"
+  - "68529"
+  - "82587"
+  - "49314
+  - "68530"
+  - "82586"
+
+dimethoate:
+  - "39009"
+  - "66596"
+  - "82662"
