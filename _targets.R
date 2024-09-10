@@ -23,7 +23,6 @@ library(broom)
 library(data.table)
 library(exactextractr)
 library(crew)
-# library(clustermq)
 library(crew.cluster)
 library(chopin)
 
@@ -33,7 +32,7 @@ terra::terraOptions(memfrac = 0.1)
 
 
 tar_config_set(
-  store = "/ddn/gs1/group/set/pipeline/Pesticides_container"
+  store = "/ddn/gs1/group/set/pipeline/PrestoGP_Pesticides"
 )
 
 
@@ -104,7 +103,7 @@ list(
     ),
   tar_target(
     wqp_params_yml,
-    '_parameter_names.yaml',
+    'param_names.yml',
     format = "file"
   ),
   

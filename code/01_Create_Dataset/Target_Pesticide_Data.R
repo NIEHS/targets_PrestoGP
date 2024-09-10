@@ -14,20 +14,13 @@
 
 
 get_pesticide_data <- function(state.list, pesticide_list) {
-  library(dataRetrieval)
-  library(dplyr)
-  library(lubridate)
-  library(tidyverse)
-  library(data.table)
-  
-  param.chlorotriazines <- c("39632", "04040", "04038", "04039", "38535", "04035")
   
   startDate <- "2000-01-01"
   endDate <- "2022-12-31"
   
   temp <- whatWQPdata(
     statecode = state.list,
-    parameterCd = param.chlorotriazines
+    parameterCd = pesticide_list
   )
   
   temp <- temp[temp$MonitoringLocationTypeName == "Well", ]
