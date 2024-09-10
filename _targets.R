@@ -37,15 +37,20 @@ tar_config_set(
 )
 
 
+# crew_default <-
+#   crew_controller_local(
+#     name = "controller_default",
+#     tls = crew::crew_tls(mode = "automatic"),
+#     launch_max = 10L,
+#     workers = 2L
+#   )
+
 crew_default <-
   crew_controller_local(
     name = "controller_default",
-    tls = crew::crew_tls(mode = "automatic"),
-    launch_max = 10L,
-    workers = 12L
+    launch_max = 5L,
+    workers = 2L
   )
-
-
 
 controller_geo1 <- crew::crew_controller_local(
   name = "controller_geo1",
@@ -104,7 +109,7 @@ list(
   ),
   tar_target(
     wqp_params_yml,
-    'param_names.yml',
+    'param_codes.yml',
     format = "file"
   ),
   
