@@ -37,20 +37,20 @@ tar_config_set(
 )
 
 
-# crew_default <-
-#   crew_controller_local(
-#     name = "controller_default",
-#     tls = crew::crew_tls(mode = "automatic"),
-#     launch_max = 10L,
-#     workers = 2L
-#   )
-
 crew_default <-
   crew_controller_local(
     name = "controller_default",
-    launch_max = 5L,
+    tls = crew::crew_tls(mode = "automatic"),
+    launch_max = 10L,
     workers = 2L
   )
+
+# crew_default <-
+#   crew_controller_local(
+#     name = "controller_default",
+#     launch_max = 5L,
+#     workers = 2L
+#   )
 
 controller_geo1 <- crew::crew_controller_local(
   name = "controller_geo1",
@@ -131,13 +131,17 @@ list(
     pest_char_names,
     filter_characteristics(char_names_crosswalk)
   ),
-    
-    tar_target( # This target creates the state-level Pesticide data from NWIS
-      name = state_pesticide,
-      command = get_pesticide_data(state_list, pest_char_names),
-      pattern = map(state_list)
-    ),
-    
+  
+  tar_target(
+    date_range,
+    c("2000-01-01", "2022-12-31")
+  ),  
+  tar_target( # This target creates the state-level Pesticide data from NWIS
+    name = state_pesticide,
+    command = get_pesticide_data(state_list, pest_char_names),
+    pattern = map(state_list)
+  ),
+  
   tar_target( # This target combines the state-level data into one dataset
     name = state_pesticide_combined,
     command = combine_state_data(state_pesticide)
@@ -327,7 +331,7 @@ list(
     command =
       calc_twi(
         twi_file = twi_path,
-        wbd_path = "/pipeline/input/WBD-National/WBD_National_GDB_reexport.gpkg", huc_level = huc_levels),
+        wbd_path = "/ddn/gs1/group/set/Projects/PrestoGP_Pesticides/input/WBD-National/WBD_National_GDB_reexport.gpkg", huc_level = huc_levels),
     resources = tar_resources(
       crew = tar_resources_crew(controller = "controller_geo2")
     ),

@@ -1,26 +1,16 @@
 # TARGET functions for Pesticide Data Creation
 
-## The 6 Chlorinated Triazines
-# 
-# Name, NWIS Code, CASN
-# CHLOROTRIAZINES
-# Atrazine, 39632
-# Desethylatrazine, 04040, 6190-65-4
-# Desisopropylatrazine, 04038, 1007-28-9
-# Diaminochloroatrazine (2-Chloro-4,6-diamino-s-triazine),04039 , 3397-62-4 [ZERO]
-# Propazine,38535, 139-40-2. [ZERO ]
-# Simazine, 04035, 122-34-9
 
 
-
-get_pesticide_data <- function(state.list, pesticide_list) {
+get_pesticide_data <- function(state.list, pesticide.param, date_range) {
   
-  startDate <- "2000-01-01"
-  endDate <- "2022-12-31"
+  startDate <- date_range[1]
+  endDate <- date_range[2]
+
   
   temp <- whatWQPdata(
     statecode = state.list,
-    parameterCd = pesticide_list
+    parameterCd = pesticide.param
   )
   
   temp <- temp[temp$MonitoringLocationTypeName == "Well", ]
@@ -31,11 +21,11 @@ get_pesticide_data <- function(state.list, pesticide_list) {
       readNWISsite() %>%
       select(c(site_no, well_depth_va))
     site.info$MonitoringLocationIdentifier <- paste0("USGS-", site.info$site_no)
-    data.chlorotriazines <- readWQPqw(temp$MonitoringLocationIdentifier, param.chlorotriazines,
+    data.wq <- readWQPqw(temp$MonitoringLocationIdentifier, pesticide.param,
                                       startDate = startDate, endDate = endDate
     )
     
-    result <- left_join(data.chlorotriazines, temp, by = "MonitoringLocationIdentifier") %>%
+    result <- left_join(data.wq, temp, by = "MonitoringLocationIdentifier") %>%
       left_join(site.info, by = "MonitoringLocationIdentifier")
     
     return(result)
@@ -57,7 +47,7 @@ combine_state_data <- function(state_pesticide) {
 
 
 
-get_censored_data <- function(data.AZO.final){
+get_censored_data <- function(data.wq.final){
   
   censored_text <- c(
     "Not Detected",
@@ -68,7 +58,7 @@ get_censored_data <- function(data.AZO.final){
   )
   
   
-  data.AZO.censored <- data.AZO.final %>%
+  data.wq.censored <- data.wq.final %>%
     mutate(
       left_censored = grepl(paste(censored_text, collapse = "|"),
                             ResultDetectionConditionText,
@@ -92,12 +82,12 @@ get_censored_data <- function(data.AZO.final){
     ) %>%
     arrange(startDate, parm_cd)
   
-  return(data.AZO.censored)
+  return(data.wq.censored)
 }
 
 
-get_daily_averages <- function(data.AZO.censored){
-  data.AZO.daily.avg <- data.AZO.censored %>%
+get_daily_averages <- function(data.wq.censored){
+  data.wq.daily.avg <- data.wq.censored %>%
     group_by(ChemicalName, site_no, startDate) %>%
     mutate("id" = cur_group_id(), "nsamples" = n()) %>%
     summarise(
@@ -128,12 +118,12 @@ get_daily_averages <- function(data.AZO.censored){
       id = first(id),
       nsamples = sum(nsamples)
     )
-  return(data.AZO.daily.avg)
+  return(data.wq.daily.avg)
 }
 
 
-get_yearly_averages <- function(data.AZO.daily.avg){
-  data.AZO.year.avg <- data.AZO.daily.avg %>%
+get_yearly_averages <- function(data.wq.daily.avg){
+  data.wq.year.avg <- data.wq.daily.avg %>%
     group_by(ChemicalName, site_no, Year) %>%
     mutate("id" = cur_group_id()) %>%
     summarise(
@@ -165,6 +155,6 @@ get_yearly_averages <- function(data.AZO.daily.avg){
       nsamples = sum(nsamples)
     ) %>%
     arrange(Year, site_no, parm_cd)
-  return(data.AZO.year.avg)
+  return(data.wq.year.avg)
 }
 
